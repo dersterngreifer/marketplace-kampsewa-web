@@ -5,24 +5,28 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RatingProduk extends Model
+class Wishlist extends Model
 {
     use HasFactory;
 
-    protected $table = 'rating_produk';
+    protected $table = 'wishlist';
 
     protected $fillable = [
         'id_user',
         'id_produk',
-        'rating',
-        'ulasan',
     ];
 
+    /**
+     * User pemilik wishlist.
+     */
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
     }
 
+    /**
+     * Produk yang di-wishlist.
+     */
     public function produk()
     {
         return $this->belongsTo(Produk::class, 'id_produk');

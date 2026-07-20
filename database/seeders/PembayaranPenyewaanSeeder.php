@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\PembayaranPenyewaan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * PembayaranPenyewaanSeeder tidak lagi berjalan standalone.
+ * Data pembayaran_penyewaan dibuat di dalam PenyewaanSeeder agar relasi konsisten.
+ *
+ * @see PenyewaanSeeder
+ */
 class PembayaranPenyewaanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        PembayaranPenyewaan::factory(500)->create();
+        $this->command->info('ℹ️  PembayaranPenyewaanSeeder: data dibuat di dalam PenyewaanSeeder (skip).');
     }
 }

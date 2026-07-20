@@ -136,7 +136,7 @@ Route::middleware('auth')->group(function () {
             Route::delete('/{id}', [KelolaPenggunaMenuController::class, 'destroy'])
                 ->name('kelola-pengguna.destroy');
 
-            Route::prefix('detail-pengguna/{fullname}')
+            Route::prefix('detail-pengguna/{user}')
                 ->name('detail-pengguna.')
                 ->controller(DetailPenggunaController::class)
                 ->group(function () {
@@ -145,6 +145,12 @@ Route::middleware('auth')->group(function () {
                     Route::get('/produk-disewakan/detail-produk/{namaproduk}', 'showDetailProdukDisewakan')->name('detail-produk-disewakan');
                     Route::get('/detail-produk-sedang-disewa/{namaproduk}', 'showDetailProdukSedangDisewa')->name('detail-produk-sedang-disewa');
                 });
+
+            Route::put('/detail/{id}', [DetailPenggunaController::class, 'update'])
+                ->name('kelola-pengguna.update');
+
+            Route::delete('/detail/{id}', [DetailPenggunaController::class, 'destroy'])
+                ->name('kelola-pengguna.detail-destroy');
         });
 
         Route::get('/informasi-pengguna', [InformasiPenggunaController::class, 'index'])
@@ -159,6 +165,9 @@ Route::middleware('auth')->group(function () {
         Route::prefix('iklan')->name('iklan.')->controller(IklanController::class)->group(function () {
             Route::get('/', 'index')->name('index');
             Route::delete('/delete-iklan-pending/{id_iklan}', 'deleteIklanPending')->name('delete-iklan-pending');
+            Route::put('/aktivasi/{id_detail_iklan}', 'aktivasiIklan')->name('aktivasi');
+            Route::put('/nonaktifkan/{id_detail_iklan}', 'nonaktifkanIklan')->name('nonaktifkan');
+            Route::put('/selesaikan/{id_detail_iklan}', 'selesaikanIklan')->name('selesaikan');
         });
 
         /*

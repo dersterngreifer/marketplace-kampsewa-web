@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Developer;
 use App\Events\FeedbackMessageSent;
 use App\Http\Controllers\Controller;
 use App\Models\BalasFeedback;
+use App\Models\DetailIklan;
 use App\Models\Feedback;
 use App\Models\FeedbackMessage;
+use App\Models\Penyewaan;
+use App\Models\RatingProduk;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -17,7 +20,6 @@ use Illuminate\Validation\ValidationException;
 use RealRashid\SweetAlert\Facades\Alert;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-
 class NotificationController extends Controller
 {
     public function __construct()
@@ -27,7 +29,8 @@ class NotificationController extends Controller
 
     public function index(Request $request)
     {
-        $user_baru_terdaftar = User::select('users.*')
+        // --- Mitra baru daftar hari ini (sebelumnya tidak dikirim ke view notifikasi)
+        $mitra_baru_hari_ini = User::select('users.*')
             ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
             ->where('users.type', 0)
             ->whereDate('users.created_at', Carbon::today())
@@ -36,6 +39,60 @@ class NotificationController extends Controller
             ->limit(10)
             ->get();
 
+        // --- Iklan mitra yang akan expired dalam 3 hari ke depan
+        $iklan_hampir_expired = DetailIklan::join('iklan', 'detail_iklan.id_iklan', '=', 'iklan.id')
+            ->join('users', 'iklan.id_user', '=', 'users.id')
+            ->where('detail_iklan.status_iklan', 'Aktif')
+            ->whereBetween('detail_iklan.tanggal_akhir', [
+                Carbon::today(),
+                Carbon::today()->addDays(3),
+            ])
+            ->select(
+                'users.name',
+                'users.email',
+                'users.foto',
+                'iklan.judul',
+                'iklan.id as id_iklan',
+                'detail_iklan.id as id_detail_iklan',
+                'detail_iklan.tanggal_akhir',
+                'detail_iklan.status_iklan'
+            )
+            ->orderBy('detail_iklan.tanggal_akhir', 'asc')
+            ->get();
+
+        // --- Rating buruk (≤ 2 bintang) dari pelanggan dalam 7 hari terakhir
+        $rating_buruk_baru = RatingProduk::with(['user', 'produk.user'])
+            ->where('rating', '<=', 2)
+            ->where('created_at', '>=', Carbon::now()->subDays(7))
+            ->orderByDesc('created_at')
+            ->limit(15)
+            ->get();
+
+        // --- Penyewaan baru yang masuk hari ini (monitoring komisi platform)
+        // Struktur: penyewaan → detail_penyewaan → produk → users (mitra)
+        $penyewaan_baru_hari_ini = DB::table('penyewaan')
+            ->join('users as penyewa', 'penyewaan.id_user', '=', 'penyewa.id')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->join('users as mitra', 'produk.id_user', '=', 'mitra.id')
+            ->join('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
+            ->whereDate('penyewaan.created_at', Carbon::today())
+            ->select(
+                'penyewaan.id',
+                'penyewaan.status_penyewaan',
+                'penyewaan.created_at',
+                'penyewa.name as nama_penyewa',
+                'mitra.name as nama_mitra',
+                'pembayaran_penyewaan.total_pembayaran',
+                'pembayaran_penyewaan.pajak_platform',
+                'pembayaran_penyewaan.status_pembayaran'
+            )
+            ->orderByDesc('penyewaan.created_at')
+            ->distinct()
+            ->limit(20)
+            ->get();
+
+        // --- Feedback queries (kode lama dipertahankan) ---
         $feedbackSort = $request->get('feedback_sort', 'date_latest');
         $feedbackKriteria = $request->get('feedback_kriteria', 'all');
 
@@ -76,17 +133,22 @@ class NotificationController extends Controller
         $customerReplies = $this->getCustomerReplies($customerReplySort, $customerReplyKriteria);
 
         return view('developers.notification')->with([
-            'title' => 'Dashboard | Notification',
-            'user_baru_terdaftar' => $user_baru_terdaftar,
-            'feedback' => $feedback,
-            'reply' => $feedbackReply,
-            'customerReplies' => $customerReplies,
-
-            'feedbackSort' => $feedbackSort,
-            'feedbackKriteria' => $feedbackKriteria,
-            'replySort' => $replySort,
-            'replyKriteria' => $replyKriteria,
-            'customerReplySort' => $customerReplySort,
+            'title'                  => 'Dashboard | Notification',
+            // Data baru
+            'mitra_baru_hari_ini'   => $mitra_baru_hari_ini,
+            'iklan_hampir_expired'  => $iklan_hampir_expired,
+            'rating_buruk_baru'     => $rating_buruk_baru,
+            'penyewaan_baru_hari_ini' => $penyewaan_baru_hari_ini,
+            // Data lama
+            'user_baru_terdaftar'   => $mitra_baru_hari_ini, // backward-compat alias
+            'feedback'              => $feedback,
+            'reply'                 => $feedbackReply,
+            'customerReplies'       => $customerReplies,
+            'feedbackSort'          => $feedbackSort,
+            'feedbackKriteria'      => $feedbackKriteria,
+            'replySort'             => $replySort,
+            'replyKriteria'         => $replyKriteria,
+            'customerReplySort'     => $customerReplySort,
             'customerReplyKriteria' => $customerReplyKriteria,
         ]);
     }

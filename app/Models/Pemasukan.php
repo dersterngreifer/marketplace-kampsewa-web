@@ -12,6 +12,10 @@ class Pemasukan extends Model
     protected $table = 'pemasukan';
 
     protected $fillable = [
-        'id_user', 'sumber', 'deskripsi', 'nominal',
+        'id_user',
+        'sumber',
+        'deskripsi',
+        'nominal',
+        'id_pembayaran_penyewaan', // Referensi transaksi untuk audit trail
     ];
 }

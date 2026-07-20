@@ -12,6 +12,10 @@ class Pengeluaran extends Model
     protected $table = 'pengeluaran';
 
     protected $fillable = [
-        'id_user', 'sumber', 'deskripsi', 'nominal',
+        'id_user',
+        'sumber',
+        'deskripsi',
+        'nominal',
+        'kategori_pengeluaran', // Label kategori: operasional, gaji, marketing, dll
     ];
 }

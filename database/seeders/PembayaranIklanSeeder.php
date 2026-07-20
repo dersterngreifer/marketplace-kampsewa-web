@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\PembayaranIklan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * PembayaranIklanSeeder tidak lagi berjalan standalone.
+ * Data pembayaran_iklan dibuat di dalam IklanSeeder agar relasi konsisten.
+ *
+ * @see IklanSeeder
+ */
 class PembayaranIklanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        PembayaranIklan::factory(500)->create();
+        $this->command->info('ℹ️  PembayaranIklanSeeder: data dibuat di dalam IklanSeeder (skip).');
     }
 }

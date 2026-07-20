@@ -17,6 +17,10 @@ class Alamat extends Model
         'latitude',
         'detail_lainnya',
         'type',
+        'kecamatan',
+        'kota_kabupaten',
+        'provinsi',
+        'kode_pos',
     ];
 
     public function getTypeAttribute($value)

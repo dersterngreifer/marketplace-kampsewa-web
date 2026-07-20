@@ -14,8 +14,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Jalankan command `app:update-status-iklan` setiap menit
-        $schedule->command('app:update-status-iklan')->everyMinute();
+        // Jalankan setiap hari pukul 00:05 untuk:
+        // 1. Menyelesaikan iklan yang sudah melewati tanggal_akhir
+        // 2. Mengaktifkan iklan Pending yang tanggal_mulai sudah tercapai (maks 10 aktif)
+        $schedule->command('app:update-status-iklan')->dailyAt('00:05');
     }
 
     /**

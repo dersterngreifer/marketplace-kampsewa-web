@@ -31,6 +31,13 @@ class User extends Authenticatable
         'time_login',
         'last_login',
         'name_store',
+        // KYC — verifikasi identitas
+        'nomor_identitas',
+        'foto_identitas',
+        'is_verified',
+        // Profil toko
+        'deskripsi_toko',
+        'banner_toko',
     ];
 
     /**

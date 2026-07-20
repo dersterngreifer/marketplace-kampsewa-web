@@ -19,4 +19,24 @@ class Iklan extends Model
         'deskripsi',
         'snap_token',
     ];
+
+    public function detailIklan()
+    {
+        return $this->hasMany(DetailIklan::class, 'id_iklan');
+    }
+
+    public function latestDetail()
+    {
+        return $this->hasOne(DetailIklan::class, 'id_iklan')->latestOfMany();
+    }
+
+    public function pembayaran()
+    {
+        return $this->hasMany(PembayaranIklan::class, 'id_iklan');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
 }

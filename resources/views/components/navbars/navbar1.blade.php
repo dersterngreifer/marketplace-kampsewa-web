@@ -116,7 +116,7 @@
                             </div>
                         @else
                             @foreach ($user_baru_terdaftar as $user)
-                                <a href="{{ route('detail-pengguna.index', ['fullname' => $user->name]) }}"
+                                <a href="{{ route('detail-pengguna.index', ['user' => $user->id]) }}"
                                     class="group flex gap-4 border-b border-slate-100 px-5 py-4 transition-all duration-300 hover:bg-slate-50">
 
                                     <img src="@userPhoto($user->foto)"

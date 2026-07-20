@@ -18,8 +18,10 @@ class PembayaranPenyewaan extends Model
         'biaya_admin',
         'kurang_pembayaran',
         'total_pembayaran',
+        'pajak_platform',
+        'persen_pajak',
         'metode',
         'jenis_transaksi',
-        'status_pembayaran'
+        'status_pembayaran',
     ];
 }

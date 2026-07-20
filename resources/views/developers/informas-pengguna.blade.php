@@ -1,315 +1,332 @@
-@extends('layouts.developers.ly-dashboard')
+﻿@extends('layouts.developers.ly-dashboard')
+
 @section('content')
-    <div class="_container flex flex-col gap-8 p-8">
-        <div class="_component-card-statistik w-full grid grid-cols-4 gap-4">
-            <div
-                class="_total-pengguna-daftar-hari-ini flex flex-col justify-between w-full h-auto bg-white rounded-[20px] p-4">
-                <div class="_header">
-                    <p class="text-[18px] font-medium text-[#BAC3DC]">Total Pendaftar<br />Hari ini</p>
-                </div>
-                <div class="_body">
-                    <p class="text-[28px] font-bold">{{ $user_pendaftar_hari_ini }} User</p>
-                </div>
-                <div class="_footer">
-                    <p class="text-[14px]">Total User yang mendaftar hari {{ Carbon\Carbon::now()->subDay()->format('l') }}
-                        kemarin adalah <b>{{ $user_pendaftar_kemarin }} User</b>.</p>
-                </div>
-            </div>
-            <div
-                class="_total-pengguna-daftar-minggu-ini flex flex-col justify-between w-full h-auto bg-white rounded-[20px] p-4">
-                <div class="_header">
-                    <p class="text-[18px] font-medium text-[#BAC3DC]">Total Pendaftar<br />Minggu ini</p>
-                </div>
-                <div class="_body">
-                    <p class="text-[28px] font-bold">{{ $user_pendaftar_minggu_ini }} User</p>
-                </div>
-                <div class="_footer">
-                    <p class="text-[14px]">Total User yang mendaftar minggu lalu adalah
-                        <b>{{ $user_pendaftar_minggu_kemarin }} User</b>.
-                    </p>
-                </div>
-            </div>
-            <div
-                class="_total-pengguna-daftar-bulan-ini flex flex-col justify-between w-full h-auti bg-white rounded-[20px] p-4">
-                <div class="_header">
-                    <p class="text-[18px] font-medium text-[#BAC3DC]">Total Pendaftar<br />Bulan ini</p>
-                </div>
-                <div class="_body">
-                    <p class="text-[28px] font-bold">{{ $user_pendaftar_bulan_ini }} User</p>
-                </div>
-                <div class="_footer">
-                    <p class="text-[14px]">Total User yang mendaftar bulan ini adalah <b>{{ $user_pendaftar_bulan_kemarin }}
-                            User</b>.</p>
-                </div>
-            </div>
-            <div
-                class="_total-pengguna-daftar-tahun-ini flex flex-col justify-between w-full h-auto bg-white rounded-[20px] p-4">
-                <div class="_header">
-                    <p class="text-[18px] font-medium text-[#BAC3DC]">Total Pendaftar<br />Tahun ini</p>
-                </div>
-                <div class="_body">
-                    <p class="text-[28px] font-bold">{{ $user_pendaftar_tahun_ini }} User</p>
-                </div>
-                <div class="_footer">
-                    <p class="text-[14px]">Total User yang mendaftar tahun lalu adalah
-                        <b>{{ $user_pendaftar_tahun_kemarin }} User</b>.
-                    </p>
-                </div>
-            </div>
+<div class="w-full px-4 py-5 sm:px-5 lg:px-6">
+
+    {{-- Page Header --}}
+    <div class="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-black tracking-tight text-slate-900">Informasi Pengguna</h1>
+            <p class="mt-1 text-sm text-slate-500">Pantau aktivitas, pertumbuhan, dan status pengguna platform secara real-time.</p>
         </div>
-        <div class="_data-pengguna w-full grid grid-cols-[2fr_1fr] gap-4">
-            <form method="GET" class="w-full" id="form-filter">
-                <div class="_component-list-data-filter w-full flex flex-col gap-4">
-                    <div class="_component-filter-search flex gap-4 items-center">
-                        <div class="_filter">
-                            <div class="flex items-center justify-center">
-                                <div class="relative inline-block text-left">
-                                    <select id="filter" name="filter"
-                                        class="origin-top-right z-10 mt-2 w-48 rounded-full px-4 py-2  text-[14px] mb-2 bg-white ring-1 ring-black ring-opacity-5">
-                                        <option value="terlama" {{ request('filter') == 'terlama' ? 'selected' : '' }}>
-                                            Terlama
-                                        </option>
-                                        <option value="terbaru" {{ request('filter') == 'terbaru' ? 'selected' : '' }}>
-                                            Terbaru
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="_divider w-[2px] h-[28px] bg-white rounded-full"></div>
-                        <div class="_search">
-                            <div class="form">
-                                <label for="search" class="bg-white  rounded-full">
-                                    <input class="input" name="cari" type="text" value="{{ $cari_customer }}"
-                                        placeholder="Cari kata" id="search">
-                                    <div class="fancy-bg"></div>
-                                    <div class="search">
-                                        <svg viewBox="0 0 24 24" aria-hidden="true"
-                                            class="r-14j79pv r-4qtqp9 r-yyyyoo r-1xvli5t r-dnmrzs r-4wgw6l r-f727ji r-bnwqim r-1plcrui r-lrvibr">
-                                            <g>
-                                                <path
-                                                    d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z">
-                                                </path>
-                                            </g>
-                                        </svg>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="px-4 py-2 gradient-1 cursor-pointer text-white rounded-full">Lakukan
-                            Aksi</button>
-                    </div>
-
-                    <div class="_component-category w-full flex gap-4 flex-wrap">
-                        <div>
-                            <label
-                                class="cursor-pointer text-[14px] px-4 py-2 font-medium hover:bg-gradient-to-bl from-[#B381F4] to-[#5038ED] hover:text-white bg-white rounded-full flex items-center transition-colors duration-200">
-                                <input type="checkbox" value="tidak_aktif_sebulan" name="tidak_aktif_sebulan"
-                                    class="hidden opacity-0 absolute checkbox-input" />
-                                <span class="relative z-10">Tidak Aktif 1 Bulan</span>
-                            </label>
-                        </div>
-                        <div>
-                            <label
-                                class="cursor-pointer text-[14px] px-4 py-2 font-medium hover:bg-gradient-to-bl from-[#B381F4] to-[#5038ED] hover:text-white bg-white rounded-full flex items-center transition-colors duration-200">
-                                <input type="checkbox" value="produk_terbanyak" name="produk_terbanyak"
-                                    class="hidden opacity-0 absolute checkbox-input" />
-                                <span class="relative z-10">Produk Terbanyak</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="_component-list-data w-full bg-white rounded-[20px] pl-4 pr-4 pt-4">
-                        <p class="text-[16px] font-medium">Total : {{ $count }} Users</p>
-                        <div
-                            class="_wrapper-card flex flex-col gap-2 {{ $users->count() > 0 ? 'min-h-[500px] max-h-[500px]' : 'h-auto' }} overflow-y-auto p-2">
-                            @if ($users->count() > 0)
-                                @foreach ($users as $item)
-                                    <a href="{{ route('detail-pengguna.index', ['fullname' => $item->name]) }}">
-                                        <div
-                                            class="_card flex p-2 group rounded-[20px] cursor-pointer hover:bg-gradient-to-bl from-[#B381F4] to-[#5038ED] hover:text-white gap-4 justify-between items-center">
-                                            <div class="_image-name-kota flex gap-2 items-center">
-                                                <div class="_image">
-                                                    <img class="object-cover w-[70px] h-[70px] rounded-[15px]"
-                                                        src="@userPhoto($item->foto)"
-                                                        alt="">
-                                                </div>
-                                                <div class="_name-kota flex flex-col gap-1">
-                                                    <div class="_name-kota">
-                                                        <p class="text-[16px] font-medium">{{ $item->name }}</p>
-                                                        <p class="text-[14px]">Kota Banyuwangi</p>
-                                                    </div>
-                                                    <p
-                                                        class="text-[12px] group-hover:text-black font-medium w-fit px-2 py-1 rounded-full bg-[#EFF2F7]">
-                                                        Customer</p>
-                                                </div>
-                                            </div>
-                                            <div class="_icon-more">
-                                                <p><i class="text-[20px] fi fi-rr-angle-small-right"></i></p>
-                                            </div>
-                                        </div>
-                                    </a>
-                                @endforeach
-                            @else
-                                <div class="w-full h-[300px] flex items-center justify-center">
-                                    <div class="flex items-center gap-4 justify-center">
-                                        <img class="w-[300px] h-auto object-cover"
-                                            src="{{ asset('images/illustration/filling-survey.png') }}" alt="">
-                                        <div>
-                                            <p class="text-[40px] font-black">OOPS!</p>
-                                            <p class="text-[16px] font-medium">Sepertiny Tidak ada data bernama
-                                                <br>{{ $cari_customer }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                    {{ $users->onEachSide(1)->links('components.paginate.custom-pagination') }}
-                </div>
-            </form>
-            <div class="_component-list-customer-sedang-aktif-sedang-sewa w-full h-full">
-                <div class="_sub-container w-full grid grid-cols-1 gap-4 sticky top-4">
-                    <div
-                        class="_sedang-aktif bg-white w-full h-[250px] overflow-hidden max-h-[250px] pl-4 pr-4 pt-4 rounded-[20px]">
-                        <h1 class="text-[14px] font-medium">Sedang Aktif</h1>
-                        <p class="text-[12px]"><b>{{ $count_user_online }}</b> Users sedang beraktifitas</p>
-                        <div class="_card-wrapper overflow-y-scroll max-h-[180px]">
-                            @if ($get_customer_online->count() > 0)
-                                @foreach ($get_customer_online as $item)
-                                    <div
-                                        class="_card flex p-2 group rounded-[20px] cursor-pointer hover:bg-gradient-to-bl from-[#B381F4] to-[#5038ED] hover:text-white gap-4 justify-between items-center">
-                                        <div class="_image-name-kota flex gap-2 items-center">
-                                            <div class="_image">
-                                                <img class="object-cover w-[70px] h-[70px] rounded-[15px]"
-                                                    src="@userPhoto($item->foto)"
-                                                    alt="">
-                                            </div>
-                                            <div class="_name-kota flex flex-col gap-1">
-                                                <div class="_name-kota">
-                                                    <p class="text-[16px] font-medium">{{ $item->name }}</p>
-                                                    <p class="text-[14px]">Kota Banyuwangi</p>
-                                                </div>
-                                                <p
-                                                    class="text-[12px] group-hover:text-black font-medium w-fit px-2 py-1 rounded-full bg-[#EFF2F7]">
-                                                    Customer</p>
-                                            </div>
-                                        </div>
-                                        <div class="_icon-more">
-                                            <p><i class="text-[20px] fi fi-rr-angle-small-right"></i></p>
-                                        </div>
-                                    </div>
-                                @endforeach
-                            @else
-                                <div class="w-full h-[300px] flex items-center justify-center">
-                                    <img class="w-[200px] h-auto object-cover"
-                                        src="{{ asset('images/illustration/Monster 404 Error-rafiki.png') }}"
-                                        alt="">
-                                </div>
-                            @endif
-                        </div>
-                    </div>
-                    <div
-                        class="_sedang-sewa bg-white w-full h-[300px] overflow-hidden max-h-[300px] pl-4 pr-4 pt-4 rounded-[20px]">
-                        <h1 class="text-[14px] font-medium">Sedang Sewa</h1>
-                        <p class="text-[12px]"><b>164</b> Users sedang transaksi sewa.</p>
-                        <div class="_card-wrapper overflow-y-scroll p-2 max-h-[250px]">
-                            @for ($i = 0; $i < 10; $i++)
-                                <div
-                                    class="_card flex p-2 group rounded-[20px] cursor-pointer hover:bg-gradient-to-bl from-[#B381F4] to-[#5038ED] hover:text-white gap-4 justify-between items-center">
-                                    <div class="_image-name-kota flex gap-2 items-center">
-                                        <div class="_image">
-                                            <img class="object-cover w-[70px] h-[70px] rounded-[15px]"
-                                                src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}"
-                                                alt="">
-                                        </div>
-                                        <div class="_name-kota flex flex-col gap-1">
-                                            <div class="_name-kota">
-                                                <p class="text-[16px] font-medium">Agung kurniawan</p>
-                                                <p class="text-[14px]">Kota Banyuwangi</p>
-                                            </div>
-                                            <p
-                                                class="text-[12px] group-hover:text-black font-medium w-fit px-2 py-1 rounded-full bg-[#EFF2F7]">
-                                                Customer</p>
-                                        </div>
-                                    </div>
-                                    <div class="_icon-more">
-                                        <p><i class="text-[20px] fi fi-rr-angle-small-right"></i></p>
-                                    </div>
-                                </div>
-                            @endfor
-                            <div class="w-full h-[10px]"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600">
+            <i class="fi fi-rr-users flex text-[15px]"></i>
+            {{ $count }} total pengguna terdaftar
         </div>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkboxes = document.querySelectorAll('.checkbox-input');
+    {{-- =============================================
+         STAT CARDS (4 kartu dengan % perubahan)
+         ============================================= --}}
+    @php
+        $statCards = [
+            [
+                'label'      => 'Pendaftar Hari Ini',
+                'sub'        => 'Kemarin: ' . $user_pendaftar_kemarin . ' user',
+                'value'      => $user_pendaftar_hari_ini,
+                'pct'        => $pct_hari,
+                'icon'       => 'fi-rr-calendar-day',
+                'color'      => 'violet',
+                'bg'         => 'bg-violet-50',
+                'text'       => 'text-violet-600',
+                'icon_bg'    => 'bg-violet-100',
+            ],
+            [
+                'label'      => 'Pendaftar Minggu Ini',
+                'sub'        => 'Minggu lalu: ' . $user_pendaftar_minggu_kemarin . ' user',
+                'value'      => $user_pendaftar_minggu_ini,
+                'pct'        => $pct_minggu,
+                'icon'       => 'fi-rr-calendar-week',
+                'color'      => 'blue',
+                'bg'         => 'bg-blue-50',
+                'text'       => 'text-blue-600',
+                'icon_bg'    => 'bg-blue-100',
+            ],
+            [
+                'label'      => 'Pendaftar Bulan Ini',
+                'sub'        => 'Bulan lalu: ' . $user_pendaftar_bulan_kemarin . ' user',
+                'value'      => $user_pendaftar_bulan_ini,
+                'pct'        => $pct_bulan,
+                'icon'       => 'fi-rr-calendar',
+                'color'      => 'emerald',
+                'bg'         => 'bg-emerald-50',
+                'text'       => 'text-emerald-600',
+                'icon_bg'    => 'bg-emerald-100',
+            ],
+            [
+                'label'      => 'Pendaftar Tahun Ini',
+                'sub'        => 'Tahun lalu: ' . $user_pendaftar_tahun_kemarin . ' user',
+                'value'      => $user_pendaftar_tahun_ini,
+                'pct'        => $pct_tahun,
+                'icon'       => 'fi-rr-time-forward',
+                'color'      => 'amber',
+                'bg'         => 'bg-amber-50',
+                'text'       => 'text-amber-600',
+                'icon_bg'    => 'bg-amber-100',
+            ],
+        ];
+    @endphp
 
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        checkboxes.forEach(otherCheckbox => {
-                            if (otherCheckbox !== this) {
-                                otherCheckbox.checked = false;
-                                otherCheckbox.parentNode.classList.remove('gradient-1');
-                                otherCheckbox.parentNode.classList.add('bg-white');
-                            }
-                        });
-                        this.parentNode.classList.add('gradient-1');
-                        this.parentNode.classList.remove('bg-white');
-                    } else {
-                        this.parentNode.classList.remove('gradient-1');
-                        this.parentNode.classList.add('bg-white');
-                    }
-                });
-            });
-        });
+    <div class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach ($statCards as $card)
+        <div class="group relative overflow-hidden rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm transition hover:shadow-md">
+            {{-- Dekoratif bulat background --}}
+            <div class="absolute -right-4 -top-4 h-24 w-24 rounded-full {{ $card['bg'] }} opacity-40 blur-xl"></div>
+            <div class="relative">
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl {{ $card['icon_bg'] }} {{ $card['text'] }}">
+                        <i class="fi {{ $card['icon'] }} flex text-lg"></i>
+                    </div>
+                    {{-- Badge persentase --}}
+                    @if ($card['pct'] > 0)
+                        <div class="flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-black text-emerald-600">
+                            <i class="fi fi-rr-trending-up flex text-[10px]"></i>
+                            +{{ $card['pct'] }}%
+                        </div>
+                    @elseif ($card['pct'] < 0)
+                        <div class="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-black text-red-500">
+                            <i class="fi fi-rr-trending-down flex text-[10px]"></i>
+                            {{ $card['pct'] }}%
+                        </div>
+                    @else
+                        <div class="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-400">
+                            —
+                        </div>
+                    @endif
+                </div>
+                <p class="text-3xl font-black text-slate-900">{{ number_format($card['value']) }}</p>
+                <p class="mt-1 text-xs font-bold uppercase tracking-wide text-slate-400">{{ $card['label'] }}</p>
+                <p class="mt-1.5 text-[11px] text-slate-400">{{ $card['sub'] }}</p>
+            </div>
+        </div>
+        @endforeach
+    </div>
 
-        document.addEventListener("DOMContentLoaded", function() {
-            // Fungsi untuk menambahkan kelas gradient-1 ke label
-            function addGradientToLabel(checkboxName) {
-                const label = document.querySelector(`input[name='${checkboxName}']`).closest('label');
-                label.classList.add('gradient-1');
-            }
+    {{-- =============================================
+         LAYOUT DUA KOLOM
+         ============================================= --}}
+    <div class="flex flex-col gap-6 xl:flex-row">
 
-            // Fungsi untuk menyimpan status checkbox ke penyimpanan
-            function saveCheckboxStatus() {
-                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(function(checkbox) {
-                    localStorage.setItem(checkbox.name, checkbox.checked);
-                });
-            }
+        {{-- KOLOM KIRI: List Pengguna --}}
+        <div class="flex flex-1 flex-col gap-5 min-w-0">
 
-            // Fungsi untuk memeriksa status checkbox dari penyimpanan dan menerapkan kelas jika diperlukan
-            function checkCheckboxStatus() {
-                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-                checkboxes.forEach(function(checkbox) {
-                    const isChecked = localStorage.getItem(checkbox.name) === 'true';
-                    if (isChecked) {
-                        checkbox.checked = true;
-                        addGradientToLabel(checkbox.name);
-                    }
-                });
-            }
+            {{-- Filter & Search --}}
+            <form method="GET" action="" id="form-filter">
+                <div class="flex flex-col gap-3 rounded-[28px] border border-slate-100 bg-white p-5 shadow-sm">
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        {{-- Search --}}
+                        <div class="relative flex-1">
+                            <i class="fi fi-rr-search absolute left-4 top-1/2 -translate-y-1/2 flex text-slate-400 text-[15px]"></i>
+                            <input type="text" name="cari" value="{{ $cari_customer }}"
+                                placeholder="Cari nama, email, atau nomor HP..."
+                                class="h-11 w-full rounded-2xl border border-slate-200 bg-slate-50 pl-11 pr-4 text-sm font-medium text-slate-700 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition">
+                        </div>
+                        {{-- Sort --}}
+                        <div class="flex items-center gap-2">
+                            <select name="filter" id="filter"
+                                class="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-600 outline-none focus:border-violet-400 focus:ring-4 focus:ring-violet-100 transition cursor-pointer">
+                                <option value="terbaru" {{ ($filter_customer ?? 'terbaru') === 'terbaru' ? 'selected' : '' }}>Terbaru</option>
+                                <option value="terlama" {{ ($filter_customer ?? '') === 'terlama' ? 'selected' : '' }}>Terlama</option>
+                            </select>
+                        </div>
+                    </div>
+                    {{-- Filter Chips --}}
+                    <div class="flex flex-wrap gap-2">
+                        <button type="submit" name="tidak_aktif_sebulan" value="tidak_aktif_sebulan"
+                            class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition cursor-pointer
+                            {{ ($tidak_aktif_sebulan ?? '') === 'tidak_aktif_sebulan'
+                                ? 'border-violet-400 bg-violet-600 text-white shadow-sm'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600' }}">
+                            <i class="fi fi-rr-time-delete flex text-[11px]"></i>
+                            Tidak Aktif 1 Bulan
+                        </button>
+                        <button type="submit" name="produk_terbanyak" value="produk_terbanyak"
+                            class="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-xs font-bold transition cursor-pointer
+                            {{ ($produk_terbanyak ?? '') === 'produk_terbanyak'
+                                ? 'border-violet-400 bg-violet-600 text-white shadow-sm'
+                                : 'border-slate-200 bg-white text-slate-600 hover:border-violet-300 hover:text-violet-600' }}">
+                            <i class="fi fi-rr-box-alt flex text-[11px]"></i>
+                            Produk Terbanyak
+                        </button>
+                        @if ($cari_customer || $tidak_aktif_sebulan || $produk_terbanyak)
+                        <a href="{{ url()->current() }}"
+                            class="inline-flex items-center gap-2 rounded-full border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-500 hover:text-white transition">
+                            <i class="fi fi-rr-cross-circle flex text-[11px]"></i>
+                            Reset Filter
+                        </a>
+                        @endif
+                    </div>
+                </div>
+            </form>
 
-            // Panggil fungsi untuk memeriksa status checkbox saat halaman dimuat
-            checkCheckboxStatus();
+            {{-- Daftar Pengguna --}}
+            <div class="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm">
+                <div class="border-b border-slate-100 px-6 py-4">
+                    <p class="text-sm font-black text-slate-700">
+                        Menampilkan <span class="text-violet-600">{{ $users->count() }}</span> dari <span class="text-violet-600">{{ $count }}</span> pengguna
+                    </p>
+                </div>
+                @if ($users->count() > 0)
+                <div class="divide-y divide-slate-100">
+                    @foreach ($users as $item)
+                    <a href="{{ route('detail-pengguna.index', ['user' => $item->user_id]) }}"
+                        class="group flex items-center gap-4 px-5 py-4 hover:bg-violet-50/40 transition">
+                        {{-- Avatar + status online --}}
+                        <div class="relative shrink-0">
+                            <img class="h-12 w-12 rounded-2xl object-cover"
+                                src="@userPhoto($item->foto)" alt="{{ $item->name }}">
+                            @if (($item->status ?? '') === 'online')
+                            <span class="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500"></span>
+                            </span>
+                            @endif
+                        </div>
+                        {{-- Info --}}
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-2">
+                                <p class="truncate text-sm font-black text-slate-900 group-hover:text-violet-700 transition">{{ $item->name }}</p>
+                                @if ($item->total_product > 0)
+                                <span class="shrink-0 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-black text-violet-600">
+                                    {{ $item->total_product }} produk
+                                </span>
+                                @endif
+                            </div>
+                            <p class="mt-0.5 truncate text-xs text-slate-400">{{ $item->email ?? '-' }}</p>
+                            <p class="text-[11px] text-slate-400">{{ $item->nomor_telephone ?? '-' }}</p>
+                        </div>
+                        {{-- Meta --}}
+                        <div class="shrink-0 text-right hidden sm:block">
+                            <p class="text-[11px] font-semibold text-slate-400">
+                                {{ \Carbon\Carbon::parse($item->created_at)->format('d M Y') }}
+                            </p>
+                            @if ($item->last_login)
+                            <p class="text-[10px] text-slate-300 mt-0.5">
+                                Login {{ \Carbon\Carbon::parse($item->last_login)->diffForHumans() }}
+                            </p>
+                            @else
+                            <p class="text-[10px] text-slate-300 mt-0.5">Belum pernah login</p>
+                            @endif
+                        </div>
+                        <i class="fi fi-rr-angle-small-right flex text-lg text-slate-300 group-hover:text-violet-400 transition shrink-0"></i>
+                    </a>
+                    @endforeach
+                </div>
+                @else
+                <div class="flex min-h-[280px] flex-col items-center justify-center p-8 text-center">
+                    <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-3xl bg-slate-100 text-slate-400">
+                        <i class="fi fi-rr-user-slash flex text-2xl"></i>
+                    </div>
+                    <p class="text-base font-black text-slate-800">Tidak Ada Data</p>
+                    <p class="mt-1 text-sm text-slate-400">
+                        @if ($cari_customer)
+                            Tidak ada pengguna yang cocok dengan "<b>{{ $cari_customer }}</b>"
+                        @else
+                            Belum ada pengguna yang terdaftar.
+                        @endif
+                    </p>
+                </div>
+                @endif
+                @if ($users->hasPages())
+                <div class="border-t border-slate-100 p-4">
+                    {{ $users->onEachSide(1)->appends(request()->query())->links('components.paginate.custom-pagination') }}
+                </div>
+                @endif
+            </div>
+        </div>
 
-            // Tambahkan event listener untuk checkbox agar saat dicentang, status disimpan dan kelas diterapkan
-            document.querySelectorAll('input[type="checkbox"]').forEach(function(checkbox) {
-                checkbox.addEventListener('change', function() {
-                    saveCheckboxStatus();
-                    if (this.checked) {
-                        addGradientToLabel(this.name);
-                    }
-                });
-            });
-        });
-    </script>
+        {{-- KOLOM KANAN: Panel Sticky --}}
+        <div class="w-full xl:w-[320px] shrink-0">
+            <div class="flex flex-col gap-5 sticky top-4">
+
+                {{-- Sedang Online --}}
+                <div class="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 p-5">
+                        <div class="mb-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-600">
+                            <span class="relative flex h-1.5 w-1.5">
+                                <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                            </span>
+                            Live
+                        </div>
+                        <h2 class="text-base font-black text-slate-900">Sedang Online</h2>
+                        <p class="text-xs text-slate-400"><b class="text-emerald-600">{{ $count_user_online }}</b> pengguna aktif saat ini</p>
+                    </div>
+                    @if ($get_customer_online->count() > 0)
+                    <div class="max-h-[240px] overflow-y-auto divide-y divide-slate-100">
+                        @foreach ($get_customer_online as $item)
+                        <div class="flex items-center gap-3 px-4 py-3 hover:bg-emerald-50/30 transition">
+                            <div class="relative shrink-0">
+                                <img src="@userPhoto($item->foto)" class="h-9 w-9 rounded-xl object-cover" alt="">
+                                <span class="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
+                                </span>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="truncate text-sm font-bold text-slate-900">{{ $item->name }}</p>
+                                <p class="text-[11px] text-emerald-500 font-semibold">Online</p>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="flex min-h-[120px] flex-col items-center justify-center p-6 text-center">
+                        <i class="fi fi-rr-signal-alt-slash flex text-2xl text-slate-200 mb-2"></i>
+                        <p class="text-xs font-semibold text-slate-400">Tidak ada pengguna online</p>
+                    </div>
+                    @endif
+                </div>
+
+                {{-- Sedang Sewa (Real Data) --}}
+                <div class="overflow-hidden rounded-[28px] border border-slate-100 bg-white shadow-sm">
+                    <div class="border-b border-slate-100 p-5">
+                        <div class="mb-1 inline-flex items-center gap-1.5 rounded-full bg-violet-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-violet-600">
+                            <i class="fi fi-rr-box-alt flex text-[10px]"></i>
+                            Aktif
+                        </div>
+                        <h2 class="text-base font-black text-slate-900">Sedang Sewa</h2>
+                        <p class="text-xs text-slate-400"><b class="text-violet-600">{{ $count_sedang_sewa }}</b> transaksi sewa berjalan</p>
+                    </div>
+                    @if ($get_customer_sedang_sewa->count() > 0)
+                    <div class="max-h-[280px] overflow-y-auto divide-y divide-slate-100">
+                        @foreach ($get_customer_sedang_sewa as $sewa)
+                        <div class="px-4 py-3 hover:bg-violet-50/20 transition">
+                            <div class="flex items-start gap-3">
+                                <img src="@userPhoto($sewa->foto_penyewa)"
+                                    class="h-9 w-9 shrink-0 rounded-xl object-cover mt-0.5" alt="">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex items-center justify-between gap-1">
+                                        <p class="truncate text-sm font-bold text-slate-900">{{ $sewa->nama_penyewa }}</p>
+                                        <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-black
+                                            {{ $sewa->status_penyewaan === 'Aktif' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600' }}">
+                                            {{ $sewa->status_penyewaan }}
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-400 truncate">{{ $sewa->nama_produk }}</p>
+                                    <p class="text-[10px] text-slate-300">Mitra: {{ $sewa->nama_mitra }}</p>
+                                    @if ($sewa->tanggal_mulai && $sewa->tanggal_selesai)
+                                    <p class="mt-1 text-[10px] text-slate-400">
+                                        {{ \Carbon\Carbon::parse($sewa->tanggal_mulai)->format('d M') }} –
+                                        {{ \Carbon\Carbon::parse($sewa->tanggal_selesai)->format('d M Y') }}
+                                    </p>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <div class="flex min-h-[140px] flex-col items-center justify-center p-6 text-center">
+                        <i class="fi fi-rr-box-open flex text-2xl text-slate-200 mb-2"></i>
+                        <p class="text-xs font-semibold text-slate-400">Tidak ada transaksi sewa aktif</p>
+                    </div>
+                    @endif
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
 @endsection

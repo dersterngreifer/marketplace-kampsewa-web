@@ -14,8 +14,21 @@ class PembayaranIklan extends Model
     protected $fillable = [
         'id_iklan',
         'id_user',
+        'midtrans_order_id',
+        'payment_type',
+        'midtrans_transaction_status',
         'metode_bayar',
         'total_bayar',
         'status_bayar',
     ];
+
+    public function iklan()
+    {
+        return $this->belongsTo(Iklan::class, 'id_iklan');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
 }

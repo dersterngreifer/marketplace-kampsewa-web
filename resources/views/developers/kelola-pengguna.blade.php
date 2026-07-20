@@ -40,7 +40,6 @@
             </div>
         </div>
 
-        {{-- Search & Filter --}}
         {{-- Search, Filter, Bulk Delete --}}
         <div class="mb-5 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <form id="customerFilterForm" method="GET" action="{{ route('kelola-pengguna.index') }}"
@@ -244,7 +243,7 @@
                                     </p>
 
                                     @if ($item->total_product)
-                                        <a href="{{ route('detail-pengguna.index', ['fullname' => $item->name]) }}"
+                                        <a href="{{ route('detail-pengguna.index', ['user' => $item->user_id]) }}"
                                             class="mt-1 inline-flex text-xs font-bold text-[#12A4ED] hover:underline">
                                             Lihat semua produk
                                         </a>
@@ -278,7 +277,7 @@
 
                                 <div
                                     class="dropdown-menu invisible absolute right-0 top-12 z-[9999] w-44 translate-y-2 rounded-2xl border border-slate-100 bg-white p-2 opacity-0 shadow-2xl shadow-slate-900/15 transition">
-                                    <a href="{{ route('detail-pengguna.index', ['fullname' => $item->name]) }}"
+                                    <a href="{{ route('detail-pengguna.index', ['user' => $item->user_id]) }}"
                                         class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-[#12A4ED]/10 hover:text-[#12A4ED]">
                                         <i class="fi fi-rr-folder-open text-sm"></i>
                                         <span>Detail</span>

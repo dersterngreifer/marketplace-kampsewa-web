@@ -9,6 +9,9 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+use Throwable;
 
 class DetailPenggunaController extends Controller
 {
@@ -16,9 +19,15 @@ class DetailPenggunaController extends Controller
     {
         $this->middleware('dev');
     }
-    public function index($namalengkap)
+    public function index(User $user)
 {
-    $name = $namalengkap;
+    if ($user->type != 0) {
+        return redirect()
+            ->route('kelola-pengguna.index')
+            ->with('error', 'Pengguna tidak ditemukan.');
+    }
+
+    $name = $user->name;
 
     $user_baru_terdaftar = User::select('users.*')
         ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
@@ -28,16 +37,6 @@ class DetailPenggunaController extends Controller
         ->orderByDesc('users.created_at')
         ->limit(10)
         ->get();
-
-    $user = User::where('name', $namalengkap)
-        ->where('type', 0)
-        ->first();
-
-    if (!$user) {
-        return redirect()
-            ->route('kelola-pengguna.index')
-            ->with('error', 'Pengguna tidak ditemukan.');
-    }
 
     $data = DB::table('users')
         ->leftJoin('produk', 'produk.id_user', '=', 'users.id')
@@ -54,6 +53,7 @@ class DetailPenggunaController extends Controller
             'users.tanggal_lahir',
             'users.status',
             'users.background',
+            'users.updated_at',
             DB::raw('COUNT(produk.id) as total_product')
         )
         ->groupBy(
@@ -69,6 +69,12 @@ class DetailPenggunaController extends Controller
             'users.background'
         )
         ->first();
+
+    if (!$data) {
+        return redirect()
+            ->route('kelola-pengguna.index')
+            ->with('error', 'Pengguna tidak ditemukan.');
+    }
 
     $produk_disewakan_limit2 = Produk::with('foto')
         ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
@@ -91,30 +97,30 @@ class DetailPenggunaController extends Controller
                 ->orderBy('id', 'asc');
         }
     ])
-    ->where('id_user', $user->id)
-    ->latest()
-    ->limit(5)
-    ->get();
+        ->where('id_user', $user->id)
+        ->latest()
+        ->limit(5)
+        ->get();
 
-$total_feedback = Feedback::where('id_user', $user->id)->count();
+    $total_feedback = Feedback::where('id_user', $user->id)->count();
 
-$feedback_dibalas = Feedback::where('id_user', $user->id)
-    ->where(function ($query) {
-        $query->where('status', 'Dibalas')
-            ->orWhereHas('messages', function ($message) {
-                $message->where('sender_type', 'admin');
-            });
-    })
-    ->count();
+    $feedback_dibalas = Feedback::where('id_user', $user->id)
+        ->where(function ($query) {
+            $query->where('status', 'Dibalas')
+                ->orWhereHas('messages', function ($message) {
+                    $message->where('sender_type', 'admin');
+                });
+        })
+        ->count();
 
-$feedback_belum_dibalas = Feedback::where('id_user', $user->id)
-    ->where(function ($query) {
-        $query->where('status', 'Belum Dibalas')
-            ->whereDoesntHave('messages', function ($message) {
-                $message->where('sender_type', 'admin');
-            });
-    })
-    ->count();
+    $feedback_belum_dibalas = Feedback::where('id_user', $user->id)
+        ->where(function ($query) {
+            $query->where('status', 'Belum Dibalas')
+                ->whereDoesntHave('messages', function ($message) {
+                    $message->where('sender_type', 'admin');
+                });
+        })
+        ->count();
 
     return view('developers.detail-pengguna')->with([
         'title' => 'Detail Pengguna',
@@ -126,37 +132,31 @@ $feedback_belum_dibalas = Feedback::where('id_user', $user->id)
         'total_feedback' => $total_feedback,
         'feedback_dibalas' => $feedback_dibalas,
         'feedback_belum_dibalas' => $feedback_belum_dibalas,
+        'user_id' => $user->id
     ]);
 }
-    public function showProdukDisewakan($namalengkap, Request $request)
-    {
-        // Fetching new registered users with unread notifications
-        $user_baru_terdaftar = User::select('users.*')
-            ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
-            ->where('users.type', 0)
-            ->whereDate('users.created_at', Carbon::today())
-            ->where('status_notifikasi_user.status', 'unread')
-            ->orderByDesc('users.created_at')
-            ->limit(10)
-            ->get();
-
-        // Mengambil data pengguna berdasarkan nama lengkap
-    $user = User::where('name', $namalengkap)->first();
-
-    // Jika pengguna tidak ditemukan, kembalikan respon error atau alihkan ke halaman lain
-    if (!$user) {
-        return redirect()->back()->with('error', 'Pengguna tidak ditemukan');
+   public function showProdukDisewakan(User $user, Request $request)
+{
+    if ($user->type != 0) {
+        return redirect()
+            ->route('kelola-pengguna.index')
+            ->with('error', 'Pengguna tidak ditemukan.');
     }
 
-    $id_user = $user->id;
+    $user_baru_terdaftar = User::select('users.*')
+        ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+        ->where('users.type', 0)
+        ->whereDate('users.created_at', Carbon::today())
+        ->where('status_notifikasi_user.status', 'unread')
+        ->orderByDesc('users.created_at')
+        ->limit(10)
+        ->get();
 
-    // Mengambil kategori produk
     $get_kategori = Produk::select('kategori')
         ->distinct()
         ->pluck('kategori')
         ->toArray();
 
-    // Menerapkan filter dan pencarian
     $filter_category = $request->input('filter_category', 'Semua Barang');
     $cari_barang = $request->input('cari_barang', '');
 
@@ -170,7 +170,7 @@ $feedback_belum_dibalas = Feedback::where('id_user', $user->id)
             'produk.deskripsi',
             DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa_terkecil')
         )
-        ->where('produk.id_user', $id_user)
+        ->where('produk.id_user', $user->id)
         ->when($filter_category != 'Semua Barang', function ($query) use ($filter_category) {
             return $query->where('produk.kategori', $filter_category);
         })
@@ -180,88 +180,109 @@ $feedback_belum_dibalas = Feedback::where('id_user', $user->id)
         ->groupBy('produk.id', 'produk.nama', 'produk.deskripsi')
         ->get();
 
-    // Mengembalikan view dengan data yang diperlukan
     return view('developers.detailpengguna-produkdisewakan')->with([
-        'name' => $namalengkap,
+        'name' => $user->name,
         'title' => 'Produk Disewakan',
         'user_baru_terdaftar' => $user_baru_terdaftar,
         'get_kategori' => $get_kategori,
         'get_data_produk' => $get_data_produk,
         'filter_category' => $filter_category,
         'cari_barang' => $cari_barang,
+        'user_id' => $user->id
     ]);
+}
+    public function showDetailProdukDisewakan(User $user, $namaproduk)
+{
+    if ($user->type != 0) {
+        return redirect()
+            ->route('kelola-pengguna.index')
+            ->with('error', 'Pengguna tidak ditemukan.');
     }
-    public function showDetailProdukDisewakan($namalengkap, $nama_produk)
-    {
-        $user_baru_terdaftar = User::select('users.*')
-            ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
-            ->where('users.type', 0)
-            ->whereDate('users.created_at', Carbon::today())
-            ->where('status_notifikasi_user.status', 'unread')
-            ->orderByDesc('users.created_at')->limit(10)
-            ->get();
 
-        $produk = Produk::with(['foto'])
-            ->whereHas('user', function ($query) use ($namalengkap) {
-                $query->where('name', $namalengkap);
-            })
-            ->where('nama', $nama_produk)
-            ->firstOrFail();
-            
-        // Get stock and min price dynamically
-        $stok_produk = DB::table('detail_variant_produk')
-            ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
-            ->where('variant_produk.id_produk', $produk->id)
-            ->sum('stok');
-            
-        $harga_sewa_terkecil = DB::table('detail_variant_produk')
-            ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
-            ->where('variant_produk.id_produk', $produk->id)
-            ->min('harga_sewa');
+    $user_baru_terdaftar = User::select('users.*')
+        ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+        ->where('users.type', 0)
+        ->whereDate('users.created_at', Carbon::today())
+        ->where('status_notifikasi_user.status', 'unread')
+        ->orderByDesc('users.created_at')
+        ->limit(10)
+        ->get();
 
-        return view('developers.detail-produk-disewakan', [
-            'title' => 'Detail Produk Disewakan', 
-            'name' => $namalengkap, 
-            'user_baru_terdaftar' => $user_baru_terdaftar, 
-            'nama_produk' => $nama_produk,
-            'produk' => $produk,
-            'stok_produk' => $stok_produk,
-            'harga_sewa_terkecil' => $harga_sewa_terkecil
-        ]);
+    $produk = Produk::with(['foto'])
+        ->where('id_user', $user->id)
+        ->where('nama', $namaproduk)
+        ->firstOrFail();
+
+    $stok_produk = DB::table('detail_variant_produk')
+        ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
+        ->where('variant_produk.id_produk', $produk->id)
+        ->sum('stok');
+
+    $harga_sewa_terkecil = DB::table('detail_variant_produk')
+        ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
+        ->where('variant_produk.id_produk', $produk->id)
+        ->min('harga_sewa');
+
+    // Statistik tambahan
+    $total_disewa = DB::table('detail_penyewaan')
+        ->where('id_produk', $produk->id)
+        ->count();
+
+    $rating_data = DB::table('rating_produk')
+        ->where('id_produk', $produk->id)
+        ->selectRaw('AVG(rating) as rata_rata, COUNT(*) as total_rating')
+        ->first();
+
+    return view('developers.detail-produk-disewakan', [
+        'title'           => 'Detail Produk Disewakan',
+        'name'            => $user->name,
+        'user_id'         => $user->id,
+        'user_baru_terdaftar' => $user_baru_terdaftar,
+        'nama_produk'     => $namaproduk,
+        'produk'          => $produk,
+        'stok_produk'     => $stok_produk,
+        'harga_sewa_terkecil' => $harga_sewa_terkecil,
+        'total_disewa'    => $total_disewa,
+        'rata_rata_rating' => round($rating_data->rata_rata ?? 0, 1),
+        'total_rating'    => $rating_data->total_rating ?? 0,
+    ]);
+}
+    public function showDetailProdukSedangDisewa(User $user, $namaproduk)
+{
+    if ($user->type != 0) {
+        return redirect()
+            ->route('kelola-pengguna.index')
+            ->with('error', 'Pengguna tidak ditemukan.');
     }
-    public function showDetailProdukSedangDisewa($namalengkap, $nama_produk)
-    {
 
-        $user_baru_terdaftar = User::select('users.*')
-            ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
-            ->where('users.type', 0)
-            ->whereDate('users.created_at', Carbon::today())
-            ->where('status_notifikasi_user.status', 'unread')
-            ->orderByDesc('users.created_at')->limit(10)
-            ->get();
+    $user_baru_terdaftar = User::select('users.*')
+        ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+        ->where('users.type', 0)
+        ->whereDate('users.created_at', Carbon::today())
+        ->where('status_notifikasi_user.status', 'unread')
+        ->orderByDesc('users.created_at')
+        ->limit(10)
+        ->get();
 
-        $produk = Produk::with(['foto'])
-            ->whereHas('user', function ($query) use ($namalengkap) {
-                $query->where('name', $namalengkap);
-            })
-            ->where('nama', $nama_produk)
-            ->firstOrFail();
+    $produk = Produk::with(['foto'])
+        ->where('id_user', $user->id)
+        ->where('nama', $namaproduk)
+        ->firstOrFail();
 
-        // Get stock and min price dynamically
-        $stok_produk = DB::table('detail_variant_produk')
-            ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
-            ->where('variant_produk.id_produk', $produk->id)
-            ->sum('stok');
+    $stok_produk = DB::table('detail_variant_produk')
+        ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
+        ->where('variant_produk.id_produk', $produk->id)
+        ->sum('stok');
 
-        return view('developers.detail-barang-sedangdisewa', [
-            'title' => 'Detail Produk Sedang Disewa', 
-            'name' => $namalengkap, 
-            'nama_produk' => $nama_produk, 
-            'user_baru_terdaftar' => $user_baru_terdaftar,
-            'produk' => $produk,
-            'stok_produk' => $stok_produk
-        ]);
-    }
+    return view('developers.detail-barang-sedangdisewa', [
+        'title' => 'Detail Produk Sedang Disewa',
+        'name' => $user->name,
+        'nama_produk' => $namaproduk,
+        'user_baru_terdaftar' => $user_baru_terdaftar,
+        'produk' => $produk,
+        'stok_produk' => $stok_produk
+    ]);
+}
 
     public function deleteSelectedProducts(Request $request)
     {
@@ -269,5 +290,72 @@ $feedback_belum_dibalas = Feedback::where('id_user', $user->id)
         Produk::whereIn('id', $ids)->delete();
 
         return back()->with('success', 'Produk terpilih telah dihapus.');
+    }
+
+    public function update(Request $request, $id)
+{
+    $user = User::whereKey($id)
+        ->where('type', 0)
+        ->firstOrFail();
+
+    $validated = $request->validate([
+        'name' => ['required', 'string', 'max:255'],
+        'email' => [
+            'required',
+            'email',
+            'max:255',
+            Rule::unique('users', 'email')->ignore($user->id),
+        ],
+        'nomor_telephone' => ['nullable', 'string', 'max:25'],
+        'tanggal_lahir' => ['nullable', 'date'],
+        'jenis_kelamin' => ['nullable', Rule::in(['Laki-laki', 'Perempuan'])],
+        'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+    ]);
+
+    if ($request->hasFile('foto')) {
+        $fotoLama = $user->foto;
+
+        if (
+            $fotoLama &&
+            !in_array(strtolower(trim($fotoLama)), ['belum di isi', 'belum di isi.']) &&
+            Storage::disk('public')->exists($fotoLama)
+        ) {
+            Storage::disk('public')->delete($fotoLama);
+        }
+
+        $validated['foto'] = $request->file('foto')->store('customers/profile', 'public');
+    }
+
+    $user->update($validated);
+
+    return back()->with('success', 'Data pengguna berhasil diperbarui.');
+}
+
+public function destroy($id)
+{
+    try {
+        $user = User::whereKey($id)
+            ->where('type', 0)
+            ->firstOrFail();
+
+        $fotoLama = $user->foto;
+
+        if (
+            $fotoLama &&
+            !in_array(strtolower(trim($fotoLama)), ['belum di isi', 'belum di isi.']) &&
+            Storage::disk('public')->exists($fotoLama)
+        ) {
+            Storage::disk('public')->delete($fotoLama);
+        }
+
+        $user->delete();
+
+        return redirect()
+            ->route('kelola-pengguna.index')
+            ->with('success', 'Pengguna berhasil dihapus.');
+    } catch (Throwable $e) {
+        return back()->with('error', 'Pengguna tidak dapat dihapus karena masih memiliki data terkait.');
+    }
+
     }
 }

@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\DetailIklan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * DetailIklanSeeder tidak lagi berjalan standalone.
+ * Data detail_iklan dibuat di dalam IklanSeeder agar relasi konsisten.
+ *
+ * @see IklanSeeder
+ */
 class DetailIklanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        DetailIklan::factory(500)->create();
+        $this->command->info('ℹ️  DetailIklanSeeder: data dibuat di dalam IklanSeeder (skip).');
     }
 }

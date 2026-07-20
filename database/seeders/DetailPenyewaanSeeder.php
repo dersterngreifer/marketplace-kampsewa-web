@@ -2,17 +2,18 @@
 
 namespace Database\Seeders;
 
-use App\Models\Penyewaan;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
+/**
+ * DetailPenyewaanSeeder tidak lagi berjalan standalone.
+ * Data detail_penyewaan dibuat di dalam PenyewaanSeeder agar relasi konsisten.
+ *
+ * @see PenyewaanSeeder
+ */
 class DetailPenyewaanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        Penyewaan::factory(500)->create();
+        $this->command->info('ℹ️  DetailPenyewaanSeeder: data dibuat di dalam PenyewaanSeeder (skip).');
     }
 }

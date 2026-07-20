@@ -9,6 +9,16 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     *
+     * Urutan pemanggilan memperhatikan dependency antar tabel:
+     * - Tier 1: Tabel utama (users)
+     * - Tier 2: Tabel yang hanya bergantung pada users
+     * - Tier 3: Tabel produk & iklan (bergantung pada users)
+     * - Tier 4: Tabel yang bergantung pada produk (variant)
+     * - Tier 5: Tabel transaksi penyewaan (bergantung pada users & produk)
+     *
+     * Catatan: DetailIklan, PembayaranIklan, DetailPenyewaan, dan PembayaranPenyewaan
+     * dibuat langsung di dalam IklanSeeder dan PenyewaanSeeder agar relasi konsisten.
      */
     public function run(): void
     {
@@ -27,26 +37,23 @@ class DatabaseSeeder extends Seeder
             RiwayatPencarianSeeder::class,
         ]);
 
-        // Tier 3: Tabel yang bergantung pada users (produk & iklan)
+        // Tier 3: Produk & Iklan (bergantung pada users)
+        // IklanSeeder sudah mengurus detail_iklan & pembayaran_iklan sekaligus
         $this->call([
             ProdukSeeder::class,
             IklanSeeder::class,
         ]);
 
-        // Tier 4: Tabel yang bergantung pada produk atau iklan
+        // Tier 4: Tabel yang bergantung pada produk
         $this->call([
-            RatingSeeder::class,           // FK: produk, users
-            VariantProdukSeeder::class,    // FK: produk
-            DetailIklanSeeder::class,      // FK: iklan
-            PembayaranIklanSeeder::class,  // FK: iklan, users
-            PenyewaanSeeder::class,        // FK: users
+            RatingSeeder::class,        // FK: produk, users
+            VariantProdukSeeder::class, // FK: produk
         ]);
 
-        // Tier 5: Tabel yang bergantung pada variant_produk atau penyewaan
+        // Tier 5: Transaksi penyewaan
+        // PenyewaanSeeder sudah mengurus detail_penyewaan & pembayaran_penyewaan sekaligus
         $this->call([
-            DetailVariantProdukSeeder::class,  // FK: variant_produk
-            DetailPenyewaanSeeder::class,      // FK: penyewaan, produk
-            PembayaranPenyewaanSeeder::class,  // FK: penyewaan
+            PenyewaanSeeder::class,
         ]);
     }
 }

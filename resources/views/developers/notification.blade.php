@@ -6,22 +6,36 @@
         <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <h1 class="text-2xl font-black tracking-tight text-slate-900">
-                    Feedback Notification
+                    Pusat Notifikasi
                 </h1>
                 <p class="mt-1 text-sm font-medium text-slate-500">
-                    Kelola feedback customer, balas semua feedback, dan hapus data yang sudah tidak diperlukan.
+                    Pantau semua aktivitas platform: feedback, mitra baru, iklan kadaluarsa, rating buruk, dan transaksi masuk.
                 </p>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
                 <div class="flex items-center gap-2 rounded-full bg-violet-50 px-4 py-2 text-sm font-bold text-violet-600">
                     <i class="fi fi-rr-comment-alt flex text-[15px]"></i>
-                    {{ $feedback->total() }} belum dibalas
+                    {{ $feedback->total() }} feedback belum dibalas
                 </div>
-                <div class="flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-600">
-                    <i class="fi fi-rr-check flex text-[15px]"></i>
-                    {{ $reply->total() }} sudah dibalas
+                @if ($mitra_baru_hari_ini->count() > 0)
+                <div class="flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600">
+                    <i class="fi fi-rr-user-add flex text-[15px]"></i>
+                    {{ $mitra_baru_hari_ini->count() }} mitra baru
                 </div>
+                @endif
+                @if ($iklan_hampir_expired->count() > 0)
+                <div class="flex items-center gap-2 rounded-full bg-red-50 px-4 py-2 text-sm font-bold text-red-500">
+                    <i class="fi fi-rr-alarm-clock flex text-[15px]"></i>
+                    {{ $iklan_hampir_expired->count() }} iklan hampir habis
+                </div>
+                @endif
+                @if ($rating_buruk_baru->count() > 0)
+                <div class="flex items-center gap-2 rounded-full bg-amber-50 px-4 py-2 text-sm font-bold text-amber-600">
+                    <i class="fi fi-rr-star flex text-[15px]"></i>
+                    {{ $rating_buruk_baru->count() }} rating buruk
+                </div>
+                @endif
             </div>
         </div>
 
@@ -38,6 +52,202 @@
         </form>
 
         <div class="flex w-full flex-col gap-6">
+
+            {{-- ============================================================
+                 KARTU 1: Mitra Baru Hari Ini
+                 ============================================================ --}}
+            @if ($mitra_baru_hari_ini->count() > 0)
+            <div class="w-full overflow-hidden rounded-[28px] border border-blue-200/60 bg-white shadow-sm">
+                <div class="border-b border-slate-100 p-5 sm:p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-blue-600">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-blue-400 opacity-75"></span>
+                                    <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                                </span>
+                                Baru Hari Ini
+                            </div>
+                            <h2 class="text-xl font-black text-slate-900">Mitra Baru Mendaftar</h2>
+                            <p class="mt-1 text-sm text-slate-400">
+                                {{ $mitra_baru_hari_ini->count() }} mitra baru mendaftar hari ini. Lakukan onboarding atau verifikasi akun.
+                            </p>
+                        </div>
+                        <a href="{{ route('kelola-pengguna.index') }}"
+                            class="shrink-0 inline-flex items-center gap-2 rounded-2xl bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-600 hover:bg-blue-600 hover:text-white transition">
+                            <i class="fi fi-rr-users flex text-[14px]"></i>
+                            Kelola Pengguna
+                        </a>
+                    </div>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach ($mitra_baru_hari_ini as $mitra)
+                    <div class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50 transition">
+                        <div class="flex items-center gap-3">
+                            <img src="@userPhoto($mitra->foto)" class="h-10 w-10 rounded-2xl object-cover" alt="">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">{{ $mitra->name }}</p>
+                                <p class="text-xs text-slate-400">{{ $mitra->email }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs text-slate-400">{{ $mitra->created_at->diffForHumans() }}</span>
+                            <span class="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600">
+                                <i class="fi fi-rr-user-add flex text-[10px]"></i> Baru
+                            </span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- ============================================================
+                 KARTU 2: Iklan Hampir Kadaluarsa
+                 ============================================================ --}}
+            @if ($iklan_hampir_expired->count() > 0)
+            <div class="w-full overflow-hidden rounded-[28px] border border-red-200/60 bg-white shadow-sm">
+                <div class="border-b border-slate-100 p-5 sm:p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-red-600">
+                                <i class="fi fi-rr-alarm-clock flex text-[10px]"></i>
+                                Perlu Tindakan
+                            </div>
+                            <h2 class="text-xl font-black text-slate-900">Iklan Hampir Kadaluarsa</h2>
+                            <p class="mt-1 text-sm text-slate-400">
+                                {{ $iklan_hampir_expired->count() }} iklan mitra akan berakhir dalam 3 hari ke depan.
+                            </p>
+                        </div>
+                        <a href="{{ route('iklan.index') }}"
+                            class="shrink-0 inline-flex items-center gap-2 rounded-2xl bg-red-50 px-4 py-2.5 text-sm font-bold text-red-500 hover:bg-red-500 hover:text-white transition">
+                            <i class="fi fi-rr-megaphone flex text-[14px]"></i>
+                            Kelola Iklan
+                        </a>
+                    </div>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach ($iklan_hampir_expired as $item)
+                    <div class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-red-50/30 transition">
+                        <div class="flex items-center gap-3">
+                            <img src="@userPhoto($item->foto)" class="h-10 w-10 rounded-2xl object-cover" alt="">
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">{{ $item->name }}</p>
+                                <p class="text-xs text-slate-400 line-clamp-1">{{ $item->judul }}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs font-black text-red-500">Berakhir {{ \Carbon\Carbon::parse($item->tanggal_akhir)->diffForHumans() }}</p>
+                            <p class="text-[11px] text-slate-400">{{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}</p>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- ============================================================
+                 KARTU 3: Rating Buruk Terbaru
+                 ============================================================ --}}
+            @if ($rating_buruk_baru->count() > 0)
+            <div class="w-full overflow-hidden rounded-[28px] border border-amber-200/60 bg-white shadow-sm">
+                <div class="border-b border-slate-100 p-5 sm:p-6">
+                    <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-600">
+                        <i class="fi fi-rr-star flex text-[10px]"></i>
+                        7 Hari Terakhir
+                    </div>
+                    <h2 class="text-xl font-black text-slate-900">Rating Buruk Masuk</h2>
+                    <p class="mt-1 text-sm text-slate-400">
+                        {{ $rating_buruk_baru->count() }} rating bintang 1–2 dari pelanggan terhadap produk mitra dalam 7 hari terakhir.
+                    </p>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach ($rating_buruk_baru as $rating)
+                    <div class="px-5 py-4 hover:bg-amber-50/30 transition">
+                        <div class="flex items-start gap-3">
+                            <img src="@userPhoto($rating->user?->foto)" class="h-9 w-9 shrink-0 rounded-xl object-cover mt-0.5" alt="">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <p class="text-sm font-bold text-slate-900">{{ $rating->user?->name ?? 'Pelanggan' }}</p>
+                                    <div class="flex items-center gap-0.5">
+                                        @for ($s = 1; $s <= 5; $s++)
+                                            <i class="fi fi-{{ $s <= $rating->rating ? 'ss' : 'rr' }}-star flex text-[12px] {{ $s <= $rating->rating ? 'text-amber-400' : 'text-slate-200' }}"></i>
+                                        @endfor
+                                    </div>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Produk: <b>{{ $rating->produk?->nama ?? '-' }}</b></p>
+                                @if ($rating->ulasan)
+                                <p class="mt-1 text-xs text-slate-400 italic line-clamp-2">"{{ $rating->ulasan }}"</p>
+                                @endif
+                                <p class="mt-1 text-[11px] text-slate-300">{{ $rating->created_at->diffForHumans() }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- ============================================================
+                 KARTU 4: Penyewaan Baru Hari Ini (monitoring komisi)
+                 ============================================================ --}}
+            @if ($penyewaan_baru_hari_ini->count() > 0)
+            <div class="w-full overflow-hidden rounded-[28px] border border-emerald-200/60 bg-white shadow-sm">
+                <div class="border-b border-slate-100 p-5 sm:p-6">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-600">
+                                <span class="relative flex h-1.5 w-1.5">
+                                    <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                                </span>
+                                Hari Ini
+                            </div>
+                            <h2 class="text-xl font-black text-slate-900">Transaksi Penyewaan Baru</h2>
+                            <p class="mt-1 text-sm text-slate-400">
+                                {{ $penyewaan_baru_hari_ini->count() }} transaksi antara mitra dan pelanggan hari ini.
+                                Total komisi: <b class="text-emerald-600">Rp {{ number_format($penyewaan_baru_hari_ini->sum('pajak_platform'), 0, ',', '.') }}</b>
+                            </p>
+                        </div>
+                        <a href="{{ route('penyewaan.index') }}"
+                            class="shrink-0 inline-flex items-center gap-2 rounded-2xl bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-600 hover:bg-emerald-600 hover:text-white transition">
+                            <i class="fi fi-rr-box-alt flex text-[14px]"></i>
+                            Lihat Penyewaan
+                        </a>
+                    </div>
+                </div>
+                <div class="divide-y divide-slate-100">
+                    @foreach ($penyewaan_baru_hari_ini as $trx)
+                    <div class="flex items-center justify-between gap-4 px-5 py-3.5 hover:bg-emerald-50/20 transition">
+                        <div>
+                            <p class="text-sm font-bold text-slate-900">{{ $trx->nama_penyewa }}</p>
+                            <p class="text-xs text-slate-400">Mitra: {{ $trx->nama_mitra }}</p>
+                        </div>
+                        <div class="flex items-center gap-4 text-right">
+                            <div>
+                                <p class="text-sm font-bold text-slate-700">Rp {{ number_format($trx->total_pembayaran, 0, ',', '.') }}</p>
+                                @if ($trx->pajak_platform > 0)
+                                <p class="text-[11px] text-emerald-600 font-semibold">Komisi: Rp {{ number_format($trx->pajak_platform, 0, ',', '.') }}</p>
+                                @endif
+                            </div>
+                            @php
+                                $statusColor = match($trx->status_pembayaran ?? '') {
+                                    'Lunas' => 'bg-emerald-50 text-emerald-600',
+                                    'Belum lunas' => 'bg-amber-50 text-amber-600',
+                                    default => 'bg-slate-100 text-slate-500',
+                                };
+                            @endphp
+                            <span class="rounded-full px-2.5 py-1 text-[11px] font-bold {{ $statusColor }}">
+                                {{ $trx->status_pembayaran ?? 'Pending' }}
+                            </span>
+                        </div>
+                    </div>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            {{-- Kartu feedback yang sudah ada sebelumnya --}}
             @include('components.cards.card-feedback')
             @include('components.cards.card-feedback-dibalas')
             @include('components.cards.card-feedback-customer-replies')

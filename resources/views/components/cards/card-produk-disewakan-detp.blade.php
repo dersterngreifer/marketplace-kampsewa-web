@@ -10,7 +10,7 @@
         </div>
 
         <a
-            href="{{ route('detail-pengguna.produk-disewakan', $name) }}"
+            href="{{ route('detail-pengguna.produk-disewakan', ['user' => $user_id]) }}"
             class="inline-flex w-fit items-center gap-2 rounded-2xl bg-[#5038ED] px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-[#5038ED]/20 transition hover:-translate-y-0.5 hover:bg-[#412CCB]"
         >
             <span>Lihat Semua</span>
@@ -21,7 +21,7 @@
     <div class="space-y-3">
         @forelse ($produk_disewakan_limit2 as $item)
             <a
-                href="{{ route('detail-pengguna.detail-produk-disewakan', ['fullname' => $name, 'namaproduk' => $item->nama]) }}"
+                href="{{ route('detail-pengguna.detail-produk-disewakan', ['user' => $name, 'namaproduk' => $item->nama]) }}"
                 class="flex flex-col gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:bg-white hover:shadow-lg sm:flex-row sm:items-center sm:justify-between"
             >
                 <div class="flex min-w-0 items-center gap-3">
