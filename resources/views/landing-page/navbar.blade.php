@@ -30,7 +30,11 @@
                 <span>Perlengkapan Camping</span>
             </a>
         </div>
-        <div class="d-flex align-items-center ms-lg-4 mt-3 mt-lg-0">
+        <div class="d-flex align-items-center gap-2 ms-lg-4 mt-3 mt-lg-0">
+            <a href="{{ url('/login') }}" class="btn-nav-login">
+                <i class="fas fa-sign-in-alt"></i>
+                <span>Login Mitra</span>
+            </a>
             <a href="#download-app" class="btn-nav-download">
                 <i class="fas fa-cloud-download-alt"></i>
                 <span>Download App</span>
