@@ -19,6 +19,9 @@ class LandingPageController extends Controller
     public function halaman_testimoni() {
         return view('landing-page.testimoni');
     }
+    public function halaman_tentangkami() {
+        return view('landing-page.tentangkami');
+    }
 
 
 }

@@ -3,15 +3,16 @@
 
     <head>
         <meta charset="utf-8">
-        <title>Travela - Tourism Website Template</title>
+        <title>KampSewa - Rental Perlengkapan Camping & Outdoor #1 di Indonesia</title>
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
-        <meta content="" name="keywords">
-        <meta content="" name="description">
+        <meta content="sewa alat camping, rental tenda, kampsewa, outdoor gear rental jember jawa timur" name="keywords">
+        <meta content="KampSewa adalah platform marketplace penyewaan peralatan camping dan outdoor terlengkap, hemat, dan praktis di Indonesia." name="description">
 
         <!-- Google Web Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Jost:wght@500;600&family=Roboto&display=swap" rel="stylesheet"> 
+        <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         <link rel="icon" type="image/x-icon" href="{{asset('assets/logo/logo.ico')}}">
         <!-- Icon Font Stylesheet -->
         <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"/>
@@ -27,4 +28,9 @@
 
         <!-- Template Stylesheet -->
         <link href="{{asset('template/envato/css/style.css')}}" rel="stylesheet">
+
+        <!-- KampSewa Design Fixes -->
+        <link href="{{asset('template/envato/css/kampsewa-fixes.css')}}" rel="stylesheet">
+        <!-- KampSewa Modern 2026 Redesign -->
+        <link href="{{asset('template/envato/css/modern-landing.css')}}" rel="stylesheet">
     </head>

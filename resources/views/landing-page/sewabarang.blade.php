@@ -212,7 +212,7 @@
                             </div>
                             <div class="col-sm-6 col-md-6 col-lg-3 col-xl-2">
                                 <div class="gallery-item h-100">
-                                <img src="{{asset('template/envato/img/barang-kompor-portable.jpeg')}}" class="img-fluid w-100 h-100 rounded" alt="Image">
+                                <img src="{{asset('template/envato/img/barang-makan.webp')}}" class="img-fluid w-100 h-100 rounded" alt="Image">
                                     <div class="gallery-content">
                                         <div class="gallery-info">
                                             <h5 class="text-white text-uppercase mb-2">Kompor Portable</h5>
@@ -431,7 +431,7 @@
                             </div>
                             <div class="col-sm-6 col-md-6 col-lg-3 col-xl-3">
                                 <div class="gallery-item h-100">
-                                <img src="{{asset('template/envato/img/barang-kompor-portable.jpeg')}}" class="img-fluid w-100 h-100 rounded" alt="Image">
+                                <img src="{{asset('template/envato/img/barang-makan.webp')}}" class="img-fluid w-100 h-100 rounded" alt="Kompor Portable">
                                     <div class="gallery-content">
                                         <div class="gallery-info">
                                             <h5 class="text-white text-uppercase mb-2">Kompor Portable</h5>

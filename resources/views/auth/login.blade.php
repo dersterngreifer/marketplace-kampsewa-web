@@ -11,8 +11,7 @@
     <link rel="stylesheet" href="{{ asset('css/gradient/gradient-color.css') }}">
     <link rel="icon" type="image/x-icon" href="{{ asset('assets/logo/logo.ico') }}">
 
-    {{-- todo import google fonts cdn --}}
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+    {{-- Font handled globally via app.css --}}
     <title>{{ $title }}</title>
 
     {{-- todo import vite tailwindcss framework css --}}

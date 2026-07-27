@@ -31,15 +31,11 @@
                         <div class="carousel-item active">
                             <img src="{{asset('template/envato/img/home-6.jpg')}}" class="img-fluid" alt="Image">
                             <div class="carousel-caption">
-                                <div class="p-3" style="max-width: 900px;">
-                                    <h4 class="text-white text-uppercase fw-bold mb-4" style="letter-spacing: 3px;">Apa kata mereka?</h4>
-                                    <h1 class="display-2 text-capitalize text-white mb-4">Testimoni Pelanggan</h1>
-                                    <p class="mb-5 fs-5">Dengerin cerita seru dari pelanggan kita! Testimoni asli dan kisah-kisah keren dari mereka yang udah jalan-jalan ke destinasi kita dan nyewa barang dari kita. 
-                                                        Kita bangga banget sama kepuasan mereka, dan pengen kamu juga punya pengalaman seru yang sama. Baca deh cerita mereka dan siap-siap buat petualangan seru kamu selanjutnya! 
-                                    </p>
-                                    <div class="d-flex align-items-center justify-content-center">
-                                    </div>
-                                </div>
+                                <div class="p-3" style="max-width: 800px; text-align: center;">
+                                <h4 class="text-white text-uppercase fw-bold mb-4" style="letter-spacing: 4px;">Apa kata mereka?</h4>
+                                <h1 class="display-2 text-capitalize text-white mb-4">Testimoni Pelanggan</h1>
+                                <p class="mb-4">Dengerin cerita seru dari pelanggan kita! Testimoni asli dan kisah-kisah keren dari mereka yang udah jalan-jalan ke destinasi kita dan nyewa barang dari kita.</p>
+                            </div>
                             </div>
                         </div>
                         

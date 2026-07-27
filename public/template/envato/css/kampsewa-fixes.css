@@ -1,0 +1,913 @@
+/**
+ * KampSewa Landing Page - Design Fixes
+ * Perbaikan: ukuran font, grid gambar, transparansi, dan lainnya
+ */
+
+/* ================================================
+   GLOBAL TYPOGRAPHY FIXES
+   ================================================ */
+:root {
+    /* Change this variable to globally update the theme font */
+    --theme-font-family: 'Manrope', 'Inter', sans-serif;
+}
+
+body {
+    font-family: var(--theme-font-family);
+    font-size: 15px;
+    line-height: 1.7;
+    color: #444;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--theme-font-family);
+    font-weight: 600;
+    color: #222;
+}
+
+/* ================================================
+   NAVBAR FIXES
+   ================================================ */
+.navbar-brand h1 {
+    font-size: 1.5rem !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navbar-brand img {
+    max-height: 38px !important;
+    width: auto;
+    object-fit: contain;
+}
+
+.sticky-top.navbar-brand img {
+    max-height: 30px !important;
+}
+
+/* Navbar font fix - match header section font style */
+.navbar-light .navbar-nav .nav-link {
+    font-family: var(--theme-font-family) !important;
+    font-weight: 600 !important;
+    font-size: 16px !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* ================================================
+   CAROUSEL / HERO CAPTION FIXES
+   ================================================ */
+.carousel-caption {
+    background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45)) !important;
+}
+
+/* Perbaikan: judul h4 label kecil di atas */
+.carousel-caption h4 {
+    font-size: 0.85rem !important;
+    letter-spacing: 4px !important;
+    font-weight: 600 !important;
+    opacity: 0.9;
+    text-transform: uppercase;
+    margin-bottom: 12px !important;
+}
+
+/* Perbaikan: judul utama h1 carousel */
+.carousel-caption h1.display-2,
+.carousel-caption h1 {
+    font-size: clamp(1.8rem, 4vw, 3rem) !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    margin-bottom: 16px !important;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Perbaikan: paragraf deskripsi carousel */
+.carousel-caption p.fs-5,
+.carousel-caption p {
+    font-size: clamp(0.9rem, 1.5vw, 1.05rem) !important;
+    line-height: 1.65 !important;
+    font-weight: 400 !important;
+    max-width: 650px;
+    margin: 0 auto 24px auto !important;
+    opacity: 0.92;
+}
+
+/* Perbaikan alignment caption wrapper */
+.carousel-caption > div {
+    width: 100% !important;
+    max-width: 800px !important;
+}
+
+/* ================================================
+   ABOUT SECTION FIXES
+   ================================================ */
+.about .col-lg-7 p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: #555;
+}
+
+.about .col-lg-7 h1 {
+    font-size: clamp(1.6rem, 3vw, 2.2rem);
+    margin-bottom: 16px;
+}
+
+.about .col-lg-7 h5.section-about-title {
+    font-size: 0.8rem;
+    letter-spacing: 3px;
+}
+
+.about .col-lg-7 p.fs-5.fw-bold {
+    font-size: 1rem !important;
+    color: #333;
+}
+
+/* Perbaikan: service item list di about */
+.about .service-item {
+    font-size: 0.9rem;
+    padding: 4px 0;
+}
+
+/* ================================================
+   SECTION TITLE GLOBAL FIXES
+   ================================================ */
+.section-title {
+    font-size: 0.8rem !important;
+    letter-spacing: 3px;
+}
+
+.container > .mx-auto h1,
+.mx-auto.text-center h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem) !important;
+    font-weight: 700;
+    color: #1a1a2e;
+}
+
+.mx-auto.text-center p {
+    font-size: 0.95rem;
+    color: #666;
+}
+
+/* ================================================
+   SERVICE CARDS FIXES
+   ================================================ */
+.service-content-inner h5 {
+    font-size: 1rem !important;
+    font-weight: 600;
+    margin-bottom: 8px !important;
+}
+
+.service-content-inner p {
+    font-size: 0.875rem !important;
+    line-height: 1.6;
+    color: #666;
+}
+
+.service-icon {
+    min-width: 80px;
+    text-align: center;
+}
+
+/* ================================================
+   EXPLORE TOUR (INDEX PAGE) - GRID FIXES
+   ================================================ */
+
+/* Perbaikan: pastikan national-item punya tinggi konsisten */
+.ExploreTour .national-item {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.ExploreTour .national-item img {
+    width: 100%;
+    height: 220px !important;
+    object-fit: cover !important;
+    display: block;
+}
+
+.national-content .national-info h5 {
+    font-size: 0.85rem !important;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 6px !important;
+}
+
+.national-content .national-info a {
+    font-size: 0.8rem !important;
+}
+
+/* Tab Pills Fixes */
+.nav-pills .nav-item a {
+    font-size: 0.875rem !important;
+    font-weight: 500;
+}
+
+.nav-pills .nav-item a span {
+    font-size: 0.875rem !important;
+}
+
+/* ================================================
+   DESTINATION PAGE - GRID IMAGE CONSISTENCY
+   ================================================ */
+.destination-img {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.destination-img img {
+    width: 100%;
+    height: 250px !important;
+    object-fit: cover !important;
+    display: block;
+    transition: 0.5s;
+}
+
+/* Tall image di destination Jawa Timur (col-xl-4) */
+.col-xl-4 .destination-img img,
+.col-xl-8 ~ .col-xl-4 .destination-img img {
+    height: 100% !important;
+    min-height: 530px !important;
+}
+
+/* Destination overlay text */
+.destination-overlay h4 {
+    font-size: 1.1rem !important;
+    font-weight: 600;
+    margin-bottom: 6px !important;
+}
+
+.destination-overlay a.btn-hover {
+    font-size: 0.85rem !important;
+}
+
+/* ================================================
+   PACKAGES CAROUSEL - CARD FIXES
+   ================================================ */
+.packages-item .packages-img img {
+    width: 100%;
+    height: 220px !important;
+    object-fit: cover !important;
+}
+
+.packages-content h5 {
+    font-size: 1.05rem !important;
+    font-weight: 600;
+}
+
+.packages-content small.text-uppercase {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.5px;
+    color: #888;
+}
+
+.packages-content p {
+    font-size: 0.875rem !important;
+    line-height: 1.6;
+    color: #666;
+    /* Batasi teks agar card tidak terlalu panjang */
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* ================================================
+   GALLERY / SEWA BARANG - GRID FIXES
+   ================================================ */
+
+/* Perbaikan utama: grid konsisten 4 kolom, bukan campuran 2/3 */
+.gallery .tab-content .row.g-2 {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 12px !important;
+}
+
+.gallery .tab-content .row.g-2 > [class*="col-"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    flex: none !important;
+}
+
+/* Tinggi gambar gallery konsisten */
+.gallery-item {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    height: 250px !important;
+}
+
+.gallery-item img {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: unset !important;
+    object-fit: cover !important;
+}
+
+/* Teks overlay gallery */
+.gallery-info h5 {
+    font-size: 0.85rem !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px !important;
+}
+
+.gallery-info a {
+    font-size: 0.8rem !important;
+}
+
+/* Responsive gallery grid */
+@media (max-width: 1199px) {
+    .gallery .tab-content .row.g-2 {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .gallery .tab-content .row.g-2 {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+    .gallery-item {
+        height: 200px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery .tab-content .row.g-2 {
+        grid-template-columns: repeat(1, 1fr) !important;
+    }
+}
+
+/* ================================================
+   TRAVEL GUIDE (REKOMENDASI TOKO) - FIXES
+   ================================================ */
+.guide-item .guide-img-efects img {
+    width: 100%;
+    height: 200px !important;
+    object-fit: cover !important;
+}
+
+.guide-title h4 {
+    font-size: 1rem !important;
+    font-weight: 600;
+}
+
+.guide-title p {
+    font-size: 0.8rem !important;
+    color: #888;
+}
+
+/* ================================================
+   TESTIMONIAL FIXES
+   ================================================ */
+.testimonial-item .testimonial-comment p {
+    font-size: 0.9rem !important;
+    line-height: 1.7 !important;
+    color: #555;
+    margin-bottom: 24px !important;
+}
+
+.testimonial-item h5 {
+    font-size: 1rem !important;
+    font-weight: 600;
+}
+
+.testimonial-item > div > p {
+    font-size: 0.8rem !important;
+    color: #888;
+}
+
+/* ================================================
+   FOOTER FIXES
+   ================================================ */
+.footer-item h4 {
+    font-size: 1rem !important;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.footer-item a {
+    font-size: 0.875rem !important;
+    line-height: 2 !important;
+}
+
+.copyright {
+    font-size: 0.8rem !important;
+}
+
+/* ================================================
+   RESPONSIVE CAROUSEL CAPTION FIXES
+   ================================================ */
+@media (max-width: 991px) {
+    .carousel-caption h1.display-2,
+    .carousel-caption h1 {
+        font-size: clamp(1.4rem, 5vw, 2rem) !important;
+    }
+
+    .carousel-caption h4 {
+        font-size: 0.75rem !important;
+    }
+
+    .carousel-caption p {
+        font-size: 0.85rem !important;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+@media (max-width: 576px) {
+    .carousel-caption h1.display-2,
+    .carousel-caption h1 {
+        font-size: 1.3rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .carousel-caption p {
+        display: none !important;
+    }
+}
+
+/* ================================================
+   DESTINATION PAGE - OVERLAY TRANSPARENCY FIX
+   ================================================ */
+
+/* Sedikit kurangi transparansi agar teks lebih terbaca */
+.destination .tab-class .tab-content .destination-img .search-icon {
+    background: rgba(0, 0, 0, 0.08) !important;
+}
+
+.destination .tab-class .tab-content .destination-img:hover .search-icon {
+    background: rgba(19, 53, 123, 0.35) !important;
+}
+
+/* ================================================
+   EXPLORE TOUR SECTION (MOVED OUT OF SERVICE)
+   FIX: Pastikan ExploreTour section benar
+   ================================================ */
+.container-fluid.ExploreTour {
+    background: #fff;
+}
+
+/* ================================================
+   NATIONAL ITEMS GRID - KONSISTEN
+   ================================================ */
+#NationalTab-1 .row.g-4 {
+    align-items: stretch;
+}
+
+#NationalTab-1 .col-md-6.col-lg-4 {
+    display: flex;
+    flex-direction: column;
+}
+
+#NationalTab-1 .national-item {
+    flex: 1;
+    height: 100%;
+}
+
+/* ================================================
+   INTERNATIONAL CAROUSEL ITEMS
+   ================================================ */
+.InternationalTour-carousel .international-item img {
+    height: 320px !important;
+    object-fit: cover !important;
+}
+
+/* ================================================
+   MISC POLISH
+   ================================================ */
+
+/* Hover transition lebih smooth */
+.national-item img,
+.destination-img img,
+.packages-img img,
+.gallery-item img,
+.guide-img-efects img {
+    transition: transform 0.4s ease, filter 0.4s ease !important;
+}
+
+.national-item:hover img,
+.destination-img:hover img,
+.packages-img:hover img,
+.gallery-item:hover img {
+    transform: scale(1.05) !important;
+}
+
+/* ================================================
+   BUTTON HOVER FIXES - Modern & Smooth
+   ================================================ */
+
+/* Override default btn-primary hover yang jelek */
+.btn.btn-primary {
+    box-shadow: none !important;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transition: all 0.4s ease !important;
+}
+
+.btn.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.6s ease;
+    z-index: -1;
+}
+
+.btn.btn-primary:hover::before {
+    left: 100%;
+}
+
+.btn.btn-primary:hover {
+    background-color: var(--bs-primary) !important;
+    color: #fff !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(19, 53, 123, 0.3) !important;
+}
+
+.btn.btn-primary:active {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 15px rgba(19, 53, 123, 0.2) !important;
+}
+
+/* Fix btn-outline-light hover di CTA */
+.btn-outline-light:hover {
+    background: #fff !important;
+    color: var(--bs-primary) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(255,255,255,0.2) !important;
+}
+
+/* ================================================
+   PAGE HERO BANNER (Tentang Kami, etc.)
+   ================================================ */
+
+.page-hero-banner {
+    position: relative;
+    width: 100%;
+    height: 65vh;
+    min-height: 400px;
+    overflow: hidden;
+}
+
+.page-hero-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    filter: brightness(0.55);
+}
+
+.page-hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));
+    padding-top: 80px;
+}
+
+.page-hero-overlay h1 {
+    text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+
+@media (max-width: 768px) {
+    .page-hero-banner {
+        height: 50vh;
+        min-height: 350px;
+    }
+
+    .page-hero-overlay h1.display-3 {
+        font-size: 2rem !important;
+    }
+
+    .page-hero-overlay h4 {
+        font-size: 0.75rem !important;
+        letter-spacing: 3px !important;
+    }
+
+    .page-hero-overlay p.fs-5 {
+        font-size: 0.9rem !important;
+    }
+}
+
+/* ================================================
+   TENTANG KAMI PAGE STYLES
+   ================================================ */
+
+/* Cerita Kami Section */
+.tentang-kami {
+    background: #fff;
+}
+
+.cerita-image-wrapper {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.cerita-image-wrapper img {
+    width: 100%;
+    height: 450px;
+    object-fit: cover;
+    border-radius: 16px;
+    transition: transform 0.6s ease;
+}
+
+.cerita-image-wrapper:hover img {
+    transform: scale(1.03);
+}
+
+.cerita-badge {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 130px;
+    height: 130px;
+    background: var(--bs-primary);
+    border-radius: 50%;
+    box-shadow: 0 10px 40px rgba(19, 53, 123, 0.35);
+    border: 5px solid #fff;
+    z-index: 2;
+}
+
+.cerita-content .section-title {
+    margin-bottom: 8px;
+}
+
+/* Visi & Misi Section */
+.visi-misi {
+    background: #f8f9fc;
+}
+
+.visi-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 40px 35px;
+    box-shadow: 0 5px 30px rgba(0,0,0,0.05);
+    border-bottom: 5px solid var(--bs-primary);
+    transition: all 0.4s ease;
+}
+
+.visi-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 45px rgba(19, 53, 123, 0.12);
+}
+
+.visi-icon {
+    width: 64px;
+    height: 64px;
+    background: rgba(19, 53, 123, 0.08);
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    font-size: 1.8rem;
+    color: var(--bs-primary);
+    transition: all 0.4s ease;
+}
+
+.visi-card:hover .visi-icon {
+    background: var(--bs-primary);
+    color: #fff;
+    transform: rotateY(180deg);
+}
+
+/* Nilai Utama Cards */
+.nilai-utama {
+    background: #fff;
+}
+
+.nilai-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #eef1f5;
+    transition: all 0.4s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.nilai-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: var(--bs-primary);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+}
+
+.nilai-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 50px rgba(19, 53, 123, 0.1);
+    border-color: var(--bs-primary);
+}
+
+.nilai-card:hover::before {
+    transform: scaleX(1);
+}
+
+.nilai-icon {
+    width: 80px;
+    height: 80px;
+    background: var(--bs-primary);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+}
+
+.nilai-card:hover .nilai-icon {
+    background: #0f2d63;
+    transform: scale(1.1) rotate(5deg);
+    box-shadow: 0 10px 30px rgba(19, 53, 123, 0.3);
+}
+
+/* CTA Section polish */
+.cta-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 500px;
+    height: 500px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.cta-section::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 300px;
+    height: 300px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .cerita-image-wrapper img {
+        height: 280px;
+    }
+
+    .cerita-badge {
+        width: 90px;
+        height: 90px;
+        bottom: -15px;
+        right: -15px;
+    }
+
+    .cerita-badge .display-6 {
+        font-size: 1.5rem !important;
+    }
+
+    .visi-card {
+        padding: 28px 22px;
+    }
+}
+
+/* Perbaiki border radius konsistensi */
+.national-item,
+.destination-img,
+.packages-item,
+.gallery-item,
+.guide-item {
+    border-radius: 10px;
+}
+
+/* Section padding konsisten */
+.container-fluid.py-5 > .container.py-5 {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+}
+
+/* ================================================
+   FOOTER COLOR LOCK - TEMA PUTIH
+   Footer selalu putih, tidak mengikuti dark/light mode browser
+   ================================================ */
+
+/* Background putih, teks gelap - LOCKED tidak berubah */
+.footer,
+.container-fluid.footer,
+[class*="footer"] {
+    background-color: #ffffff !important;
+    color: #555555 !important;
+}
+
+/* Heading footer selalu warna gelap */
+.footer h4,
+.footer .footer-item h4,
+[class*="footer"] h4 {
+    color: #1a1f2e !important;
+    font-weight: 600 !important;
+}
+
+/* Link footer selalu abu gelap */
+.footer a,
+.footer .footer-item a,
+[class*="footer"] a:not(.btn) {
+    color: #555555 !important;
+    text-decoration: none !important;
+}
+
+.footer a:hover,
+.footer .footer-item a:hover {
+    color: #1a1f2e !important;
+    letter-spacing: 0.5px;
+}
+
+/* Copyright bar - abu muda, bukan hitam */
+.container-fluid.copyright,
+.copyright {
+    background-color: #f0f3f7 !important;
+    color: #666666 !important;
+    border-top: 1px solid #dee2e6 !important;
+}
+
+.copyright a,
+.container-fluid.copyright a {
+    color: #333333 !important;
+    font-weight: 600;
+}
+
+/* Footer select dropdowns - putih/abu muda */
+.footer select.form-select {
+    background-color: #f5f7fa !important;
+    color: #333333 !important;
+    border-color: #dee2e6 !important;
+}
+
+.footer select.form-select option {
+    background-color: #ffffff;
+    color: #333333;
+}
+
+.footer .form-floating > label {
+    color: #777777 !important;
+}
+
+/* ================================================
+   DARK MODE BROWSER OVERRIDE
+   Paksa footer TETAP PUTIH meski browser di mode gelap
+   ================================================ */
+@media (prefers-color-scheme: dark) {
+    .footer,
+    .container-fluid.footer,
+    [class*="footer"] {
+        background-color: #ffffff !important;
+        color: #555555 !important;
+    }
+
+    .footer h4,
+    .footer .footer-item h4 {
+        color: #1a1f2e !important;
+    }
+
+    .footer a,
+    .footer .footer-item a,
+    [class*="footer"] a:not(.btn) {
+        color: #555555 !important;
+    }
+
+    .footer a:hover {
+        color: #1a1f2e !important;
+    }
+
+    .container-fluid.copyright,
+    .copyright {
+        background-color: #f0f3f7 !important;
+        color: #666666 !important;
+        border-top: 1px solid #dee2e6 !important;
+    }
+
+    .copyright a {
+        color: #333333 !important;
+    }
+
+    .footer select.form-select {
+        background-color: #f5f7fa !important;
+        color: #333333 !important;
+        border-color: #dee2e6 !important;
+    }
+
+    .footer .form-floating > label {
+        color: #777777 !important;
+    }
+}

@@ -8,7 +8,7 @@
     <title>Data Pemasukan</title>
     <style>
         body {
-            font-family: Arial, Helvetica, sans-serif;
+            font-family: 'Manrope', Arial, Helvetica, sans-serif;
         }
 
         h2 {

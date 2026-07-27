@@ -154,7 +154,7 @@
 
 /*** Navbar ***/
 .navbar-light .navbar-nav .nav-link {
-    font-family: 'Roboto', sans-serif;
+    font-family: var(--theme-font-family, 'Manrope', 'Inter', sans-serif);
     position: relative;
     padding: 35px 15px;
     color: var(--bs-white) !important;

@@ -59,9 +59,10 @@ Route::post('/logout', [AuthController::class, 'logout'])
 
 Route::controller(LandingPageController::class)->group(function () {
     Route::get('/', 'halamanBeranda')->name('landing-page.halaman-beranda');
-    Route::get('/halaman_destinasi', 'halaman_destinasi')->name('landing-page.halaman_destinasi');
-    Route::get('/halaman_sewabarang', 'halaman_sewabarang')->name('landing-page.halaman_sewabarang');
-    Route::get('/halaman_testimoni', 'halaman_testimoni')->name('landing-page.halaman_testimoni');
+    Route::get('/halaman-destinasi', 'halaman_destinasi')->name('landing-page.halaman-destinasi');
+    Route::get('/halaman-sewabarang', 'halaman_sewabarang')->name('landing-page.halaman-sewabarang');
+    Route::get('/halaman-testimoni', 'halaman_testimoni')->name('landing-page.halaman-testimoni');
+    Route::get('/halaman-tentangkami', 'halaman_tentangkami')->name('landing-page.halaman-tentangkami');
 });
 
 
@@ -211,7 +212,7 @@ Route::middleware('auth')->group(function () {
         ->name('mark-notification-as-read');
 
     Route::post('/delete-selected-products', [DetailPenggunaController::class, 'deleteSelectedProducts'])
-        ->name('delete_selected_products');
+        ->name('delete-selected-products');
 });
 
 
@@ -244,7 +245,7 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
 
     Route::prefix('kelola-produk')->name('menu-produk.')->controller(ProdukController::class)->group(function () {
         Route::get('/{id_user}', 'kelolaProduk')->name('kelola-produk');
-        Route::get('/detail-produk/{nama_produk}/{id_user}', 'detailProduk')->name('detail_produk');
+        Route::get('/detail-produk/{nama_produk}/{id_user}', 'detailProduk')->name('detail-produk');
         Route::get('/tambah-produk/{id_user}', 'tambahProduk')->name('tambah-produk');
         Route::get('/update-produk/{id_produk}/{id_user}', 'updateProduk')->name('update-produk');
 

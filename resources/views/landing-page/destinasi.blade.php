@@ -31,14 +31,11 @@
                         <div class="carousel-item active">
                             <img src="{{asset('template/envato/img/home-4.jpg')}}" class="img-fluid" alt="Image">
                             <div class="carousel-caption">
-                                <div class="p-3" style="max-width: 900px;">
-                                    <h4 class="text-white text-uppercase fw-bold mb-4" style="letter-spacing: 3px;">Rekomendasi</h4>
-                                    <h1 class="display-2 text-capitalize text-white mb-4">Destinasi Wisata Terbaik untuk Liburanmu</h1>
-                                    <p class="mb-5 fs-5">Yuk, cari petualangan seru di destinasi pilihan kami! Dari pantai keren sampai gunung yang bikin takjub, semua ada di sini. 
-                                                        Setiap tempat dipilih dengan hati-hati biar liburanmu makin berkesan. Ayo jelajahi tempat-tempat seru dan temukan petualangan baru setiap harinya </p>
-                                    <div class="d-flex align-items-center justify-content-center">
-                                    </div>
-                                </div>
+                                <div class="p-3" style="max-width: 800px; text-align: center;">
+                                <h4 class="text-white text-uppercase fw-bold mb-4" style="letter-spacing: 4px;">Rekomendasi</h4>
+                                <h1 class="display-2 text-capitalize text-white mb-4">Destinasi Wisata Terbaik untuk Liburanmu</h1>
+                                <p class="mb-4">Yuk, cari petualangan seru di destinasi pilihan kami! Dari pantai keren sampai gunung yang bikin takjub, semua ada di sini. Setiap tempat dipilih dengan hati-hati biar liburanmu makin berkesan.</p>
+                            </div>
                             </div>
                         </div>
                     </div>

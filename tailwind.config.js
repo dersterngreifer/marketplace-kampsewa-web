@@ -8,8 +8,10 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                poppins: ["Poppins", "sans-serif"],
-                monasans: ["Mona Sans", "sans-serif"],
+                theme: ["var(--theme-font-family)"],
+                sans: ["var(--theme-font-family)"],
+                poppins: ["var(--theme-font-family)"],
+                monasans: ["var(--theme-font-family)"],
             },
             boxShadow: {
                 "box-shadow-36":
