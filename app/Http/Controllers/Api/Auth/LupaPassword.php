@@ -34,7 +34,7 @@ class LupaPassword extends Controller
                 $resetPassword->expired_at = now()->addMinutes(1);
                 $resetPassword->save();
 
-                $token = 'RwxiLamgrVPaRCrfSE7k';
+                $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
                 $telfon = $validate['nomor_telephone'];
                 $nama_user = $user->name;
 
@@ -217,7 +217,7 @@ class LupaPassword extends Controller
             $resetPassword->save();
 
             // Konfigurasi untuk mengirim pesan OTP melalui API SMS
-            $token = 'RwxiLamgrVPaRCrfSE7k';
+            $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
             $telfon = $data_user->nomor_telephone;
             $nama_user = $data_user->name;
 

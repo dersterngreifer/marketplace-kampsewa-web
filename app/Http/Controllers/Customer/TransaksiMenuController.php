@@ -6,16 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\Alamat;
 use App\Models\Bank;
 use App\Models\DetailPenyewaan;
+use App\Models\DetailVariantProduk;
+use App\Models\Pemasukan;
 use App\Models\PembayaranPenyewaan;
+use App\Models\Pengembalian;
 use App\Models\Penyewaan;
 use App\Models\User;
-use Geocoder\Provider\Nominatim\Nominatim;
-use Geocoder\Query\GeocodeQuery;
-use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
-use Http\Adapter\Guzzle6\Client as GuzzleAdapter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use RealRashid\SweetAlert\Facades\Alert;
@@ -177,6 +176,44 @@ class TransaksiMenuController extends Controller
             ->groupBy('id_produk');
 
         $total_harus_dibayar = DetailPenyewaan::where('id_penyewaan', $id_penyewaan_decrypt)->sum('subtotal');
+
+        // Logic for Denda Keterlambatan
+        $denda_keterlambatan = 0;
+        $info_keterlambatan = '';
+        if ($singleData->status_penyewaan == 'Aktif' || $singleData->status_penyewaan == 'Pengembalian') {
+            $tanggal_selesai = \Carbon\Carbon::parse($singleData->tanggal_selesai);
+            $deadline = $tanggal_selesai->copy()->setTime(21, 0, 0); // Deadline at 21:00
+            
+            $now = \Carbon\Carbon::now();
+            
+            if ($now->greaterThan($deadline)) {
+                $hours_late = $deadline->diffInHours($now);
+                
+                $start = \Carbon\Carbon::parse($singleData->tanggal_mulai);
+                $end = \Carbon\Carbon::parse($singleData->tanggal_selesai);
+                $durasi = $start->diffInDays($end) + 1;
+                $harga_sewa_per_hari = $durasi > 0 ? ($total_harus_dibayar / $durasi) : $total_harus_dibayar;
+
+                if ($hours_late <= 3) {
+                    $info_keterlambatan = "Telat {$hours_late} jam (Masih dalam batas toleransi).";
+                    $denda_keterlambatan = 0;
+                } elseif ($hours_late > 3 && $hours_late <= 6) {
+                    $info_keterlambatan = "Telat {$hours_late} jam (Denda ringan).";
+                    $denda_keterlambatan = $harga_sewa_per_hari * 0.25;
+                } elseif ($hours_late > 6 && $hours_late <= 12) {
+                    $info_keterlambatan = "Telat {$hours_late} jam (Denda setengah harga sewa per hari).";
+                    $denda_keterlambatan = $harga_sewa_per_hari * 0.5;
+                } else {
+                    $days_late = ceil($hours_late / 24); 
+                    $info_keterlambatan = "Telat {$hours_late} jam ({$days_late} hari) (Denda sewa penuh per hari terlambat).";
+                    $denda_keterlambatan = $harga_sewa_per_hari * $days_late;
+                }
+                $denda_keterlambatan = round($denda_keterlambatan);
+            } else {
+                $info_keterlambatan = 'Pengembalian tepat waktu (sebelum jam 21:00 pada tanggal selesai).';
+            }
+        }
+
         return view('customers.menu-transaksi.terima-order-masuk')->with([
             'title' => 'Terima Order Masuk',
             'data' => $singleData,
@@ -184,6 +221,8 @@ class TransaksiMenuController extends Controller
             'address' => $addressString,
             'details' => $details,
             'harus_dibayar' => $total_harus_dibayar,
+            'denda_keterlambatan' => $denda_keterlambatan,
+            'info_keterlambatan' => $info_keterlambatan,
         ]);
     }
 
@@ -219,18 +258,28 @@ class TransaksiMenuController extends Controller
                 'jaminan_sewa' => 'required|string',
             ]);
 
-            // Update data pada table pembayaran_penyewaan
-            $pembayaran_penyewaan = PembayaranPenyewaan::where('id_penyewaan', $id_penyewaan)->update([
-                'jaminan_sewa' => $validatedData['jaminan_sewa'],
-                'jumlah_pembayaran' => $validatedData['jumlah_pembayaran'],
-                'kembalian_pembayaran' => $validatedData['kembalian_pembayaran'],
-                'kurang_pembayaran' => $validatedData['kurang_pembayaran'],
-                'total_pembayaran' => $validatedData['total_pembayaran'],
-                'status_pembayaran' => 'Lunas',
-            ]);
-
+            $pembayaran_penyewaan = PembayaranPenyewaan::where('id_penyewaan', $id_penyewaan)->first();
             if ($pembayaran_penyewaan) {
-                Alert::toast('Berhasil menyimpan pembayaran!', 'success');
+                $pembayaran_penyewaan->update([
+                    'jaminan_sewa' => $validatedData['jaminan_sewa'],
+                    'jumlah_pembayaran' => $validatedData['jumlah_pembayaran'],
+                    'kembalian_pembayaran' => $validatedData['kembalian_pembayaran'],
+                    'kurang_pembayaran' => $validatedData['kurang_pembayaran'],
+                    'total_pembayaran' => $validatedData['total_pembayaran'],
+                    'status_pembayaran' => 'Lunas',
+                ]);
+
+                // Catat ke tabel pemasukan untuk toko
+                $store_user_id = DB::table('detail_penyewaan')
+                    ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                    ->where('detail_penyewaan.id_penyewaan', $id_penyewaan)
+                    ->value('produk.id_user');
+
+                if ($store_user_id) {
+                    $this->catatPemasukan($store_user_id, $pembayaran_penyewaan);
+                }
+
+                Alert::toast('Berhasil menyimpan pembayaran COD & mencatat pemasukan!', 'success');
                 return redirect()->back();
             }
             Alert::toast('Gagal menyimpan silahkan ulangi lagi!', 'warning');
@@ -245,16 +294,32 @@ class TransaksiMenuController extends Controller
         try {
             if ($parameter == 1) {
                 $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Aktif']);
+                // Jika pembayaran via Transfer dan masih menunggu verifikasi, set Lunas & catat pemasukan
+                $pembayaran = PembayaranPenyewaan::where('id_penyewaan', $id_penyewaan)->first();
+                if ($pembayaran && ($pembayaran->metode === 'Transfer' || $pembayaran->status_pembayaran === 'Menunggu Verifikasi')) {
+                    $pembayaran->status_pembayaran = 'Lunas';
+                    $pembayaran->save();
+
+                    $store_user_id = DB::table('detail_penyewaan')
+                        ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                        ->where('detail_penyewaan.id_penyewaan', $id_penyewaan)
+                        ->value('produk.id_user');
+                    if ($store_user_id) {
+                        $this->catatPemasukan($store_user_id, $pembayaran);
+                    }
+                }
+
                 if ($penyewaan) {
-                    Alert::toast('Order berhasil diterima dan status User saat ini adalah aktif menyewa!, atau waktu penyewaan telah berjalan', 'success');
+                    Alert::toast('Order diterima! Penyewaan aktif & pembayaran diverifikasi.', 'success');
                     return redirect('customer/dashboard/transaksi/' . $id_user);
                 } else {
                     return response()->json(['message' => 'Update failed'], 500);
                 }
             } else {
                 $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Selesai']);
+                $this->restoreStok($id_penyewaan);
                 if ($penyewaan) {
-                    Alert::toast('Pengembalian berhasil di simpan!', 'success');
+                    Alert::toast('Pengembalian berhasil disimpan dan stok produk dikembalikan!', 'success');
                     return redirect('customer/dashboard/order-selesai/' . $id_user);
                 } else {
                     return response()->json(['message' => 'Update failed'], 500);
@@ -263,6 +328,131 @@ class TransaksiMenuController extends Controller
         } catch (\Exception $e) {
             Log::error('Error in confirmOrderMasuk: ' . $e->getMessage());
             return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function batalkanOrder($id_penyewaan, $id_user)
+    {
+        try {
+            $penyewaan = Penyewaan::find($id_penyewaan);
+            if ($penyewaan) {
+                $penyewaan->status_penyewaan = 'Dibatalkan';
+                $penyewaan->save();
+                $this->restoreStok($id_penyewaan);
+                Alert::toast('Pesanan berhasil ditolak/dibatalkan dan stok telah dikembalikan!', 'success');
+            } else {
+                Alert::toast('Pesanan tidak ditemukan!', 'error');
+            }
+            return redirect()->back();
+        } catch (\Exception $e) {
+            Log::error('Error batalkanOrder: ' . $e->getMessage());
+            Alert::toast('Terjadi kesalahan!', 'error');
+            return redirect()->back();
+        }
+    }
+
+    public function prosesPengembalian(Request $request, $id_penyewaan, $id_user)
+    {
+        try {
+            $penyewaan = Penyewaan::find($id_penyewaan);
+            if (!$penyewaan) {
+                Alert::toast('Pesanan tidak ditemukan!', 'error');
+                return redirect()->back();
+            }
+
+            $buktiName = 'Belum di isi';
+            if ($request->hasFile('bukti_kondisi')) {
+                $file = $request->file('bukti_kondisi');
+                $buktiName = time() . '_kondisi.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/image/customers/pengembalian/'), $buktiName);
+            }
+
+            $denda = (int) $request->input('denda', 0);
+            $status_denda = $request->input('status_denda', 'Tidak Ada');
+
+            Pengembalian::create([
+                'id_penyewaan' => $id_penyewaan,
+                'tanggal_kembali_rencana' => $penyewaan->tanggal_selesai,
+                'tanggal_kembali_aktual' => now(),
+                'kondisi_barang' => $request->input('kondisi_barang', 'Baik'),
+                'denda' => $denda,
+                'status_denda' => $status_denda,
+                'catatan' => $request->input('catatan', '-'),
+                'bukti_kondisi' => $buktiName,
+                'dicatat_oleh' => auth()->id() ?? Crypt::decrypt($id_user),
+            ]);
+
+            $penyewaan->status_penyewaan = 'Selesai';
+            $penyewaan->save();
+
+            if ($request->input('kondisi_barang') !== 'Hilang') {
+                $this->restoreStok($id_penyewaan);
+            }
+
+            if ($denda > 0 && $status_denda === 'Lunas') {
+                $store_user_id = Crypt::decrypt($id_user);
+                Pemasukan::create([
+                    'id_user' => $store_user_id,
+                    'sumber' => 'Denda Penyewaan',
+                    'deskripsi' => 'Denda Pengembalian (Order ID: ' . $id_penyewaan . ')',
+                    'nominal' => $denda,
+                    'id_pembayaran_penyewaan' => null,
+                ]);
+            }
+
+            Alert::toast('Proses pengembalian berhasil disimpan!', 'success');
+            return redirect('customer/dashboard/order-selesai/' . $id_user);
+        } catch (\Exception $e) {
+            Log::error('Error prosesPengembalian: ' . $e->getMessage());
+            Alert::toast('Gagal memproses pengembalian: ' . $e->getMessage(), 'error');
+            return redirect()->back();
+        }
+    }
+
+    private function catatPemasukan($id_user, $pembayaran)
+    {
+        if (!$pembayaran) return;
+        $exists = Pemasukan::where('id_pembayaran_penyewaan', $pembayaran->id)->exists();
+        if (!$exists && $pembayaran->total_pembayaran > 0) {
+            Pemasukan::create([
+                'id_user' => $id_user,
+                'sumber' => 'Penyewaan',
+                'deskripsi' => 'Layanan Penyewaan Toko (ID Order: ' . $pembayaran->id_penyewaan . ')',
+                'nominal' => $pembayaran->total_pembayaran,
+                'id_pembayaran_penyewaan' => $pembayaran->id,
+            ]);
+            if ($pembayaran->biaya_admin > 0) {
+                Pemasukan::create([
+                    'id_user' => $id_user,
+                    'sumber' => 'Service',
+                    'deskripsi' => 'Biaya Admin (ID Order: ' . $pembayaran->id_penyewaan . ')',
+                    'nominal' => $pembayaran->biaya_admin,
+                    'id_pembayaran_penyewaan' => $pembayaran->id,
+                ]);
+            }
+        }
+    }
+
+    private function restoreStok($id_penyewaan)
+    {
+        $details = DetailPenyewaan::where('id_penyewaan', $id_penyewaan)->get();
+        foreach ($details as $detail) {
+            $variant = null;
+            if ($detail->id_detail_variant_produk) {
+                $variant = DetailVariantProduk::find($detail->id_detail_variant_produk);
+            }
+            if (!$variant) {
+                $variant = DetailVariantProduk::join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
+                    ->where('variant_produk.id_produk', $detail->id_produk)
+                    ->where('variant_produk.warna', $detail->warna_produk)
+                    ->where('detail_variant_produk.ukuran', $detail->ukuran)
+                    ->select('detail_variant_produk.*')
+                    ->first();
+            }
+            if ($variant) {
+                $variant->stok += $detail->qty;
+                $variant->save();
+            }
         }
     }
 

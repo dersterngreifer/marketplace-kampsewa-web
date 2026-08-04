@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
 use App\Models\DetailVariantProduk;
+use App\Models\FotoProduk;
 use App\Models\Produk;
 use App\Models\RatingProduk;
 use App\Models\User;
@@ -74,6 +75,14 @@ class ProdukController extends Controller
             // Paginate the filtered results
             $result_table = $table_produk->groupBy('produk.id', 'produk.id_user', 'produk.nama', 'produk.kategori', 'produk.foto_depan', 'produk.created_at')->paginate(32);
 
+            // Ambil semua kategori unik milik user
+            $user_categories = Produk::where('id_user', $id_user_decrypt)
+                                     ->whereNotNull('kategori')
+                                     ->where('kategori', '!=', 'Belum di isi')
+                                     ->select('kategori')
+                                     ->distinct()
+                                     ->pluck('kategori');
+
             return view('customers.menu-produk.produk')->with([
                 'title' => 'Produk Menu | KampSewa',
                 'produk' => $result_table,
@@ -81,6 +90,7 @@ class ProdukController extends Controller
                 'result' => '',
                 'filter_side' => $filter_side,
                 'filter_right' => $filter_right,
+                'user_categories' => $user_categories,
             ]);
         } catch (\Exception $error) {
             Log::error($error->getMessage());
@@ -102,7 +112,7 @@ class ProdukController extends Controller
                 'produk.id_user as id_user',
                 'produk.nama as nama_produk',
                 'produk.status as status_produk',
-                'produk.foto_depan as foto',
+                'produk.foto_depan',
                 DB::raw('SUM(detail_variant_produk.stok) as stok_produk')
             )->where('produk.id_user', $id);
 
@@ -129,12 +139,21 @@ class ProdukController extends Controller
         // Count the total number of products
         $total_product = $count_query->count();
 
+        // Ambil semua kategori unik milik user
+        $user_categories = Produk::where('id_user', $id)
+                                 ->whereNotNull('kategori')
+                                 ->where('kategori', '!=', 'Belum di isi')
+                                 ->select('kategori')
+                                 ->distinct()
+                                 ->pluck('kategori');
+
         return view('customers.menu-produk.kelola-produk')->with(
             [
                 'title' => 'Kelola Produk | KampSewa',
                 'produk' => $produk_result,
                 'search' => $search,
                 'total_produk' => $total_product,
+                'user_categories' => $user_categories,
             ]
         );
     }
@@ -142,14 +161,56 @@ class ProdukController extends Controller
 
     public function sedangDisewa($id_user)
     {
-        return view('customers.menu-produk.sedang-disewa', ['title' => 'Sedang Disewa | KampSewa']);
+        try {
+            $id_user_dec = Crypt::decrypt($id_user);
+            $sedang_disewa = Produk::join('detail_penyewaan', 'produk.id', '=', 'detail_penyewaan.id_produk')
+                ->join('penyewaan', 'detail_penyewaan.id_penyewaan', '=', 'penyewaan.id')
+                ->join('users as penyewa', 'penyewaan.id_user', '=', 'penyewa.id')
+                ->where('produk.id_user', $id_user_dec)
+                ->where('penyewaan.status_penyewaan', 'Aktif')
+                ->select(
+                    'produk.*',
+                    'penyewa.name as nama_penyewa',
+                    'penyewa.foto as foto_penyewa',
+                    'penyewaan.id as id_penyewaan',
+                    'penyewaan.tanggal_mulai',
+                    'penyewaan.tanggal_selesai',
+                    'detail_penyewaan.qty as qty_disewa',
+                    'detail_penyewaan.warna_produk',
+                    'detail_penyewaan.ukuran'
+                )
+                ->orderByDesc('penyewaan.tanggal_mulai')
+                ->paginate(12);
+
+            return view('customers.menu-produk.sedang-disewa', [
+                'title' => 'Sedang Disewa | KampSewa',
+                'sedang_disewa' => $sedang_disewa,
+                'id_user' => $id_user_dec,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error sedangDisewa: ' . $e->getMessage());
+            return view('customers.menu-produk.sedang-disewa', [
+                'title' => 'Sedang Disewa | KampSewa',
+                'sedang_disewa' => collect([]),
+                'id_user' => null,
+            ]);
+        }
     }
     public function tambahProduk($id_user)
     {
-        $id_user_dec = Crypt::decrypt($id_user);
+        $id_user_decrypt = Crypt::decrypt($id_user);
+        
+        $user_categories = Produk::where('id_user', $id_user_decrypt)
+                                 ->whereNotNull('kategori')
+                                 ->where('kategori', '!=', 'Belum di isi')
+                                 ->select('kategori')
+                                 ->distinct()
+                                 ->pluck('kategori');
+
         return view('customers.menu-produk.tambah-produk')->with([
-            'title' => 'Tambah Produk',
-            'id' => $id_user_dec,
+            'title' => 'Tambah Produk | KampSewa',
+            'id' => $id_user_decrypt,
+            'user_categories' => $user_categories
         ]);
     }
 
@@ -162,10 +223,8 @@ class ProdukController extends Controller
                 'nama_produk' => 'required|string|max:100',
                 'deskripsi_produk' => 'required|string|max:1000',
                 'kategori_produk' => 'required|string',
-                'foto_depan' => 'required|image|mimes:jpeg,png,jpg,gif|max:3000',
-                'foto_belakang' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3000',
-                'foto_kiri' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3000',
-                'foto_kanan' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3000',
+                'foto_produk.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3000',
+                'foto_produk_url.*' => 'nullable|url',
                 'variants.*.warna' => 'nullable|string',
                 'variants.*.sizes.*.ukuran' => 'nullable|string',
                 'variants.*.sizes.*.stok' => 'nullable|integer',
@@ -184,35 +243,43 @@ class ProdukController extends Controller
             $produk->kategori = $request->input('kategori_produk');
 
             // Simpan gambar-gambar
-            if ($request->hasFile('foto_depan')) {
-                $foto_depan = $request->file('foto_depan');
-                $fotoDepanName = time() . '_depan.' . $foto_depan->getClientOriginalExtension();
-                $foto_depan->move(public_path('assets/image/customers/produk/'), $fotoDepanName);
-                $produk->foto_depan = $fotoDepanName;
+            $processedImages = [];
+
+            // 1. Process uploaded files
+            if ($request->hasFile('foto_produk')) {
+                foreach ($request->file('foto_produk') as $file) {
+                    $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('assets/image/customers/produk/'), $fileName);
+                    $processedImages[] = ['url' => $fileName, 'tipe' => 'internal'];
+                }
             }
 
-            if ($request->hasFile('foto_belakang')) {
-                $foto_belakang = $request->file('foto_belakang');
-                $fotoBelakangName = time() . '_belakang.' . $foto_belakang->getClientOriginalExtension();
-                $foto_belakang->move(public_path('assets/image/customers/produk/'), $fotoBelakangName);
-                $produk->foto_belakang = $fotoBelakangName;
+            // 2. Process external URLs
+            if ($request->has('foto_produk_url') && is_array($request->input('foto_produk_url'))) {
+                foreach ($request->input('foto_produk_url') as $url) {
+                    if (!empty($url)) {
+                        $processedImages[] = ['url' => $url, 'tipe' => 'external'];
+                    }
+                }
             }
 
-            if ($request->hasFile('foto_kiri')) {
-                $foto_kiri = $request->file('foto_kiri');
-                $fotoKiriName = time() . '_kiri.' . $foto_kiri->getClientOriginalExtension();
-                $foto_kiri->move(public_path('assets/image/customers/produk/'), $fotoKiriName);
-                $produk->foto_kiri = $fotoKiriName;
-            }
-
-            if ($request->hasFile('foto_kanan')) {
-                $foto_kanan = $request->file('foto_kanan');
-                $fotoKananName = time() . '_kanan.' . $foto_kanan->getClientOriginalExtension();
-                $foto_kanan->move(public_path('assets/image/customers/produk/'), $fotoKananName);
-                $produk->foto_kanan = $fotoKananName;
-            }
+            // Fallback for legacy database schema backward compatibility
+            $produk->foto_depan = $processedImages[0]['url'] ?? 'Belum di isi';
+            $produk->foto_belakang = $processedImages[1]['url'] ?? 'Belum di isi';
+            $produk->foto_kiri = $processedImages[2]['url'] ?? 'Belum di isi';
+            $produk->foto_kanan = $processedImages[3]['url'] ?? 'Belum di isi';
 
             $produk->save();
+            
+            // Simpan semua foto tanpa batas ke tabel foto_produk
+            foreach ($processedImages as $index => $img) {
+                FotoProduk::create([
+                    'id_produk' => $produk->id,
+                    'url_foto' => $img['url'],
+                    'tipe_sumber' => $img['tipe'],
+                    'urutan' => $index + 1
+                ]);
+            }
 
             // Simpan detail varian produk
             foreach ($request->variants as $variant) {
@@ -268,6 +335,7 @@ class ProdukController extends Controller
         $product_detail = Produk::join('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->select(
+                'produk.id',
                 'produk.id as id_produk',
                 'produk.nama as nama_produk',
                 'produk.status as status_produk',
@@ -279,6 +347,7 @@ class ProdukController extends Controller
                 'produk.foto_kanan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
             )
+            ->with('foto')
             ->where('produk.id', $id_product_decrypt)
             ->groupBy(
                 'produk.id',
@@ -391,6 +460,15 @@ class ProdukController extends Controller
             ->get()
             ->groupBy('id_variant_produk');
 
+        $table_foto_produk = FotoProduk::where('id_produk', $id_produk_decrypt)->orderBy('urutan')->get();
+
+        $user_categories = Produk::where('id_user', $id_user_decrypt)
+                                 ->whereNotNull('kategori')
+                                 ->where('kategori', '!=', 'Belum di isi')
+                                 ->select('kategori')
+                                 ->distinct()
+                                 ->pluck('kategori');
+
         // Pass data to the view
         return view('customers.menu-produk.update-produk')->with([
             'title' => 'Update Produk',
@@ -399,6 +477,8 @@ class ProdukController extends Controller
             'produk' => $table_produk,
             'variants' => $table_variant_produk,
             'detail_variants' => $table_detail_variant_produk,
+            'foto_produk' => $table_foto_produk,
+            'user_categories' => $user_categories
         ]);
     }
 
@@ -410,10 +490,10 @@ class ProdukController extends Controller
                 'nama_produk' => 'required|string|max:255',
                 'deskripsi_produk' => 'required|string',
                 'kategori_produk_update' => 'required|string|max:255',
-                'foto_depan' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-                'foto_belakang' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-                'foto_kiri' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
-                'foto_kanan' => 'nullable|image|mimes:jpeg,png,jpg,svg|max:2048',
+                'foto_produk.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:3000',
+                'foto_produk_url.*' => 'nullable|url',
+                'deleted_fotos' => 'nullable|array',
+                'deleted_fotos.*' => 'integer',
                 'variants' => 'required|array',
                 'variants.*.warna' => 'required|string|max:255',
                 'variants.*.sizes' => 'nullable|array',
@@ -430,19 +510,55 @@ class ProdukController extends Controller
 
             Log::info('Kategori Produk: ' . $request->input('kategori_produk_update'));
 
-            // Handle foto uploads
-            $fotoFields = ['foto_depan', 'foto_belakang', 'foto_kiri', 'foto_kanan'];
-            foreach ($fotoFields as $field) {
-                if ($request->hasFile($field)) {
-                    $file = $request->file($field);
-                    $filename = time() . '_' . $file->getClientOriginalName();
-                    $file->move(public_path('assets/image/customers/produk/'), $filename);
-                    $produk->$field = $filename; // Menggunakan $filename bukan $filePath
+            // Hapus foto yang di-delete dari array deleted_fotos
+            if ($request->has('deleted_fotos')) {
+                foreach ($request->input('deleted_fotos') as $idFoto) {
+                    $fotoToDelete = FotoProduk::where('id', $idFoto)->where('id_produk', $produk->id)->first();
+                    if ($fotoToDelete) {
+                        if ($fotoToDelete->tipe_sumber === 'internal' && file_exists(public_path('assets/image/customers/produk/' . $fotoToDelete->url_foto))) {
+                            unlink(public_path('assets/image/customers/produk/' . $fotoToDelete->url_foto));
+                        }
+                        $fotoToDelete->delete();
+                    }
                 }
             }
 
-            $produk->save();
+            // Tambah foto baru tanpa batas
+            $newImages = [];
+            if ($request->hasFile('foto_produk')) {
+                foreach ($request->file('foto_produk') as $file) {
+                    $fileName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    $file->move(public_path('assets/image/customers/produk/'), $fileName);
+                    $newImages[] = ['url' => $fileName, 'tipe' => 'internal'];
+                }
+            }
+            if ($request->has('foto_produk_url') && is_array($request->input('foto_produk_url'))) {
+                foreach ($request->input('foto_produk_url') as $url) {
+                    if (!empty($url)) {
+                        $newImages[] = ['url' => $url, 'tipe' => 'external'];
+                    }
+                }
+            }
 
+            // Tentukan urutan terakhir
+            $lastUrutan = FotoProduk::where('id_produk', $produk->id)->max('urutan') ?? 0;
+            foreach ($newImages as $img) {
+                $lastUrutan++;
+                FotoProduk::create([
+                    'id_produk' => $produk->id,
+                    'url_foto' => $img['url'],
+                    'tipe_sumber' => $img['tipe'],
+                    'urutan' => $lastUrutan
+                ]);
+            }
+            
+            // Sync fallback columns based on current state of FotoProduk for backward compatibility
+            $allPhotos = FotoProduk::where('id_produk', $produk->id)->orderBy('urutan')->get();
+            $produk->foto_depan = $allPhotos->get(0)->url_foto ?? 'Belum di isi';
+            $produk->foto_belakang = $allPhotos->get(1)->url_foto ?? 'Belum di isi';
+            $produk->foto_kiri = $allPhotos->get(2)->url_foto ?? 'Belum di isi';
+            $produk->foto_kanan = $allPhotos->get(3)->url_foto ?? 'Belum di isi';
+            $produk->save();
             // Sinkronisasi varian dan detail varian
             $existingVariantIds = [];
             foreach ($request->input('variants') as $variantData) {
@@ -482,6 +598,28 @@ class ProdukController extends Controller
             return back();
         } catch (\Exception $error) {
             Log::error('Error :' . $error->getMessage());
+        }
+    }
+
+    private function syncFotoProduk($produk)
+    {
+        try {
+            $fotoFields = [
+                1 => $produk->foto_depan,
+                2 => $produk->foto_belakang,
+                3 => $produk->foto_kiri,
+                4 => $produk->foto_kanan,
+            ];
+            foreach ($fotoFields as $urutan => $urlFoto) {
+                if (!empty($urlFoto) && $urlFoto !== 'Belum di isi') {
+                    FotoProduk::updateOrCreate(
+                        ['id_produk' => $produk->id, 'urutan' => $urutan],
+                        ['url_foto' => $urlFoto, 'tipe_sumber' => 'internal']
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error syncFotoProduk: ' . $e->getMessage());
         }
     }
 }

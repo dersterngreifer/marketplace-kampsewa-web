@@ -310,6 +310,11 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
     |--------------------------------------------------------------------------
     */
 
+    Route::controller(App\Http\Controllers\Customer\KasirOfflineController::class)->name('kasir-offline.')->group(function () {
+        Route::get('/kasir-offline/{id_user}', 'index')->name('index');
+        Route::post('/kasir-offline/proses/{id_user}', 'prosesPesanan')->name('proses');
+    });
+
     Route::controller(TransaksiMenuController::class)->name('menu-transaksi.')->group(function () {
         Route::get('/transaksi/{id_user}', 'index')->name('index');
         Route::get('/sewa-berlangsung/{id_user}', 'sewaBerlangsung')->name('sewa-berlangsung');
@@ -319,6 +324,8 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
         Route::get('/transaksi/terima-order-masuk/{id_penyewaan}', 'terimaOrderMasuk')->name('terima-order-masuk');
         Route::put('/transaksi/input-pembayaran-cod/{id_penyewaan}', 'inputPembayaranCOD')->name('input-pembayaran-cod');
         Route::put('/transaksi/confirm-order-masuk/{id_penyewaan}/{id_user}/{parameter}', 'confirmOrderMasuk')->name('confirm-order-masuk');
+        Route::put('/transaksi/batalkan-order/{id_penyewaan}/{id_user}', 'batalkanOrder')->name('batalkan-order');
+        Route::post('/transaksi/proses-pengembalian/{id_penyewaan}/{id_user}', 'prosesPengembalian')->name('proses-pengembalian');
     });
 });
 

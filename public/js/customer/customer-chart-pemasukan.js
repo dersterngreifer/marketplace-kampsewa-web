@@ -24,16 +24,16 @@ const dataPemasukanTahunDashboard = {
     labels: labelsMonthPemasukanTahunDashboard,
     datasets: [
         {
-            label: "Total Tahun 2023",
-            data: [37, 43, 23, 19, 87, 35, 22, 55, 74, 39, 41, 121],
+            label: "Total Tahun " + (window.labelTahunLalu || "Lalu"),
+            data: window.chartTahunLalu || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             fill: false,
             borderColor: "rgb(86,11,208)",
             bordeWidth: 3,
             tension: 0.4,
         },
         {
-            label: "Total Tahun 2024",
-            data: [34, 56, 12, 66, 86, 12, 44, 66, 22, 33, 44, 55],
+            label: "Total Tahun " + (window.labelTahunIni || "Ini"),
+            data: window.chartTahunIni || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             fill: false,
             borderColor: "rgb(3,118,253)",
             bordeWidth: 3,
@@ -63,7 +63,9 @@ const configPemasukanTahunDashboard = {
                 },
                 ticks: {
                     callback: function (value) {
-                        return `${value} M`;
+                        if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                        return 'Rp ' + value;
                     }
                 }
             },
@@ -86,7 +88,9 @@ const configPemasukanTahunDashboard = {
                 },
                 ticks: {
                     callback: function (value) {
-                        return `${value} M`;
+                        if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                        return 'Rp ' + value;
                     }
                 }
             }
@@ -124,8 +128,8 @@ const dataPemasukanBulanDashboard = {
     labels: labelsMonthPemasukanBulanDashboard,
     datasets: [
         {
-            label: "Total Bulan April",
-            data: [37, 43, 23, 19, 87, 35, 22, 55, 74, 39, 41, 121],
+            label: "Total Tahun " + (window.labelTahunLalu || "Lalu"),
+            data: window.chartTahunLalu || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             fill: false,
             borderColor: "rgb(255,206,86)",
             backgroundColor: "rgb(255,206,86)",
@@ -133,8 +137,8 @@ const dataPemasukanBulanDashboard = {
             tension: 0.4,
         },
         {
-            label: "Total Bulan Mei",
-            data: [34, 56, 12, 66, 86, 12, 44, 66, 22, 33, 44, 55],
+            label: "Total Tahun " + (window.labelTahunIni || "Ini"),
+            data: window.chartTahunIni || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             fill: false,
             borderColor: "rgb(75,192,192)",
             backgroundColor: "rgb(75,192,192)",
@@ -165,7 +169,9 @@ const configPemasukanBulanDashboard = {
                 },
                 ticks: {
                     callback: function (value) {
-                        return `${value} M`;
+                        if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                        return 'Rp ' + value;
                     }
                 }
             },
@@ -188,7 +194,9 @@ const configPemasukanBulanDashboard = {
                 },
                 ticks: {
                     callback: function (value) {
-                        return `${value} M`;
+                        if (value >= 1000000) return 'Rp ' + (value / 1000000).toFixed(1) + 'M';
+                        if (value >= 1000) return 'Rp ' + (value / 1000).toFixed(0) + 'K';
+                        return 'Rp ' + value;
                     }
                 }
             }

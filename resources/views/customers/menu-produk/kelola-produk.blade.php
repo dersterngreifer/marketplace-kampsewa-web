@@ -1,149 +1,143 @@
-@extends('customers.menu-dashboard-cust.dashboard')
+@extends('layouts.customers.layouts-customer')
 @section('customer-content')
-    <div class="--container px-10 mobile-max:py-2 mobile-max:px-5 py-5 flex flex-col gap-8">
-        <div class="--wrapper-heading-wrapper-deskripsi-halaman">
-            <h1 class="text-[24px] font-bold capitalize">Manajemen Produk Anda!</h1>
-            <p class="text-[14px]">Halaman ini berisi data produk anda, anda bisa menambah, mengedit dan menghapus produk,
-                melihat produk yang
-                sedang disewa, menampilkan berdasarkan produk terlaris disewa, harga sewa termurah - termahal, produk
-                terbaru
-                dan terlama sekaligus bisa mencari berdasarkan kosakata nama produk dan harga. Jika anda masih bingung lihat
-                menu cara penggunaan fitur pada menu <a href=""
-                    class="text-blue-700 underline hover:underline font-bold">Dokumentasi</a>.</p>
-        </div>
-
-        {{-- wrapper navigation item menu --}}
-        <div class="--wrapper-navigation-menu w-full">
-            <ul class="flex items-center gap-2 mobile-max:gap-4 mobile-max:flex-wrap">
-                <li><a class="{{ $title == 'Produk Menu | KampSewa' ? 'bg-[#F8F7F4] font-medium' : '' }} hover:font-medium hover:bg-[#F8F7F4] hover:text-[#0F172A] text-[14px] px-4 py-2 rounded-full"
-                        href="{{ route('menu-produk.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Semua
-                        Produk</a></li>
-                <li><a class="{{ $title == 'Kelola Produk | KampSewa' ? 'bg-[#F8F7F4] font-medium' : '' }} text-[14px] hover:font-medium px-4 py-2 rounded-full hover:bg-[#F8F7F4] hover:text-[#0F172A]"
-                        href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Kelola
-                        Produk</a></li>
-                <li><a class="text-[14px] hover:font-medium px-4 py-2 rounded-full hover:bg-[#F8F7F4] hover:text-[#0F172A]"
-                        href="{{ route('menu-produk.sedang-disewa', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Sedang
-                        Disewa</a></li>
-            </ul>
-        </div>
-
-        <div class="--wrapper-action-button">
-            {{-- todo wrapper total search filter --}}
-            <div class="flex w-full justify-between items-center mobile-max:flex-col-reverse gap-6 mb-4">
-
-                {{-- todo total users --}}
-                <div class="_total">
-                    <p class="text-[#19191b] text-[14px] font-bold whitespace-nowrap">{{ $total_produk }} Produk</p>
-                </div>
-
-                {{-- todo wrapper search filter --}}
-                <div class="_search-filter w-1/2 mobile-max:w-full items-center mobile-max:flex-col small-desktop:w-full flex gap-[20px]">
-                    {{-- todo search --}}
-                    <div class="_searrh w-full">
-                        <form method="GET" class="w-full">
-                            <div class="relative w-full mx-auto">
-                                <input name="search" value="{{ $search }}"
-                                    class="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    type="search" placeholder="Berdasarkan Nama dan Stok...">
-                                <button class="absolute right-0 rounded-md text-white py-2 px-4 bg-blue-700"
-                                    type="submit">Cari</button>
-                            </div>
-                        </form>
-                    </div>
-                    {{-- todo untuk tombol tambah data --}}
-                    <div class="_btn-tambah-data whitespace-nowrap mobile-max:w-full">
-                        <a
-                            href="{{ route('menu-produk.tambah-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">
-                            <button class="mobile-max:w-full px-4 py-2 gradient-1 cursor-pointer text-white rounded-full">
-                                <div class="_icon-plus"></div>
-                                <span>Tambah Produk</span>
-                            </button>
-                        </a>
-                    </div>
-                </div>
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col gap-8">
+        <div class="flex flex-col gap-6">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Manajemen Produk Anda!</h1>
+                <p class="text-gray-500 font-medium mt-1">Halaman ini berisi data produk Anda. Anda bisa menambah, mengedit, menghapus, atau melihat produk yang sedang disewa.</p>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 pb-4 lg:pb-0">
+                <!-- Tabs -->
+                <nav class="flex overflow-x-auto hide-scrollbar gap-6" aria-label="Tabs">
+                    <a href="{{ route('menu-produk.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Produk Menu | KampSewa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Semua Produk
+                    </a>
+                    <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Kelola Produk | KampSewa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Kelola Produk
+                    </a>
+                    <a href="{{ route('menu-produk.sedang-disewa', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Sedang Disewa | KampSewa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Sedang Disewa
+                    </a>
+                </nav>
             </div>
         </div>
-        <div class="--table w-full h-auto flex flex-col gap-6">
-            <div
-                class="relative w-full h-[500px] overflow-y-hidden overflow-x-scroll shadow-box-shadow-11 rounded-[20px] bg-white">
-                <div class="w-full h-full overflow-x-auto">
-                    @if ($produk->count() == 0)
-                        <div class="w-full h-full flex items-center justify-center">
-                            <div class="flex items-center gap-4 justify-center">
-                                <img class="w-[300px] h-auto object-cover"
-                                    src="{{ asset('images/illustration/filling-survey.png') }}" alt="">
-                                <div>
-                                    <p class="text-[40px] font-black">OOPS!</p>
-                                    <p class="text-[16px] font-medium">Sepertinya {{ $search }} Tidak ada dalam daftar
-                                        produk!
-                                </div>
-                            </div>
+
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-2">
+            <div class="text-gray-900 font-bold text-sm">{{ $total_produk }} Produk Total</div>
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                <form method="GET" class="w-full sm:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="bi bi-search text-gray-400"></i>
                         </div>
-                    @else
-                        <table class="w-full min-w-max text-sm text-left rtl:text-right text-gray-500 dark:text-gray-400">
-                            <thead
-                                class="sticky top-0 z-10 text-xs text-gray-700 uppercase bg-white dark:bg-gray-700 dark:text-gray-400">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3">
-                                        Nama Poduk
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Status Produk
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Total Stok
-                                    </th>
-                                    <th scope="col" class="px-6 py-3">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($produk as $item)
-                                    <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700">
-                                        <td scope="row"
-                                            class="px-6 py-4 font-medium text-gray-900 flex items-center gap-2 dark:text-white">
-                                            <img class="w-[50px] h-[50px] rounded-[10px] object-cover"
-                                                src="{{ str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
-                                                alt="{{ $item->nama_produk }}"
-                                                onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
-                                            <p class="line-clamp-2 capitalize">{{ $item->nama_produk }}</p>
-                                        </td>
-                                        <td class="px-6 py-4 text-left">
-                                            <p class="py-2 px-4 w-fit bg-[#F0FDF4] text-[#4ED17E] rounded-full">
-                                                {{ $item->status_produk }}</p>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            {{ $item->stok_produk }}
-                                        </td>
-                                        <td class="px-6 py-4 flex gap-2 items-center">
-                                            <p><a
-                                                    href="{{ route('menu-produk.update-produk', ['id_produk' => Crypt::encrypt($item->id_produk), 'id_user' => Crypt::encrypt($item->id_user)]) }}"><i
-                                                        class="text-[16px] bi bi-pen-fill"></i></a>
+                        <input type="search" value="{{ $search }}" name="search"
+                            class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-shadow"
+                            placeholder="Cari produk..." />
+                    </div>
+                </form>
+                <a href="{{ route('menu-produk.tambah-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}"
+                   class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 hover:shadow-md transition-all text-sm">
+                    <i class="bi bi-plus-circle-fill"></i> Tambah Produk
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden w-full flex flex-col">
+            @if (!is_object($produk) || $produk->isEmpty())
+                <div class="p-12 flex flex-col items-center justify-center min-h-[400px]">
+                    <img class="w-48 h-auto object-cover opacity-80 mb-6" src="{{ asset('images/illustration/filling-survey.png') }}" alt="Not Found">
+                    <h3 class="text-2xl font-black text-gray-800 mb-2">OOPS! Tidak Ada Produk</h3>
+                    <p class="text-gray-500 text-center max-w-md font-medium">Sepertinya kata kunci "<span class="text-gray-900 font-bold">{{ $search }}</span>" tidak ditemukan dalam daftar produk Anda.</p>
+                </div>
+            @else
+                <div class="w-full overflow-x-auto">
+                    <table class="w-full min-w-max text-sm text-left">
+                        <thead class="bg-gray-50/80 border-b border-gray-100 text-xs text-gray-500 uppercase tracking-wider font-bold">
+                            <tr>
+                                <th scope="col" class="px-6 py-4 rounded-tl-xl">Produk</th>
+                                <th scope="col" class="px-6 py-4">Status</th>
+                                <th scope="col" class="px-6 py-4">Stok</th>
+                                <th scope="col" class="px-6 py-4 rounded-tr-xl text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-50 bg-white">
+                            @foreach ($produk as $item)
+                                <tr class="hover:bg-blue-50/30 transition-colors duration-200 group">
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-4">
+                                            <div class="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shadow-sm group-hover:shadow transition-all">
+                                                <img class="w-full h-full object-cover"
+                                                    src="{{ str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
+                                                    alt="{{ $item->nama_produk }}"
+                                                    onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <a href="{{ route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($item->id_produk)]) }}" class="font-bold text-gray-900 text-[15px] hover:text-blue-600 transition-colors line-clamp-1 capitalize">
+                                                    {{ $item->nama_produk }}
+                                                </a>
+                                                <span class="text-xs font-medium text-gray-400 mt-0.5">ID: #{{ substr(md5($item->id_produk), 0, 8) }}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        @if(strtolower($item->status_produk) == 'tersedia')
+                                            <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold bg-green-50 text-green-600 border border-green-100">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                                {{ $item->status_produk }}
+                                            </span>
+                                        @else
+                                            <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
+                                                {{ $item->status_produk }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-2">
+                                            <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-700 font-bold border border-gray-100">
+                                                {{ $item->stok_produk ?? 0 }}
+                                            </div>
+                                            <span class="text-xs font-medium text-gray-500">Unit</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                            <a href="{{ route('menu-produk.update-produk', ['id_produk' => Crypt::encrypt($item->id_produk), 'id_user' => Crypt::encrypt($item->id_user)]) }}" 
+                                               class="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow group/btn relative"
+                                               title="Edit Produk">
+                                                <i class="bi bi-pencil-square text-[15px]"></i>
+                                            </a>
+                                            
                                             <form id="delete-produk-{{ $item->id_produk }}"
                                                 action="{{ route('menu-produk.delete', ['id_produk' => $item->id_produk]) }}"
-                                                method="POST">
+                                                method="POST" class="m-0">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button id="delete-product-{{ $item->id_produk }}" type="button">
-                                                    <i class="text-[16px] bi bi-trash-fill"></i>
+                                                <button id="delete-product-{{ $item->id_produk }}" type="button" 
+                                                        class="w-9 h-9 flex items-center justify-center rounded-xl bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all shadow-sm hover:shadow"
+                                                        title="Hapus Produk">
+                                                    <i class="bi bi-trash3 text-[15px]"></i>
                                                 </button>
                                             </form>
-                                            </p>
-                                            {{-- <p><a href="{{ route('menu-produk.detail_produk', ['nama_produk' =>$item->nama_produk, 'id_user' => Crypt::encrypt(session('id_user'))]) }}"><i
-                                                            class="text-[16px] bi bi-file-earmark-spreadsheet-fill"></i></a>
-                                                </p> --}}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-            {{ $produk->onEachSide(1)->links('components.paginate.custom-pagination') }}
+            @endif
+            
+            @if(is_object($produk) && !$produk->isEmpty())
+                <div class="p-5 border-t border-gray-100 bg-gray-50/30 rounded-b-2xl">
+                    {{ $produk->onEachSide(1)->links('components.paginate.custom-pagination') }}
+                </div>
+            @endif
         </div>
-    </div>
     <script>
         document.querySelectorAll('[id^="delete-product-"]').forEach(button => {
             button.addEventListener('click', function(event) {

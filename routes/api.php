@@ -158,6 +158,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/', 'riwayat');
             Route::get('/rincian-produk', 'rincianProduk');
             Route::post('/bayar-sekarang', 'bayarSekarang');
+            Route::post('/batalkan/{id_penyewaan}', 'batalkanPesanan');
         });
 
     Route::prefix('feedback')

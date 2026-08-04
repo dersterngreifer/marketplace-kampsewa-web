@@ -124,6 +124,14 @@ class RegisterController extends Controller
         $notifikasi->status = 'unread';
         $notifikasi->save();
 
+        // Check for existing offline orders and link them to this new user
+        \App\Models\Penyewaan::where('tipe_pesanan', 'offline')
+            ->where('no_hp_offline', $request->nomor_telephone)
+            ->whereNull('id_user')
+            ->update([
+                'id_user' => $user->id
+            ]);
+
         return response()->json(['message' => 'User berhasil didaftarkan'], 201);
     }
 }

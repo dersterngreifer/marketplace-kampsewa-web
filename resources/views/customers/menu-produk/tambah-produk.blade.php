@@ -1,124 +1,143 @@
 @extends('layouts.customers.layouts-customer')
 @section('customer-content')
-    <div class="--container w-full h-auto flex justify-center px-10 py-5 mobile-max:px-5 mobile-max:py-2">
-        <div class="--wrapper-form w-[800px] h-auto bg-white shadow-box-shadow-11 p-4">
-            <div class="mb-6"><a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}"><i class="bi bi-arrow-left-short"></i> Kembali</a></div>
-            <h1 class="text-[20px] font-bold">Tambah Barang Penyewaan</h1>
-            <p>Tambahkan barang penyewaan! anda bisa memasukkan data barang dengan banyak ukuran dan jenis, seperti warna,
-                stok, dan harga sewa yang berbeda.</p>
-            <form id="simpan-produk" action="{{ route('menu-produk.tambah-produk-post') }}"
-                class="w-full flex flex-col gap-6 h-auto mt-4" method="POST" enctype="multipart/form-data">
-                @csrf
-                <input type="hidden" name="id_user" value="{{ $id }}">
-                <div class="--input-table-produk grid grid-cols-3 gap-x-2 gap-y-4 mobile-max:grid-cols-1">
-                    <div class="--input-nama-produk w-full">
-                        <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Nama Produk</p>
-                        <input
-                            class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                            type="text" id="nama_produk" name="nama_produk" placeholder="Masukkan nama produk">
-                    </div>
-                    <div class="--input-deskripsi w-full">
-                        <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Deskripsi Produk</p>
-                        <input
-                            class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                            type="text" id="deskripsi_produk" name="deskripsi_produk"
-                            placeholder="Masukkan deskripsi produk">
-                    </div>
-                    <div class="--input-kategori relative w-full">
-                        <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Kategori Produk</p>
-                        <select name="kategori_produk"
-                            class="block appearance-none w-full bg-gray-200 border border-gray-200 text-gray-700 py-3 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                            id="grid-state">
-                            <option value="Belum di isi">-- Pilih Kategori --</option>
-                            <option value="Tenda">Tenda</option>
-                            <option value="Pakaian">Pakaian</option>
-                            <option value="Tas">Tas</option>
-                            <option value="Sepatu">Sepatu</option>
-                            <option value="Perlengkapan">Perlengkapan</option>
-                        </select>
-                        <div class="pointer-events-none absolute top-1/2 right-0 flex items-center px-2 text-gray-700">
-                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
-                            </svg>
+    <div class="max-w-[1000px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col gap-6">
+        <div class="mb-2">
+            <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="inline-flex items-center text-sm font-bold text-gray-500 hover:text-blue-600 transition-colors">
+                <i class="bi bi-arrow-left-short text-xl mr-1"></i> Kembali ke Kelola Produk
+            </a>
+        </div>
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 sm:p-8 border-b border-gray-100 bg-gray-50/50">
+                <h1 class="text-2xl font-black text-gray-900 tracking-tight">Tambah Barang Penyewaan</h1>
+                <p class="text-sm text-gray-500 mt-2 font-medium">Tambahkan barang penyewaan! Anda bisa memasukkan data barang dengan banyak ukuran dan jenis, seperti warna, stok, dan harga sewa yang berbeda.</p>
+            </div>
+            
+            <div class="p-6 sm:p-8">
+                <form id="simpan-produk" action="{{ route('menu-produk.tambah-produk-post') }}"
+                    class="w-full flex flex-col gap-8 h-auto" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="id_user" value="{{ $id }}">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="w-full">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Nama Produk</label>
+                            <input
+                                class="block w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                type="text" id="nama_produk" name="nama_produk" placeholder="Masukkan nama produk">
                         </div>
-                        @error('kategori_produk')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-                    <div class="--input-foto-produk flex flex-col col-span-3 mobile-max:col-span-1">
-                        <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Input Foto Produk (Multiple)</p>
-                        <p class="text-[12px] font-medium mb-2">Anda bisa mengunggah banyak foto sekaligus. Disarankan rasio ukuran 1:1</p>
-                        <div class="w-full border-2 border-dashed border-gray-300 p-4 rounded-lg">
-                            <input id="foto_produk" type="file" name="foto_produk[]" multiple accept="image/*"
-                                onchange="previewMultipleImages(event)"
-                                class="block w-full text-sm text-gray-500 file:me-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 mb-4">
-                            <div id="foto-preview-container" class="grid grid-cols-4 mobile-max:grid-cols-2 gap-4">
+                        <div class="w-full">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi Produk</label>
+                            <input
+                                class="block w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                type="text" id="deskripsi_produk" name="deskripsi_produk"
+                                placeholder="Masukkan deskripsi produk">
+                        </div>
+                        <div class="relative w-full">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">Kategori Produk</label>
+                            <input list="kategoriList" name="kategori_produk" id="grid-state" placeholder="Pilih atau ketik kategori baru..."
+                                class="block w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors">
+                            <datalist id="kategoriList">
+                                @if(isset($user_categories) && count($user_categories) > 0)
+                                    @foreach($user_categories as $kat)
+                                        <option value="{{ ucfirst($kat) }}"></option>
+                                    @endforeach
+                                @else
+                                    <option value="Tenda"></option>
+                                    <option value="Pakaian"></option>
+                                    <option value="Tas"></option>
+                                    <option value="Sepatu"></option>
+                                    <option value="Perlengkapan"></option>
+                                @endif
+                            </datalist>
+                            @error('kategori_produk')
+                                <p class="text-red-500 text-xs mt-1 font-medium">{{ $message }}</p>
+                            @enderror
+                        </div>
+                        <div class="flex flex-col col-span-1 md:col-span-2 lg:col-span-3">
+                            <label class="block text-sm font-bold text-gray-700 mb-1">Upload Foto Produk (Multiple)</label>
+                            <p class="text-xs text-gray-500 font-medium mb-3">Anda bisa mengunggah banyak foto tanpa batas. Disarankan rasio ukuran 1:1.</p>
+                            
+                            <div class="w-full border-2 border-dashed border-gray-300 bg-gray-50 p-6 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer relative">
+                                <input id="foto_produk" type="file" name="foto_produk[]" multiple accept="image/*"
+                                    onchange="previewMultipleImages(event)"
+                                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                                <div class="text-center z-0 pointer-events-none">
+                                    <i class="bi bi-cloud-arrow-up text-4xl text-blue-500"></i>
+                                    <p class="mt-2 text-sm font-medium text-gray-700">Klik atau Drag & Drop foto di sini</p>
+                                    <p class="text-xs text-gray-500 mt-1">Format JPG, PNG (Unlimited)</p>
+                                </div>
+                            </div>
+                            <div id="foto-preview-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mt-4 empty:hidden">
                                 <!-- Previews will be injected here -->
                             </div>
-                        </div>
-                        <div class="mt-4 w-full border-2 border-dashed border-gray-300 p-4 rounded-lg">
-                            <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Atau Paste External Image URLs</p>
-                            <div id="url-inputs-container" class="flex flex-col gap-2 mb-2">
-                                <input type="url" name="foto_produk_url[]" placeholder="https://example.com/image.jpg" class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-2 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500">
+                            
+                            <div class="mt-6 w-full border border-gray-200 bg-white p-5 rounded-xl shadow-sm">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Atau Paste External Image URLs</label>
+                                <p class="text-xs text-gray-500 font-medium mb-3">Jika foto berasal dari internet, paste link (URL) gambar langsung di sini.</p>
+                                <div id="url-inputs-container" class="flex flex-col gap-3 mb-3">
+                                    <input type="url" name="foto_produk_url[]" placeholder="https://example.com/image.jpg" class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors">
+                                </div>
+                                <button type="button" onclick="addUrlInput()" class="inline-flex items-center gap-1 text-[13px] bg-gray-800 text-white py-1.5 px-3 rounded-lg hover:bg-gray-700 transition font-medium">
+                                    <i class="bi bi-plus-lg"></i> Tambah URL
+                                </button>
                             </div>
-                            <button type="button" onclick="addUrlInput()" class="text-[12px] bg-gray-800 text-white py-1 px-3 rounded hover:bg-gray-700">+ Tambah URL Baru</button>
                         </div>
                     </div>
-                </div>
 
-                <div class="--input-table-variant-detail-variant" id="variantContainer">
-                    <div class="variant">
-                        <div class="w-1/2 mobile-max:w-full">
-                            <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Warna Produk</p>
-                            <input
-                                class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                                type="text" id="warna0" name="variants[0][warna]" placeholder="contoh: Merah"
-                                required>
-                        </div>
-                        <div class="size flex items-center gap-4 mt-2 mobile-max:flex-col">
-                            <div class="w-full">
-                                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Ukuran</p>
+                    <div class="border-t border-gray-200 pt-6" id="variantContainer">
+                        <h2 class="text-lg font-bold text-gray-900 mb-4">Varian & Detail Produk</h2>
+                        <div class="variant bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4 relative">
+                            <div class="w-full md:w-1/2 mb-4">
+                                <label class="block text-sm font-bold text-gray-700 mb-2">Warna / Jenis Varian</label>
                                 <input
-                                    class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                                    type="text" id="ukuran" name="variants[0][sizes][0][ukuran]"
-                                    placeholder="contoh: 3x4/XXL" required>
+                                    class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                                    type="text" id="warna0" name="variants[0][warna]" placeholder="contoh: Merah, Basic, dll"
+                                    required>
                             </div>
-                            <div class="w-full">
-                                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Stok</p>
-                                <input
-                                    class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                                    type="number" id="stok" name="variants[0][sizes][0][stok]"
-                                    placeholder="contoh: 20" required>
+                            
+                            <div class="size flex flex-col md:flex-row items-end gap-4 mt-4 bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-gray-700 mb-2">Ukuran / Kapasitas</label>
+                                    <input
+                                        class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                        type="text" id="ukuran" name="variants[0][sizes][0][ukuran]"
+                                        placeholder="contoh: 3x4 / 4 Orang" required>
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-gray-700 mb-2">Stok (pcs)</label>
+                                    <input
+                                        class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                        type="number" id="stok" name="variants[0][sizes][0][stok]"
+                                        placeholder="contoh: 20" required>
+                                </div>
+                                <div class="w-full">
+                                    <label class="block text-xs font-bold text-gray-700 mb-2">Harga Sewa / Hari (Rp)</label>
+                                    <input
+                                        class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                                        type="number" id="harga_sewa" name="variants[0][sizes][0][harga_sewa]"
+                                        placeholder="contoh: 15000" required>
+                                </div>
                             </div>
-                            <div class="w-full">
-                                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Harga Sewa
-                                </p>
-                                <input
-                                    class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                                    type="number" id="harga_sewa" name="variants[0][sizes][0][harga_sewa]"
-                                    placeholder="contoh: 10000" required>
+                            
+                            <div class="sizeContainer mt-3 text-right w-full">
+                                <button type="button" class="inline-flex items-center gap-1 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-bold text-xs transition"
+                                    onclick="addSize(this.parentElement)">
+                                    <i class="bi bi-plus-lg"></i> Tambah Sub-varian
+                                </button>
                             </div>
-                            {{-- <div>
-                                <p class="opacity-0">button</p>
-                                <button type="button" class="py-3 px-4 rounded flex items-center justify-center h-full bg-red-100 text-red-500"
-                                    onclick="removeSize(this)"><i class="bi bi-trash3-fill"></i></button>
-                            </div> --}}
-                        </div>
-                        <div class="sizeContainer mt-2 mobile-max:w-full">
-                            <button type="button" class="mobile-max:w-full p-2 bg-blue-500 rounded mt-2 text-white font-medium text-[14px]"
-                                onclick="addSize(this.parentElement)">Tambah Detail Variant</button>
-                            {{-- <button type="button" class="p-2 bg-red-500 rounded mt-2 text-white font-medium text-[14px]" onclick="removeVariant(this)">Hapus Warna</button> --}}
                         </div>
                     </div>
-                </div>
-                <div class="w-full flex items-center gap-2">
-                    <button type="button" class="mobile-max:w-full p-2 bg-blue-500 rounded text-white font-medium text-[14px]"
-                        onclick="addVariant()">Tambah Warna</button>
-                    <button class="mobile-max:w-full p-2 bg-green-500 rounded text-white font-medium text-[14px]"
-                        id="simpan-data-produk">Simpan
-                        Data</button>
-                </div>
-            </form>
+                    
+                    <div class="flex flex-col sm:flex-row items-center gap-3 border-t border-gray-200 pt-6">
+                        <button type="button" class="w-full sm:w-auto px-6 py-3 bg-gray-800 text-white rounded-xl font-bold text-sm hover:bg-gray-900 shadow-sm transition"
+                            onclick="addVariant()">+ Tambah Varian Utama</button>
+                        <button class="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 shadow-md transition ml-auto"
+                            id="simpan-data-produk">
+                            <i class="bi bi-floppy-fill mr-1"></i> Simpan Data Produk
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -127,50 +146,58 @@
             const variantContainer = document.getElementById('variantContainer');
             const variantCount = document.querySelectorAll('.variant').length;
             const newVariant = `
-        <div class="variant">
-            <div class="w-1/2 mt-4 mobile-max:w-full">
-                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Warna Produk</p>
-                <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                    type="text" id="warna${variantCount}" name="variants[${variantCount}][warna]" placeholder="contoh: Merah" required>
+        <div class="variant bg-gray-50 border border-gray-200 rounded-xl p-5 mb-4 relative mt-4">
+            <button type="button" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 bg-white border border-gray-200 hover:bg-red-50 hover:border-red-200 rounded-lg p-2 transition shadow-sm flex items-center justify-center" onclick="removeVariant(this)" title="Hapus Varian Utama ini">
+                <i class="bi bi-trash-fill"></i>
+            </button>
+            <div class="w-full md:w-1/2 mb-4">
+                <label class="block text-sm font-bold text-gray-700 mb-2">Warna / Jenis Varian</label>
+                <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
+                    type="text" id="warna${variantCount}" name="variants[${variantCount}][warna]" placeholder="contoh: Merah, Basic, dll" required>
             </div>
-            <div class="sizeContainer mt-2 mobile-max:w-full">
-                <button type="button" class="mobile-max:w-full p-2 bg-blue-500 rounded mt-2 text-white font-medium text-[14px]" onclick="addSize(this.parentElement)">Tambah Detail Variant</button>
-                <button type="button" class="mobile-max:w-full p-2 bg-red-500 rounded mt-2 text-white font-medium text-[14px]" onclick="removeVariant(this)">Hapus Warna</button>
+            
+            <div class="sizeContainer mt-3 text-right w-full">
+                <button type="button" class="inline-flex items-center gap-1 px-4 py-2 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg font-bold text-xs transition" onclick="addSize(this.parentElement)">
+                    <i class="bi bi-plus-lg"></i> Tambah Sub-varian
+                </button>
             </div>
         </div>
     `;
             variantContainer.insertAdjacentHTML('beforeend', newVariant);
+            
+            // Automatically add one size input inside the new variant
+            const newestVariant = variantContainer.lastElementChild;
+            addSize(newestVariant.querySelector('.sizeContainer'));
         }
 
         function addSize(sizeContainer) {
             const variantIndex = Array.from(document.querySelectorAll('.variant')).indexOf(sizeContainer.parentElement);
             const sizeCount = sizeContainer.parentElement.querySelectorAll('.size').length + 1;
             const newSize = `
-        <div class="size flex items-center gap-4 mt-2 mobile-max:flex-col">
+        <div class="size flex flex-col md:flex-row items-end gap-4 mt-4 bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
             <div class="w-full">
-                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Ukuran</p>
-                <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                    type="text" name="variants[${variantIndex}][sizes][${sizeCount}][ukuran]" placeholder="contoh: 3x4/XXL" required>
+                <label class="block text-xs font-bold text-gray-700 mb-2">Ukuran / Kapasitas</label>
+                <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                    type="text" name="variants[${variantIndex}][sizes][${sizeCount}][ukuran]" placeholder="contoh: 3x4 / 4 Orang" required>
             </div>
             <div class="w-full">
-                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Stok</p>
-                <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                <label class="block text-xs font-bold text-gray-700 mb-2">Stok (pcs)</label>
+                <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
                     type="number" name="variants[${variantIndex}][sizes][${sizeCount}][stok]" placeholder="contoh: 20" required>
             </div>
             <div class="w-full">
-                <p class="block uppercase tracking-wide text-gray-700 text-xs font-bold mb-2">Harga Sewa</p>
-                <input class="appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-3 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                    type="number" name="variants[${variantIndex}][sizes][${sizeCount}][harga_sewa]" placeholder="contoh: 10000" required>
+                <label class="block text-xs font-bold text-gray-700 mb-2">Harga Sewa / Hari (Rp)</label>
+                <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
+                    type="number" name="variants[${variantIndex}][sizes][${sizeCount}][harga_sewa]" placeholder="contoh: 15000" required>
             </div>
-            <div>
-                <p class="opacity-0">button</p>
-                <button type="button" class="py-3 px-4 rounded flex items-center justify-center h-full bg-red-100 text-red-500 mobile-max:w-fit"
-                    onclick="removeSize(this)"><i class="bi bi-trash3-fill"></i></button>
+            <div class="pb-1">
+                <button type="button" class="px-3.5 py-2.5 rounded-lg flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white border border-red-100 transition shadow-sm"
+                    onclick="removeSize(this)" title="Hapus Sub-varian"><i class="bi bi-trash-fill"></i></button>
             </div>
         </div>
     `;
             sizeContainer.insertAdjacentHTML('beforebegin', newSize);
-            sizeContainer.querySelector('.size:last-child button').style.display = 'inline-block';
+            sizeContainer.parentElement.querySelector('.size:last-child button').style.display = 'inline-flex';
         }
 
         function removeVariant(button) {
@@ -207,7 +234,7 @@
             input.type = 'url';
             input.name = 'foto_produk_url[]';
             input.placeholder = 'https://example.com/image.jpg';
-            input.className = 'appearance-none block w-full bg-gray-200 text-gray-700 border border-gray-200 rounded py-2 px-4 leading-tight focus:outline-none focus:bg-white focus:border-gray-500 mb-2';
+            input.className = 'block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors mb-3';
             container.appendChild(input);
         }
 

@@ -18,7 +18,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
-use PhpParser\Node\Stmt\Switch_;
 
 class TransaksiController extends Controller
 {
@@ -60,6 +59,44 @@ class TransaksiController extends Controller
                 'biaya_admin' => 'required|integer',
             ], $message_error);
 
+            $produk_details = request()->input('produk_details');
+            $resolved_variants = [];
+
+            // 1. Validasi stok semua produk terlebih dahulu (Atomic check)
+            foreach ($produk_details as $detail) {
+                $detail_variant_produk = DetailVariantProduk::join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
+                    ->where('variant_produk.id_produk', $detail['id_produk'])
+                    ->where('variant_produk.warna', $detail['warna'])
+                    ->where('detail_variant_produk.ukuran', $detail['ukuran'])
+                    ->select('detail_variant_produk.*')
+                    ->first();
+
+                if (!$detail_variant_produk) {
+                    return response()->json([
+                        'message' => 'Varian produk tidak ditemukan',
+                        'id_produk' => $detail['id_produk'],
+                        'warna' => $detail['warna'],
+                        'ukuran' => $detail['ukuran']
+                    ], 404);
+                }
+
+                if ($detail_variant_produk->stok < $detail['qty']) {
+                    return response()->json([
+                        'message' => 'Stok produk tidak mencukupi',
+                        'id_produk' => $detail['id_produk'],
+                        'warna' => $detail['warna'],
+                        'ukuran' => $detail['ukuran'],
+                        'stok_tersedia' => $detail_variant_produk->stok,
+                        'qty_diminta' => $detail['qty']
+                    ], 400);
+                }
+
+                $resolved_variants[] = [
+                    'input' => $detail,
+                    'model' => $detail_variant_produk
+                ];
+            }
+
             // Mengisi tabel penyewaan
             $table_penyewaan = new Penyewaan();
             $table_penyewaan->id_user = $id_user;
@@ -69,52 +106,39 @@ class TransaksiController extends Controller
             $table_penyewaan->status_penyewaan = 'Pending';
             $table_penyewaan->save();
 
-            if (request()->input('metode') == 'COD') {
-                $table_pembayaran = new PembayaranPenyewaan();
-                $table_pembayaran->id_penyewaan = $table_penyewaan->id;
-                $table_pembayaran->bukti_pembayaran = 'Belum di isi';
-                $table_pembayaran->jaminan_sewa = 'Belum di isi';
-                $table_pembayaran->jumlah_pembayaran = 0;
-                $table_pembayaran->kembalian_pembayaran = 0;
-                $table_pembayaran->biaya_admin = request()->input('biaya_admin');
-                $table_pembayaran->kurang_pembayaran = 0;
-                $table_pembayaran->total_pembayaran = 0;
-                $table_pembayaran->metode = request()->input('metode');
-                $table_pembayaran->save();
-            }
+            // Selalu buat entri PembayaranPenyewaan dengan status default 'Belum lunas'
+            $table_pembayaran = new PembayaranPenyewaan();
+            $table_pembayaran->id_penyewaan = $table_penyewaan->id;
+            $table_pembayaran->bukti_pembayaran = 'Belum di isi';
+            $table_pembayaran->jaminan_sewa = 'Belum di isi';
+            $table_pembayaran->jumlah_pembayaran = 0;
+            $table_pembayaran->kembalian_pembayaran = 0;
+            $table_pembayaran->biaya_admin = request()->input('biaya_admin', 0);
+            $table_pembayaran->kurang_pembayaran = 0;
+            $table_pembayaran->total_pembayaran = 0;
+            $table_pembayaran->metode = request()->input('metode');
+            $table_pembayaran->status_pembayaran = 'Belum lunas';
+            $table_pembayaran->save();
 
-            // Mengisi tabel detail_penyewaan
-            $produk_details = request()->input('produk_details');
+            // Mengisi tabel detail_penyewaan dan kurangi stok
+            foreach ($resolved_variants as $item) {
+                $detail = $item['input'];
+                $variant_model = $item['model'];
 
-            foreach ($produk_details as $detail) {
                 $table_detail_penyewaan = new DetailPenyewaan();
                 $table_detail_penyewaan->id_penyewaan = $table_penyewaan->id;
                 $table_detail_penyewaan->id_produk = $detail['id_produk'];
+                $table_detail_penyewaan->id_detail_variant_produk = $variant_model->id;
                 $table_detail_penyewaan->warna_produk = $detail['warna'];
                 $table_detail_penyewaan->ukuran = $detail['ukuran'];
                 $table_detail_penyewaan->qty = $detail['qty'];
+                $table_detail_penyewaan->harga_sewa_satuan = $variant_model->harga_sewa ?? ($detail['subtotal'] / max(1, $detail['qty']));
                 $table_detail_penyewaan->subtotal = $detail['subtotal'];
                 $table_detail_penyewaan->save();
 
                 // Mengurangi stok produk di tabel detail_variant_produk
-                $detail_variant_produk = DetailVariantProduk::join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
-                    ->where('variant_produk.id_produk', $detail['id_produk'])
-                    ->where('variant_produk.warna', $detail['warna'])
-                    ->where('detail_variant_produk.ukuran', $detail['ukuran'])
-                    ->select('detail_variant_produk.*')
-                    ->first();
-
-                if ($detail_variant_produk) {
-                    $detail_variant_produk->stok -= $detail['qty'];
-                    $detail_variant_produk->save();
-                } else {
-                    return response()->json([
-                        'message' => 'Varian produk tidak ditemukan',
-                        'id_produk' => $detail['id_produk'],
-                        'warna' => $detail['warna'],
-                        'ukuran' => $detail['ukuran']
-                    ], 404);
-                }
+                $variant_model->stok -= $detail['qty'];
+                $variant_model->save();
             }
 
             $detail_penyewaan = DetailPenyewaan::where('id_penyewaan', $table_penyewaan->id)->get();
@@ -149,13 +173,19 @@ class TransaksiController extends Controller
                 return response()->json(['message' => $validate->errors()], 400);
             }
 
-            $request->merge([
-                'metode' => 'Transfer',
-                'status_pembayaran' => 'Lunas',
-                'jenis_transaksi' => 'Ambil ditempat',
-            ]);
-
-            $pembayaran = new PembayaranPenyewaan($request->all());
+            $pembayaran = PembayaranPenyewaan::where('id_penyewaan', $request->id_penyewaan)->first();
+            if (!$pembayaran) {
+                $pembayaran = new PembayaranPenyewaan();
+                $pembayaran->id_penyewaan = $request->id_penyewaan;
+            }
+            $pembayaran->jumlah_pembayaran = $request->jumlah_pembayaran;
+            $pembayaran->kembalian_pembayaran = $request->kembalian_pembayaran;
+            $pembayaran->biaya_admin = $request->biaya_admin;
+            $pembayaran->kurang_pembayaran = $request->kurang_pembayaran;
+            $pembayaran->total_pembayaran = $request->total_pembayaran;
+            $pembayaran->metode = 'Transfer';
+            $pembayaran->jenis_transaksi = 'Ambil ditempat';
+            $pembayaran->status_pembayaran = 'Menunggu Verifikasi';
 
             if ($request->hasFile('bukti_pembayaran')) {
                 $buktiPembayaran = $request->file('bukti_pembayaran');
@@ -172,28 +202,6 @@ class TransaksiController extends Controller
             }
 
             $pembayaran->save();
-
-            if ($id_toko != null) {
-                $pemasukanData = [
-                    [
-                        'id_user' => $id_toko,
-                        'sumber' => 'Penyewaan',
-                        'deskripsi' => 'Layanan Penyewaan Toko',
-                        'nominal' => $request->total_pembayaran,
-                    ],
-                    [
-                        'id_user' => $id_toko,
-                        'sumber' => 'Service',
-                        'deskripsi' => 'Biaya Admin',
-                        'nominal' => $request->biaya_admin,
-                    ]
-                ];
-
-                foreach ($pemasukanData as $data) {
-                    $pemasukan = new Pemasukan($data);
-                    $pemasukan->save();
-                }
-            }
 
             return response()->json(['message' => 'Pembayaran berhasil disimpan', 'data' => $pembayaran], 201);
         } catch (\Exception $error) {
@@ -500,5 +508,51 @@ class TransaksiController extends Controller
     public function rincianProduk(Request $request)
     {
 
+    }
+
+    public function batalkanPesanan($id_penyewaan)
+    {
+        try {
+            $penyewaan = Penyewaan::find($id_penyewaan);
+            if (!$penyewaan) {
+                return response()->json(['message' => 'Pesanan tidak ditemukan'], 404);
+            }
+            if ($penyewaan->status_penyewaan !== 'Pending') {
+                return response()->json(['message' => 'Hanya pesanan berstatus Pending yang dapat dibatalkan'], 400);
+            }
+
+            $penyewaan->status_penyewaan = 'Dibatalkan';
+            $penyewaan->save();
+
+            $this->restoreStok($id_penyewaan);
+
+            return response()->json(['message' => 'Pesanan berhasil dibatalkan dan stok dikembalikan'], 200);
+        } catch (\Exception $error) {
+            Log::error($error->getMessage());
+            return response()->json(['message' => 'Terjadi kesalahan server', 'error' => $error->getMessage()], 500);
+        }
+    }
+
+    private function restoreStok($id_penyewaan)
+    {
+        $details = DetailPenyewaan::where('id_penyewaan', $id_penyewaan)->get();
+        foreach ($details as $detail) {
+            $variant = null;
+            if ($detail->id_detail_variant_produk) {
+                $variant = DetailVariantProduk::find($detail->id_detail_variant_produk);
+            }
+            if (!$variant) {
+                $variant = DetailVariantProduk::join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
+                    ->where('variant_produk.id_produk', $detail->id_produk)
+                    ->where('variant_produk.warna', $detail->warna_produk)
+                    ->where('detail_variant_produk.ukuran', $detail->ukuran)
+                    ->select('detail_variant_produk.*')
+                    ->first();
+            }
+            if ($variant) {
+                $variant->stok += $detail->qty;
+                $variant->save();
+            }
+        }
     }
 }

@@ -1,149 +1,176 @@
 @extends('layouts.customers.layouts-customer')
 @section('customer-content')
-    <div class="--container sm:flex sm:flex-col sm:gap-8 w-full h-auto px-6 py-5 sm:px-8 sm:py-5">
-        <div class="--title">
-            <h1 class="xl:text-[28px] font-black">Menu Order, Transaksi & Denda</h1>
-        </div>
-        <div class="--action flex xl:items-center w-full xl:justify-between">
-            <ul class="--menu flex wrap gap-4 items-center">
-                <li><a class="{{ $title === 'Order Masuk' ? 'border-b-2 border-b-[#FF3F42] text-[#FF3F42]' : '' }} hover:border-b-2 hover:border-b-[#FF3F42] hover:text-[#FF3F42] p-2 xl:text-[16px] font-medium text-[#D1CDD0]"
-                        href="">Order Masuk</a></li>
-                <li><a class="{{ $title === 'Sewa Berlangsung' ? 'border-b-2 border-b-[#FF3F42] text-[#FF3F42]' : '' }} hover:border-b-2 hover:border-b-[#FF3F42] hover:text-[#FF3F42] p-2 xl:text-[16px] font-medium text-[#D1CDD0]"
-                        href="{{ route('menu-transaksi.sewa-berlangsung', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Sewa
-                        Berlangsung</a></li>
-                {{-- <li><a class="{{ $title === 'Denda' ? 'border-b-2 border-b-[#FF3F42] text-[#FF3F42]' : '' }} hover:border-b-2 hover:border-b-[#FF3F42] hover:text-[#FF3F42] p-2 xl:text-[16px] font-medium text-[#D1CDD0]"
-                        href="{{ route('menu-transaksi.denda-transaksi', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Denda</a>
-                </li> --}}
-                <li><a class="{{ $title === 'Order Selesai' ? 'border-b-2 border-b-[#FF3F42] text-[#FF3F42]' : '' }} hover:border-b-2 hover:border-b-[#FF3F42] hover:text-[#FF3F42] p-2 xl:text-[16px] font-medium text-[#D1CDD0]"
-                        href="{{ route('menu-transaksi.order-selesai', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Selesai</a>
-                </li>
-            </ul>
-            <div class="--filter flex items-center gap-4">
-                <form method="GET">
-                    <div class="--filter-search relative flex">
-                        <input type="search" value="{{ $search }}" name="search"
-                            class="shadow-box-shadow-11 rounded-lg bg-white appearance-none px-6 py-2"
-                            placeholder="Cari nama...enter" aria-label="Search" id="exampleFormControlInput3"
-                            aria-describedby="button-addon3" />
-                    </div>
-                </form>
-                <form method="GET" id="form-filter-order-selesai">
-                    <div class="--filter-tanggal flex xl:items-center xl:gap-4">
-                        <div class="--filter-dropdown">
-                            <div class="w-fit relative">
-                                <select
-                                    class="shadow-box-shadow-11 cursor-pointer rounded-lg bg-white appearance-none px-6 py-2"
-                                    name="filter-order-selesai" id="filter-order-selesai">
-                                    <option value="Semua">Semua</option>
-                                    <option value="Pengembalian">Belum Dikonfirmasi</option>
-                                    <option value="Selesai">Sudah Dikonfirmasi</option>
-                                </select>
-                                <i class="absolute right-2 top-1/2 transform -translate-y-1/2 bi bi-caret-down-fill"></i>
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col gap-8">
+        <!-- Header & Tabs -->
+        <div class="flex flex-col gap-6">
+            <div>
+                <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Manajemen Transaksi</h1>
+                <p class="text-gray-500 font-medium mt-1">Kelola semua pesanan masuk, penyewaan aktif, dan riwayat transaksi toko Anda.</p>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 pb-4 lg:pb-0">
+                <!-- Tabs -->
+                <nav class="flex overflow-x-auto hide-scrollbar gap-6" aria-label="Tabs">
+                    <a href="{{ route('menu-transaksi.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Order Masuk' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Order Masuk
+                    </a>
+                    <a href="{{ route('menu-transaksi.sewa-berlangsung', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Sewa Berlangsung' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Sewa Berlangsung
+                    </a>
+                    <a href="{{ route('menu-transaksi.order-selesai', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Order Selesai' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Selesai
+                    </a>
+                </nav>
+
+                <!-- Filters -->
+                <div class="flex flex-col sm:flex-row items-center gap-3">
+                    <form method="GET" class="w-full sm:w-auto">
+                        <div class="relative w-full sm:w-64">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="bi bi-search text-gray-400"></i>
+                            </div>
+                            <input type="search" value="{{ $search }}" name="search"
+                                class="block w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm transition-shadow"
+                                placeholder="Cari nama penyewa..." id="exampleFormControlInput3" />
+                        </div>
+                    </form>
+                    
+                    <form method="GET" id="form-filter-order-selesai" class="w-full sm:w-auto">
+                        <div class="relative">
+                            <select name="filter-order-selesai" id="filter-order-selesai"
+                                class="block w-full sm:w-48 pl-3 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm cursor-pointer appearance-none">
+                                <option value="Semua">Semua Status</option>
+                                <option value="Pengembalian">Belum Dikonfirmasi</option>
+                                <option value="Selesai">Sudah Dikonfirmasi</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
+                                <i class="bi bi-chevron-down text-xs"></i>
                             </div>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
-        <div class="--warnging-alert w-fit p-2 rounded-lg bg-orange-500/20 flex items-center gap-2">
-            <div class="--icon"><i class="text-orange-500 bi bi-exclamation-diamond-fill"></i></div>
-            <p class="text-[14px] font-medium text-orange-500">Silahkan pilih tombol <b>ACC</b> untuk pelanggan yang
-                melakukan pengembalian dan bisa di filter dengan memilih pilihan <b>Belum Dikonfirmasi</b>! dan anda bisa
-                melihat riwayat transaksi yang sudah selesai dengan memilih filter
-                <b>Sudah Dikonfirmasi</b>.
-            </p>
+
+        <!-- Alert Info -->
+        <div class="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex gap-3 shadow-sm">
+            <div class="text-emerald-500 mt-0.5"><i class="bi bi-info-circle-fill text-lg"></i></div>
+            <div>
+                <h4 class="text-sm font-bold text-emerald-900">Riwayat & Pengembalian</h4>
+                <p class="text-[13px] font-medium text-emerald-700 mt-1">Silakan pilih tombol <strong>ACC</strong> untuk menyetujui pelanggan yang melakukan pengembalian barang. Anda juga bisa menggunakan filter <strong>Belum Dikonfirmasi</strong> untuk mempermudah pencarian.</p>
+            </div>
         </div>
-        <div class="--table bg-white w-full">
-            <table class="w-full bg-white border-spacing-2">
-                <thead class="bg-white sticky top-0 z-20 shadow-box-shadow-11">
-                    <tr class="text-left">
-                        <th class="px-4 py-2">Client</th>
-                        <th class="px-4 py-2">Tanggal Dimulai</th>
-                        <th class="px-4 py-2">Tanggal Selesai</th>
-                        <th class="px-4 py-2">Status</th>
-                        <th class="px-4 py-2">Pembayaran</th>
-                        <th class="px-4 py-2">Metode</th>
-                        <th class="px-4 py-2">Produk</th>
-                        <th class="px-4 py-2">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white">
-                    <tr>
-                        <td colspan="7" style="height: 15px;"></td>
-                    </tr>
-                    @foreach ($data as $item)
-                        <tr
-                            class="shadow-box-shadow-8 p-2 hover:scale-105 hover:z-10 text-xs transition transform duration-200 text-[14px] font-medium">
-                            <td class="px-4 py-2 flex items-center gap-2">
-                                <img class="w-[40px] h-[40px] rounded-[10px] object-cover"
-                                    src="@userPhoto($item->foto_users)"
-                                    alt="">
-                                <div>{{ $item->nama_penyewa }}</div>
-                            </td>
-                            <td class="px-4 py-2">{{ Carbon\Carbon::parse($item->tanggal_mulai)->format('d F Y') }}</td>
-                            <td class="px-4 py-2">{{ Carbon\Carbon::parse($item->tanggal_selesai)->format('d F Y') }}</td>
-                            <td class="px-4 py-2">
-                                <p class="py-1 px-2 rounded-md {{ $item->status_penyewaan == 'Pengembalian' ? 'bg-amber-500/20 text-amber-900' : 'bg-green-500/20 text-green-900' }} text-center">
-                                    {{ $item->status_penyewaan }}</p>
-                            </td>
-                            <td class="px-4 py-2">
-                                <p
-                                    class="py-1 px-2 rounded-md {{ $item->status_pembayaran == 'Belum lunas' ? 'bg-red-500/20 text-red-900' : '' }} bg-green-500/20 text-green-900 text-center">
-                                    {{ $item->status_pembayaran }}</p>
-                            </td>
-                            <td class="px-4 py-2">{{ $item->metode }}</td>
-                            <td class="px-4 py-2 flex items-center gap-2">
-                                <img class="w-[40px] h-[40px] rounded-[10px] object-cover"
-                                    src="{{ asset('assets/image/customers/produk/' . $item->foto_depan) }}" alt="">
-                                <div class="max-w-[250px] line-clamp-1">{{ $item->nama }}</div>
-                            </td>
-                            <td class="px-4 py-2"><a href="{{ route('menu-transaksi.terima-order-masuk', ['id_penyewaan' => Crypt::encrypt($item->id_penyewaan)]) }}"
-                                    class="py-1 px-2 rounded-md bg-blue-500/20 text-blue-900 text-center hover:text-blue-900">
+
+        <!-- Table Data -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50/50 border-b border-gray-100">
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Penyewa</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Produk</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Durasi Sewa</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Pembayaran</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse ($data as $item)
+                            <tr class="hover:bg-gray-50/50 transition-colors group">
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <img class="w-10 h-10 rounded-full object-cover border border-gray-200"
+                                            src="@userPhoto($item->foto_users)" alt="{{ $item->nama_penyewa }}">
+                                        <div class="font-bold text-gray-900 text-sm">{{ $item->nama_penyewa }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center gap-3">
+                                        <img class="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm"
+                                            src="{{ asset('assets/image/customers/produk/' . $item->foto_depan) }}" alt="{{ $item->nama }}">
+                                        <div class="text-sm font-bold text-gray-800 max-w-[200px] truncate" title="{{ $item->nama }}">{{ $item->nama }}</div>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col gap-1">
+                                        <span class="text-xs font-bold text-gray-800"><i class="bi bi-calendar-event text-blue-500 mr-1"></i> {{ Carbon\Carbon::parse($item->tanggal_mulai)->format('d M Y') }}</span>
+                                        <span class="text-xs font-medium text-gray-500 pl-4">s/d {{ Carbon\Carbon::parse($item->tanggal_selesai)->format('d M Y') }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex flex-col items-start gap-1">
+                                        <span class="px-2.5 py-1 rounded-md text-[11px] font-bold {{ $item->status_pembayaran == 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                            {{ $item->status_pembayaran }}
+                                        </span>
+                                        <span class="text-[11px] font-medium text-gray-500 ml-1 border-b border-gray-300 border-dashed pb-0.5">Via {{ $item->metode }}</span>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold {{ $item->status_penyewaan == 'Pengembalian' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }} shadow-sm flex items-center gap-1.5 w-fit">
+                                        @if ($item->status_penyewaan == 'Pengembalian')
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Belum Dikonfirmasi
+                                        @else
+                                            <i class="bi bi-check2-all text-[14px]"></i> Selesai
+                                        @endif
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     @if ($item->status_penyewaan == 'Pengembalian')
-                                    ACC
+                                        <a href="{{ route('menu-transaksi.terima-order-masuk', ['id_penyewaan' => Crypt::encrypt($item->id_penyewaan)]) }}"
+                                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 text-white font-bold rounded-xl hover:bg-amber-600 hover:shadow-md hover:-translate-y-0.5 transition-all focus:ring-2 focus:ring-amber-500 focus:ring-offset-1">
+                                            <i class="bi bi-clipboard-check"></i> ACC
+                                        </a>
                                     @else
-                                    Detail
+                                        <a href="{{ route('menu-transaksi.terima-order-masuk', ['id_penyewaan' => Crypt::encrypt($item->id_penyewaan)]) }}"
+                                            class="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 hover:shadow-sm hover:-translate-y-0.5 transition-all focus:ring-2 focus:ring-gray-300 focus:ring-offset-1">
+                                            <i class="bi bi-eye"></i> Detail
+                                        </a>
                                     @endif
-                                </a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="7" style="height: 15px;"></td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="px-6 py-12 text-center">
+                                    <div class="flex flex-col items-center justify-center">
+                                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                                            <i class="bi bi-check-circle text-2xl text-gray-400"></i>
+                                        </div>
+                                        <h4 class="text-base font-bold text-gray-700 mb-1">Belum ada riwayat selesai</h4>
+                                        <p class="text-sm text-gray-500">Transaksi yang sudah selesai akan muncul di sini.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Ambil nilai dari query string jika tersedia
             var filterOrderSelesai = "{{ request()->input('filter-order-selesai') }}";
             var searchQuery = "{{ request()->input('search') }}";
 
-            // Set nilai input filter-order-selesai saat halaman dimuat
             if (filterOrderSelesai) {
                 document.getElementById('filter-order-selesai').value = filterOrderSelesai;
             }
 
-            // Set nilai input search saat halaman dimuat
             if (searchQuery) {
                 document.querySelector('input[name="search"]').value = searchQuery;
             }
 
-            // Event listener untuk filter-order-selesai
-            document.getElementById('filter-order-selesai').addEventListener('change', function() {
-                submitForm();
-            });
+            document.getElementById('filter-order-selesai').addEventListener('change', submitForm);
 
-            // Fungsi untuk men-submit form
             function submitForm() {
-                // Ambil nilai dari input filter-order-selesai dan search
                 var filterOrderSelesai = document.getElementById('filter-order-selesai').value;
                 var search = document.querySelector('input[name="search"]').value;
 
-                // Bangun URL dengan parameter query yang sesuai
-                var url = window.location.pathname + '?'; // Ambil path URL saat ini
+                var url = window.location.pathname + '?'; 
                 if (filterOrderSelesai) {
                     url += 'filter-order-selesai=' + encodeURIComponent(filterOrderSelesai) + '&';
                 }
@@ -151,23 +178,15 @@
                     url += 'search=' + encodeURIComponent(search);
                 }
 
-                // Redirect halaman dengan URL yang baru dibangun
                 window.location.href = url;
             }
 
-            // Event listener untuk input search
             document.querySelector('input[name="search"]').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     submitForm();
                 }
             });
-
-            // Update the form action when the search button is clicked
-            document.getElementById('button-addon3').addEventListener('click', function() {
-                submitForm();
-            });
         });
-        </script>
-
+    </script>
 @endsection

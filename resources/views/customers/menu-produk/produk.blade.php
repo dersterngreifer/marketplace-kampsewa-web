@@ -1,185 +1,202 @@
-{{-- ambil turunan design --}}
-@extends('customers.menu-dashboard-cust.dashboard')
-{{-- gunakan section dengan nama yang sesuai untuk custom content --}}
+@extends('layouts.customers.layouts-customer')
 @section('customer-content')
-    {{-- container utama pembungkus kontent utama --}}
-    <div class="--container small-desktop:px-7 small-desktop:py-2 px-10 py-5 flex flex-col gap-8">
-        {{-- heading dan deskripsi halaman --}}
-        <div class="--wrapper-heading-wrapper-deskripsi-halaman">
-            <h1 class="text-[24px] font-bold capitalize">Manajemen Produk Anda!</h1>
-            <p class="text-[14px]">Halaman ini berisi data produk anda, anda bisa menambah, mengedit dan menghapus produk,
-                melihat produk yang
-                sedang disewa, menampilkan berdasarkan produk terlaris disewa, harga sewa termurah - termahal, produk
-                terbaru
-                dan terlama sekaligus bisa mencari berdasarkan kosakata nama produk dan harga. Jika anda masih bingung lihat
-                menu cara penggunaan fitur pada menu <a href=""
-                    class="text-blue-700 underline hover:underline font-bold">Dokumentasi</a>.</p>
+    <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex flex-col gap-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col gap-2">
+            <h1 class="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">Manajemen Produk Anda!</h1>
+            <p class="text-gray-500 font-medium text-sm sm:text-base max-w-4xl">
+                Halaman ini berisi data produk Anda. Anda bisa menambah, mengedit, dan menghapus produk,
+                melihat produk yang sedang disewa, mengurutkan berdasarkan produk terlaris, harga, maupun waktu pembuatan. 
+                Jika bingung, lihat <a href="#" class="text-blue-600 hover:text-blue-700 font-bold hover:underline transition-all">Dokumentasi</a>.
+            </p>
         </div>
 
-        {{-- wrapper navigation item menu --}}
-        <div class="--wrapper-navigation-menu w-full">
-            <ul class="flex items-center gap-x-4 gap-y-4 flex-wrap">
-                <li><a class="{{ $title == 'Produk Menu | KampSewa' ? 'bg-[#F8F7F4] font-medium' : '' }} hover:font-medium hover:bg-[#F8F7F4] hover:text-[#0F172A] text-[14px] px-4 py-2 rounded-full"
-                        href="{{ route('menu-produk.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Semua
-                        Produk</a></li>
-                <li><a class="text-[14px] hover:font-medium px-4 py-2 rounded-full hover:bg-[#F8F7F4] hover:text-[#0F172A]"
-                        href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Kelola
-                        Produk</a></li>
-                <li><a class="text-[14px] hover:font-medium px-4 py-2 rounded-full hover:bg-[#F8F7F4] hover:text-[#0F172A]"
-                        href="{{ route('menu-produk.sedang-disewa', ['id_user' => Crypt::encrypt(session('id_user'))]) }}">Sedang
-                        Disewa</a></li>
-            </ul>
+        <!-- Tabs Navigation -->
+        <div class="flex overflow-x-auto hide-scrollbar border-b border-gray-200 pb-px">
+            <nav class="flex gap-6" aria-label="Tabs">
+                <a href="{{ route('menu-produk.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                   class="{{ $title == 'Produk Menu | KampSewa' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                    Semua Produk
+                </a>
+                <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                   class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                    Kelola Produk
+                </a>
+                <a href="{{ route('menu-produk.sedang-disewa', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                   class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                    Sedang Disewa
+                </a>
+            </nav>
         </div>
 
-        <hr>
+        <!-- Main Content (Filter + Grid) -->
+        <div class="flex flex-col lg:flex-row gap-8 items-start relative">
+            
+            <!-- Sidebar Filter -->
+            <div class="w-full lg:w-1/4 flex-shrink-0 bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sticky top-8 z-10">
+                <form id="formSide" method="GET" class="flex flex-col gap-6">
+                    <div>
+                        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <i class="bi bi-funnel"></i> Filter Pencarian
+                        </h3>
+                    </div>
 
-        {{-- pembungkus kontent filter dan list produk --}}
-        <div class="--wrapper-filter-wrapper-list-product mobile-max:flex-col mobile-max:gap-10 w-full flex gap-4 items-start h-auto">
-            {{-- filter --}}
-            <div class="--wrapper-filter max-w-[500px] mobile-max:w-full mobile-max:relative sticky top-4">
-                <form id="formSide" method="GET" class="flex w-full flex-col gap-4">
-                    <div class="--search w-full flex flex-col gap-2">
-                        <p class="text-[14px] font-medium">Pencarian Produk:</p>
-                        <div class="relative w-full mx-auto">
+                    <!-- Search -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-bold text-gray-700">Nama Produk</label>
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="bi bi-search text-gray-400"></i>
+                            </div>
                             <input name="search" value="{{ $search }}"
-                                class="w-full py-2 px-4 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                type="search" placeholder="Search">
+                                class="w-full pl-10 pr-3 py-2.5 border border-gray-200 rounded-xl text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                                type="search" placeholder="Cari nama produk...">
                         </div>
                     </div>
 
-                    {{-- filter category --}}
-                    <div class="--search flex flex-col gap-2">
-                        <p class="text-[14px] font-medium">Pilih Category:</p>
-                        <div class="custom-select-wrapper">
-                            <select id="countries" name="filter_side" class="custom-select">
-                                <option value="" {{ empty($filter_side) ? 'selected' : '' }}>Semua</option>
-                                <option value="tenda" {{ $filter_side == 'tenda' ? 'selected' : '' }}>Tenda</option>
-                                <option value="tas" {{ $filter_side == 'tas' ? 'selected' : '' }}>Tas</option>
-                                <option value="sepatu" {{ $filter_side == 'sepatu' ? 'selected' : '' }}>Sepatu</option>
-                                <option value="perlengkapan" {{ $filter_side == 'perlengkapan' ? 'selected' : '' }}>
-                                    Perlengkapan</option>
+                    <!-- Category -->
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-bold text-gray-700">Kategori</label>
+                        <div class="relative">
+                            <select name="filter_side" class="w-full pl-4 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer transition-all">
+                                <option value="" {{ empty($filter_side) ? 'selected' : '' }}>Semua Kategori</option>
+                                @foreach ($user_categories as $kategori)
+                                    <option value="{{ strtolower($kategori) }}" {{ strtolower($filter_side) == strtolower($kategori) ? 'selected' : '' }}>
+                                        {{ ucfirst($kategori) }}
+                                    </option>
+                                @endforeach
                             </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
+                                <i class="bi bi-chevron-down text-xs"></i>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="--wrapper-button w-full">
-                        <button id="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded-full">Lakukan
-                            Aksi</button>
+                    <div class="pt-2">
+                        <button id="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl shadow-sm hover:shadow-md transition-all focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center justify-center gap-2">
+                            <i class="bi bi-check2-circle"></i> Terapkan Filter
+                        </button>
                     </div>
                 </form>
             </div>
 
-            {{-- divider --}}
-            <div class="w-[3px] h-screen bg-[#19191b] sticky top-4 mobile-max:hidden"></div>
-
-            {{-- list produk --}}
-            <div class="--wrapper-produk w-full flex flex-col gap-4">
-                <div class="w-full flex items-center justify-between">
-                    <p class="text-[14px]">{{ $result }} Hasil Produk</p>
-                    <form id="filterFormRight" method="GET">
-                        <select name="filter_right" id="filterRight" class="focus:outline-none text-[14px]">
-                            <option value="terbaru" {{ $filter_right == 'terbaru' ? 'selected' : '' }}>Terbaru</option>
-                            <option value="terlama" {{ $filter_right == 'terlama' ? 'selected' : '' }}>Terlama</option>
-                            <option value="termahal" {{ $filter_right == 'termahal' ? 'selected' : '' }}>Harga Termahal
-                            </option>
-                            <option value="termurah" {{ $filter_right == 'termurah' ? 'selected' : '' }}>Harga Termurah
-                            </option>
-                        </select>
-                    </form>
-                </div>
-                <div class="--wrapper-card w-full">
-                    @if ($produk->count() == 0)
-                        <div class="w-full h-full flex items-center justify-center">
-                            <div class="flex items-center gap-4 justify-center">
-                                <img class="w-[300px] mobile-max:w-full h-auto object-cover"
-                                    src="{{ asset('images/illustration/filling-survey.png') }}" alt="">
-                                <div>
-                                    <p class="text-[40px] font-black">OOPS!</p>
-                                    <p class="text-[16px] font-medium">Sepertinya {{ $search }} Tidak ada dalam
-                                        daftar
-                                        produk!
-                                </div>
+            <!-- Product Grid -->
+            <div class="w-full lg:w-3/4 flex flex-col gap-5">
+                
+                <!-- Toolbar Area -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-2xl shadow-sm border border-gray-100 p-3 px-5">
+                    <p class="text-sm font-bold text-gray-700">Menampilkan <span class="text-blue-600">{{ $produk->total() }}</span> Hasil Produk</p>
+                    
+                    <form id="filterFormRight" method="GET" class="flex items-center gap-2 w-full sm:w-auto">
+                        <span class="text-sm text-gray-500 hidden sm:inline">Urutkan:</span>
+                        <div class="relative w-full sm:w-48">
+                            <select name="filter_right" id="filterRight" class="w-full pl-3 pr-8 py-2 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none cursor-pointer">
+                                <option value="terbaru" {{ $filter_right == 'terbaru' ? 'selected' : '' }}>Terbaru</option>
+                                <option value="terlama" {{ $filter_right == 'terlama' ? 'selected' : '' }}>Terlama</option>
+                                <option value="termahal" {{ $filter_right == 'termahal' ? 'selected' : '' }}>Harga Tertinggi</option>
+                                <option value="termurah" {{ $filter_right == 'termurah' ? 'selected' : '' }}>Harga Terendah</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-2.5 pointer-events-none text-gray-400">
+                                <i class="bi bi-sort-down text-sm"></i>
                             </div>
                         </div>
-                    @else
-                        <div class="--card-design grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-                            @foreach ($produk as $item)
-                                <a href="{{ route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($item->id_produk)]) }}" class="hover:text-black group">
-                                    <div class="--card-item flex flex-col gap-2">
-                                        <div class="--header">
-                                            <img class="w-[250px] mobile-max:w-full mobile-max:h-full h-[250px] medium-screen:w-[200px] medium-screen:h-[200px] object-cover rounded-[30px]"
-                                                src="{{ str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
-                                                alt="{{ $item->nama_produk }}"
-                                                onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
+                    </form>
+                </div>
+
+                <!-- Products -->
+                @if ($produk->count() == 0)
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center min-h-[400px]">
+                        <img class="w-48 h-auto object-cover opacity-80 mb-6" src="{{ asset('images/illustration/filling-survey.png') }}" alt="Not Found">
+                        <h3 class="text-2xl font-black text-gray-800 mb-2">OOPS! Tidak Ada Produk</h3>
+                        <p class="text-gray-500 text-center max-w-md font-medium">Sepertinya kata kunci "<span class="text-gray-900 font-bold">{{ $search }}</span>" tidak ditemukan dalam daftar produk Anda. Silakan coba dengan kata kunci lain.</p>
+                    </div>
+                @else
+                    <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+                        @foreach ($produk as $item)
+                            <a href="{{ route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($item->id_produk)]) }}" class="group block h-full">
+                                <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col group-hover:-translate-y-1">
+                                    <!-- Image Container -->
+                                    <div class="relative w-full aspect-square overflow-hidden bg-gray-50">
+                                        <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                            src="{{ str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
+                                            alt="{{ $item->nama_produk }}"
+                                            onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
+                                        
+                                        <!-- Overlay gradient & Category Badge -->
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <div class="absolute top-3 left-3">
+                                            <span class="px-2.5 py-1 text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-white/90 backdrop-blur-sm text-gray-800 rounded-lg shadow-sm">
+                                                {{ $item->kategori_produk }}
+                                            </span>
                                         </div>
-                                        <div class="--body">
-                                            <p
-                                                class="capitalize text-[18px] font-medium line-clamp-1 group-hover:underline">
-                                                {{ $item->nama_produk }}</p>
-                                            <p class="text-[14px] text-gray-400"><i class="bi bi-box-fill"></i> Stok :
-                                                {{ $item->stok_produk }}</p>
-                                            <div class="flex items-center gap-2 mt-2">
-                                                <p
-                                                    class="text-[12px] font-medium bg-[#F6F7FF] text-[#8DBCFF] px-2 py-1 rounded-[5px]">
-                                                    {{ $item->kategori_produk }}</p>
-                                                <p
-                                                    class="text-[12px] font-medium bg-[#FEF2EC] text-[#EF9866] px-2 py-1 rounded-[5px]">
-                                                    {{ number_format($item->harga_sewa_min, 0, ',', '.') }}/Hari</p>
+                                    </div>
+
+                                    <!-- Content -->
+                                    <div class="p-4 flex flex-col flex-grow justify-between gap-3">
+                                        <div>
+                                            <h3 class="text-sm sm:text-base font-bold text-gray-900 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">
+                                                {{ $item->nama_produk }}
+                                            </h3>
+                                        </div>
+                                        
+                                        <div class="flex flex-col gap-2 mt-auto">
+                                            <div class="flex items-center gap-1.5 text-xs font-medium text-gray-500">
+                                                <i class="bi bi-box-seam text-gray-400"></i>
+                                                <span>Stok: <strong class="text-gray-700">{{ $item->stok_produk }}</strong></span>
+                                            </div>
+                                            <div class="flex items-center justify-between mt-1">
+                                                <span class="text-[13px] sm:text-sm font-black text-orange-500">
+                                                    Rp {{ number_format($item->harga_sewa_min, 0, ',', '.') }}<span class="text-[10px] text-gray-400 font-medium">/hari</span>
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                </a>
-                            @endforeach
-                        </div>
-                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- Pagination -->
+                <div class="mt-4">
+                    {{ $produk->onEachSide(1)->links('components.paginate.custom-pagination') }}
                 </div>
-                {{ $produk->onEachSide(1)->links('components.paginate.custom-pagination') }}
             </div>
         </div>
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function(){
-            // Simpan nilai search dan filter_side saat halaman dimuat
             var searchValue = "{{ $search }}";
             var filterSideValue = "{{ $filter_side }}";
 
-            // Tombol submit pada formSide
+            // Sidebar Submit
             document.getElementById('submit').addEventListener('click', function(event){
                 event.preventDefault();
                 var formSide = document.getElementById('formSide');
                 var filterRightValue = document.getElementById('filterRight').value;
 
-                // Menambahkan parameter filter_right ke URL
                 var urlParams = new URLSearchParams(window.location.search);
                 urlParams.set('filter_right', filterRightValue);
 
-                // Menyiapkan URL dengan parameter tambahan
-                var url = '?' + urlParams.toString();
-
-                // Menggabungkan parameter dari formSide ke URL
                 var formData = new FormData(formSide);
                 formData.forEach((value, key) => {
                     urlParams.set(key, value);
                 });
 
-                // Mengirimkan permintaan ke URL yang diperbarui
-                window.location.href = url + '&' + urlParams.toString();
+                window.location.href = window.location.pathname + '?' + urlParams.toString();
             });
 
-            // Menangani perubahan pada elemen select di filterFormRight
+            // Sorting Right change
             document.getElementById('filterRight').addEventListener('change', function() {
-                var filterFormRight = document.getElementById('filterFormRight');
-                var filterRightValue = filterFormRight.elements['filter_right'].value;
+                var filterRightValue = this.value;
+                var urlParams = new URLSearchParams(window.location.search);
+                urlParams.set('filter_right', filterRightValue);
+                if (searchValue) urlParams.set('search', searchValue);
+                if (filterSideValue) urlParams.set('filter_side', filterSideValue);
 
-                // Menyiapkan URL dengan parameter filter_right
-                var url = '?filter_right=' + filterRightValue;
-
-                // Menambahkan nilai search dan filter_side ke URL
-                url += '&search=' + searchValue;
-                url += '&filter_side=' + filterSideValue;
-
-                // Mengirimkan permintaan ke URL yang diperbarui
-                window.location.href = url;
+                window.location.href = window.location.pathname + '?' + urlParams.toString();
             });
         });
     </script>

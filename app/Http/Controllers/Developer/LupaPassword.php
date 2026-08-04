@@ -34,7 +34,7 @@ class LupaPassword extends Controller
             $resetPassword->expired_at = now()->addMinutes(1);
             $resetPassword->save();
 
-            $token = 'RwxiLamgrVPaRCrfSE7k';
+            $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
             $telfon = $validate['nomor_telephone'];
             $encrypt_telfon = Crypt::encryptString($telfon);
             $nama_user = $user->name;
@@ -136,7 +136,7 @@ class LupaPassword extends Controller
             $resetPassword->expired_at = now()->addMinutes(1);
             $resetPassword->save();
 
-            $token = 'RwxiLamgrVPaRCrfSE7k';
+            $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
             $telfon = $user->nomor_telephone;
             $nama_user = $user->name;
 

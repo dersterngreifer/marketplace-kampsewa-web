@@ -301,36 +301,71 @@
             </div>
         </div>
         @if ($data->status_penyewaan == 'Pending')
-            <div class="--component-terima shadow-box-shadow-8 p-4 rounded-lg">
-                <p class="font-medium text-[14px] mb-2 text-center">Jika dirasa sudah memenuhi anda maka tekan tombol
-                    terima
-                    dibawah ini,
-                    dan waktu mulai dari penyewaan client akan berlangsung.</p>
-                <form id="form-confirm-order"
-                    action="{{ route('menu-transaksi.confirm-order-masuk', ['id_penyewaan' => $data->id_penyewaan, 'id_user' => Crypt::encrypt(session('id_user')), 'parameter' => 1]) }}"
-                    method="POST">
-                    @csrf
-                    @method('PUT')
-                    <div class="w-full flex justify-center"><button id="terima-order"
-                            {{ $data->status_pembayaran == 'Belum lunas' ? 'disabled' : '' }}
-                            class="p-3 w-1/2 rounded-full {{ $data->status_pembayaran == 'Belum lunas' ? 'opacity-45' : '' }} bg-[#F6D91F] border-black border-2 font-medium text-black">Terima
-                            Order</button></div>
-                </form>
+            <div class="--component-terima shadow-box-shadow-8 p-4 rounded-lg flex flex-col gap-4">
+                <p class="font-medium text-[14px] mb-2 text-center">Jika pesanan sesuai dan bukti pembayaran valid, tekan tombol terima di bawah ini. Waktu mulai penyewaan client akan berlangsung.</p>
+                <div class="w-full flex justify-center gap-4">
+                    <form id="form-confirm-order" class="w-1/2 flex justify-center" action="{{ route('menu-transaksi.confirm-order-masuk', ['id_penyewaan' => $data->id_penyewaan, 'id_user' => Crypt::encrypt(session('id_user')), 'parameter' => 1]) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        <button id="terima-order" {{ $data->status_pembayaran == 'Belum lunas' ? 'disabled' : '' }} class="p-3 w-full rounded-full {{ $data->status_pembayaran == 'Belum lunas' ? 'opacity-45' : '' }} bg-[#F6D91F] border-black border-2 font-medium text-black hover:bg-yellow-400 transition">Terima Order</button>
+                    </form>
+                    <form class="w-1/2 flex justify-center" action="{{ route('menu-transaksi.batalkan-order', ['id_penyewaan' => $data->id_penyewaan, 'id_user' => Crypt::encrypt(session('id_user'))]) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menolak pesanan ini? Stok produk akan otomatis dikembalikan.');">
+                        @csrf
+                        @method('PUT')
+                        <button type="submit" class="p-3 w-full rounded-full bg-red-500 border-black border-2 font-medium text-white hover:bg-red-600 transition">Tolak / Batalkan Pesanan</button>
+                    </form>
+                </div>
             </div>
-            @elseif ($data->status_penyewaan == 'Pengembalian')
-            <div class="--component-terima shadow-box-shadow-8 p-4 rounded-lg">
-                <p class="font-medium text-[14px] mb-2 text-center">Jika dirasa sudah memenuhi anda maka tekan tombol
-                    terima
-                    dibawah ini,
-                    dan client anda akan memiliki status selesai.</p>
-                <form id="form-confirm-order"
-                    action="{{ route('menu-transaksi.confirm-order-masuk', ['id_penyewaan' => $data->id_penyewaan, 'id_user' => Crypt::encrypt(session('id_user')), 'parameter' => 2]) }}"
-                    method="POST">
+        @elseif ($data->status_penyewaan == 'Pengembalian' || $data->status_penyewaan == 'Aktif')
+            <div class="--component-terima shadow-box-shadow-8 p-6 rounded-lg bg-white border border-gray-200 mt-6">
+                <h3 class="font-bold text-[20px] mb-2 text-gray-800">Proses Pengembalian Barang & Denda</h3>
+                <p class="font-medium text-[14px] text-gray-600 mb-6">Silakan periksa kondisi barang yang dikembalikan pelanggan, isi denda jika ada kerusakan/keterlambatan, dan upload bukti foto kondisi barang.</p>
+                <form id="form-proses-pengembalian" action="{{ route('menu-transaksi.proses-pengembalian', ['id_penyewaan' => $data->id_penyewaan, 'id_user' => Crypt::encrypt(session('id_user'))]) }}" method="POST" enctype="multipart/form-data" class="flex flex-col gap-4">
                     @csrf
-                    @method('PUT')
-                    <div class="w-full flex justify-center"><button id="terima-order"
-                            {{ $data->status_pembayaran == 'Belum lunas' ? 'disabled' : '' }}
-                            class="p-3 w-1/2 rounded-full {{ $data->status_pembayaran == 'Belum lunas' ? 'opacity-45' : '' }} bg-[#F6D91F] border-black border-2 font-medium text-black">Terima Pengembalian Client</button></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Kondisi Barang</label>
+                            <select name="kondisi_barang" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="Baik">Baik (Normal)</option>
+                                <option value="Rusak Ringan">Rusak Ringan</option>
+                                <option value="Rusak Berat">Rusak Berat</option>
+                                <option value="Hilang">Hilang (Stok tidak dikembalikan)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Total Denda (Rp)</label>
+                            <input type="number" name="denda" value="{{ isset($denda_keterlambatan) ? $denda_keterlambatan : 0 }}" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="0">
+                            @if(isset($info_keterlambatan) && $info_keterlambatan != '')
+                                <p class="text-[11px] font-semibold mt-1 {{ $denda_keterlambatan > 0 ? 'text-red-500' : 'text-emerald-500' }}">
+                                    <i class="bi {{ $denda_keterlambatan > 0 ? 'bi-exclamation-circle' : 'bi-check-circle' }}"></i> {{ $info_keterlambatan }}
+                                </p>
+                            @endif
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Status Pembayaran Denda</label>
+                            <select name="status_denda" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="Tidak Ada">Tidak Ada Denda</option>
+                                <option value="Belum Lunas">Belum Lunas</option>
+                                <option value="Lunas">Lunas (Catat ke Pemasukan)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Catatan Kondisi / Kerusakan</label>
+                            <textarea name="catatan" rows="2" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Contoh: Terdapat goresan di bagian samping..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2">Bukti Foto Kondisi Barang</label>
+                            <input type="file" name="bukti_kondisi" accept="image/*" class="shadow border rounded w-full py-1.5 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline bg-white">
+                            <p class="text-[12px] text-gray-500 mt-1">*Format: JPG, PNG, max 3MB.</p>
+                        </div>
+                    </div>
+                    <div class="w-full flex justify-end mt-4">
+                        <button type="submit" class="px-6 py-3 rounded-full bg-emerald-500 hover:bg-emerald-600 font-bold text-white shadow-md transition flex items-center gap-2">
+                            <span>Selesaikan Penyewaan & Simpan Kondisi</span>
+                        </button>
+                    </div>
                 </form>
             </div>
         @endif

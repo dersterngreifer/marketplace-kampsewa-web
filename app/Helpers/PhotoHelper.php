@@ -77,13 +77,21 @@ class PhotoHelper
      */
     public static function getThumbnailUrl($produk): string
     {
-        if ($produk->foto && $produk->foto->count() > 0) {
-            $photo = $produk->foto->first();
-            return self::getPhotoUrl($photo->url_foto, $photo->tipe_sumber);
+        if (!empty($produk->foto)) {
+            // Jika foto adalah collection (dari relasi model)
+            if (is_object($produk->foto) && method_exists($produk->foto, 'count') && $produk->foto->count() > 0) {
+                $photo = $produk->foto->first();
+                return self::getPhotoUrl($photo->url_foto, $photo->tipe_sumber);
+            }
+            
+            // Jika foto adalah string (misal dari query builder alias)
+            if (is_string($produk->foto)) {
+                return self::getPhotoUrl($produk->foto, 'internal');
+            }
         }
 
         // Fallback ke foto_depan jika masih ada
-        if ($produk->foto_depan) {
+        if (!empty($produk->foto_depan)) {
             return self::getPhotoUrl($produk->foto_depan, 'internal');
         }
 
