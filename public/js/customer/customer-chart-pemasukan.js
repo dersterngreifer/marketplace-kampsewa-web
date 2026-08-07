@@ -100,7 +100,9 @@ const configPemasukanTahunDashboard = {
 
 // render init block
 const ctx = document.getElementById("customer-chart-pemasukan-dsb");
-new Chart(ctx, configPemasukanTahunDashboard);
+if (ctx) {
+    new Chart(ctx, configPemasukanTahunDashboard);
+}
 
 /*
 /----------------------------------------
@@ -206,4 +208,6 @@ const configPemasukanBulanDashboard = {
 
 // render init block
 const ctxPerbulan = document.getElementById("customer-chart-pemasukan-perbulan-dsb");
-new Chart(ctxPerbulan, configPemasukanBulanDashboard);
+if (ctxPerbulan) {
+    new Chart(ctxPerbulan, configPemasukanBulanDashboard);
+}
