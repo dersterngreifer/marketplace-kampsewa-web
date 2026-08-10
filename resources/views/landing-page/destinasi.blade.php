@@ -47,7 +47,7 @@
 
                 <h1 class="about-hero-title">
                     Jelajahi Surga Alam <br>
-                    <span class="text-gradient-amber">Nusantara Indonesia</span>
+                    <span class="text-white">Nusantara Indonesia</span>
                 </h1>
 
                 <p class="about-hero-desc">

@@ -47,7 +47,7 @@
 
                 <h1 class="about-hero-title">
                     Sewa Perlengkapan <br>
-                    <span class="text-gradient-amber">Kualitas Terjamin & Steril</span>
+                    <span class="text-white">Kualitas Terjamin & Steril</span>
                 </h1>
 
                 <p class="about-hero-desc">

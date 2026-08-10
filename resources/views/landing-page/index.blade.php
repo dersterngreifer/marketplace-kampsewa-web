@@ -49,7 +49,7 @@
                         <!-- Main Headline -->
                         <h1 class="hero-title-main">
                             Sewa Perlengkapan Outdoor <br>
-                            <span class="text-gradient-amber">Mudah, Hemat & Terpercaya</span>
+                            <span class="text-white">Mudah, Hemat & Terpercaya</span>
                         </h1>
 
                         <!-- Subtitle -->

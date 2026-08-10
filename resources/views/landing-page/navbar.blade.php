@@ -1,14 +1,15 @@
 <nav class="navbar navbar-expand-lg navbar-light px-4 px-lg-5">
-    <a href="{{ route('landing-page.halaman-beranda') }}" class="navbar-brand p-0">
-        <h1 class="m-0">
-            <img src="{{asset('template/envato/img/logog-kampsewa.png')}}" alt="KampSewa" sizes="">KampSewa</h1>
+    <a href="{{ route('landing-page.halaman-beranda') }}" class="navbar-brand p-0 text-dark" style="color: black !important;">
+        <h1 class="m-0 d-flex align-items-center" style="color: black !important; font-size: 2.5rem;">
+            <img src="{{asset('assets/logo/favicons/android-chrome-512x512.png')}}" alt="KampSewa" style="height: 65px;" class="me-2">
+        </h1>
     </a>
     <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse">
         <span class="fa fa-bars text-primary fs-3"></span>
     </button>
 
     <div class="collapse navbar-collapse" id="navbarCollapse">
-        <div class="navbar-nav ms-auto py-0 align-items-lg-center">
+        <div class="navbar-nav mx-auto py-0 align-items-lg-center">
             <a href="{{ route('landing-page.halaman-beranda') }}" class="nav-item nav-link {{ Request::routeIs('landing-page.halaman-beranda') ? 'active' : '' }}">
                 <i class="fas fa-home"></i>
                 <span>Home</span>

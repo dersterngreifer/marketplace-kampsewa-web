@@ -45,7 +45,7 @@
 
                 <h1 class="about-hero-title">
                     Mengenal KampSewa <br>
-                    <span class="text-gradient-amber">Lebih Dekat</span>
+                    <span class="text-white">Lebih Dekat</span>
                 </h1>
 
                 <p class="about-hero-desc">

@@ -9,6 +9,12 @@
     <link href="{{ asset('template/azia/lib/ionicons/css/ionicons.min.css') }}" rel="stylesheet">
     <link href="{{ asset('template/azia/lib/typicons.font/typicons.css') }}" rel="stylesheet">
     <link href="{{ asset('template/azia/lib/flag-icon-css/css/flag-icon.min.css') }}" rel="stylesheet">
+    
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('assets/logo/favicons/apple-touch-icon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('assets/logo/favicons/favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('assets/logo/favicons/favicon-16x16.png') }}">
+    <link rel="manifest" href="{{ asset('assets/logo/favicons/site.webmanifest') }}">
+    
     <link rel="stylesheet" href="{{ asset('template/azia/css/azia.css') }}">
     <link rel="stylesheet" href="{{ asset('css/input/input-category.css') }}">
     <link rel="stylesheet" href="{{ asset('css/gradient/gradient-color.css') }}">

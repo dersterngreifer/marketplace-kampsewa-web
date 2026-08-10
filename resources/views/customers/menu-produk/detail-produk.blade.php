@@ -17,38 +17,40 @@
         {{-- LEFT: Image Gallery --}}
         <div class="dp-gallery">
             {{-- Thumbnail strip vertikal --}}
-            <div class="dp-thumbs">
-                @forelse ($detail_produk->foto as $foto)
-                    <div class="dp-thumb"
-                        onclick="dpChangeImage('{{ $foto->url_foto }}', '{{ str_starts_with($foto->url_foto, 'http') ? 'external' : $foto->tipe_sumber }}', this)">
-                        <img src="{{ str_starts_with($foto->url_foto, 'http') ? $foto->url_foto : \App\Helpers\PhotoHelper::getPhotoUrl($foto->url_foto, $foto->tipe_sumber) }}"
-                            alt="Thumbnail"
-                            onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
-                    </div>
-                @empty
-                    @php
-                        $fotoLama = [
-                            ['url' => $detail_produk->foto_depan, 'tipe' => 'internal'],
-                            ['url' => $detail_produk->foto_belakang, 'tipe' => 'internal'],
-                            ['url' => $detail_produk->foto_kiri, 'tipe' => 'internal'],
-                            ['url' => $detail_produk->foto_kanan, 'tipe' => 'internal'],
-                        ];
-                    @endphp
-                    @foreach ($fotoLama as $foto)
-                        @if ($foto['url'] && $foto['url'] !== 'Belum di isi')
-                            <div class="dp-thumb"
-                                onclick="dpChangeImage('{{ $foto['url'] }}', '{{ str_starts_with($foto['url'], 'http') ? 'external' : $foto['tipe'] }}', this)">
-                                <img src="{{ str_starts_with($foto['url'], 'http') ? $foto['url'] : \App\Helpers\PhotoHelper::getPhotoUrl($foto['url'], $foto['tipe']) }}"
-                                    alt="Thumbnail"
-                                    onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
-                            </div>
-                        @endif
-                    @endforeach
-                @endforelse
+            <div class="dp-thumbs-wrapper" style="position: relative; height: 100%;">
+                <div class="dp-thumbs" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0;">
+                    @forelse ($detail_produk->foto as $foto)
+                        <div class="dp-thumb"
+                            onclick="dpChangeImage('{{ $foto->url_foto }}', '{{ str_starts_with($foto->url_foto, 'http') ? 'external' : $foto->tipe_sumber }}', this)">
+                            <img src="{{ str_starts_with($foto->url_foto, 'http') ? $foto->url_foto : \App\Helpers\PhotoHelper::getPhotoUrl($foto->url_foto, $foto->tipe_sumber) }}"
+                                alt="Thumbnail"
+                                onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
+                        </div>
+                    @empty
+                        @php
+                            $fotoLama = [
+                                ['url' => $detail_produk->foto_depan, 'tipe' => 'internal'],
+                                ['url' => $detail_produk->foto_belakang, 'tipe' => 'internal'],
+                                ['url' => $detail_produk->foto_kiri, 'tipe' => 'internal'],
+                                ['url' => $detail_produk->foto_kanan, 'tipe' => 'internal'],
+                            ];
+                        @endphp
+                        @foreach ($fotoLama as $foto)
+                            @if ($foto['url'] && $foto['url'] !== 'Belum di isi')
+                                <div class="dp-thumb"
+                                    onclick="dpChangeImage('{{ $foto['url'] }}', '{{ str_starts_with($foto['url'], 'http') ? 'external' : $foto['tipe'] }}', this)">
+                                    <img src="{{ str_starts_with($foto['url'], 'http') ? $foto['url'] : \App\Helpers\PhotoHelper::getPhotoUrl($foto['url'], $foto['tipe']) }}"
+                                        alt="Thumbnail"
+                                        onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
+                                </div>
+                            @endif
+                        @endforeach
+                    @endforelse
+                </div>
             </div>
 
             {{-- Main image --}}
-            <div class="dp-main-img-wrap">
+            <div class="dp-main-img-wrap group" style="cursor: zoom-in;" onclick="dpOpenModal()">
                 <img id="dp-main-img"
                     src="{{ str_starts_with($detail_produk->foto->first()?->url_foto ?? $detail_produk->foto_depan ?? '', 'http')
                         ? ($detail_produk->foto->first()?->url_foto ?? $detail_produk->foto_depan)
@@ -59,6 +61,9 @@
                     alt="{{ $detail_produk->nama_produk }}"
                     onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                 <span class="dp-category-badge">{{ $detail_produk->kategori_produk ?? 'Peralatan Kemah' }}</span>
+                <div class="dp-view-overlay">
+                    <i class="bi bi-eye"></i> View
+                </div>
             </div>
         </div>
 
@@ -205,7 +210,41 @@
 
 </div>{{-- /dp-wrapper --}}
 
+{{-- Modal for full resolution image --}}
+<div id="dp-image-modal" class="dp-image-modal" onclick="dpCloseModal()">
+    <span class="dp-image-modal-close" onclick="dpCloseModal()">&times;</span>
+    <img id="dp-image-modal-img" class="dp-image-modal-content" onclick="event.stopPropagation()">
+</div>
+
 <style>
+/* Modal CSS */
+.dp-image-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.85);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(5px);
+}
+.dp-image-modal-content {
+    max-width: 95vw;
+    max-height: 95vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+.dp-image-modal-close {
+    position: absolute;
+    top: 20px; right: 35px;
+    color: #f1f1f1;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.dp-image-modal-close:hover { color: #bbb; }
 /* ==========================================================
    DETAIL PRODUK — Clean Custom CSS
    ========================================================== */
@@ -238,7 +277,7 @@
     border-radius: 1.5rem;
     box-shadow: 0 4px 24px rgba(0,0,0,.06);
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.15fr 1fr;
     align-items: stretch;   /* kedua kolom sama tinggi */
     overflow: hidden;
 }
@@ -254,7 +293,7 @@
     display: grid;
     grid-template-columns: 80px 1fr;  /* 80px cukup untuk thumb 64px + scrollbar 4px + gap */
     gap: 0.75rem;
-    align-items: stretch;
+    align-items: start;
     /* Crop overflow dari dalam galeri saja */
     overflow: hidden;
 }
@@ -264,8 +303,6 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    /* Tinggi maksimal = tinggi gambar utama, lalu scroll */
-    max-height: 100%;
     overflow-y: auto;
     overflow-x: hidden;   /* tidak boleh horizontal scroll */
     /* Scrollbar tipis pakai padding internal, bukan margin negatif */
@@ -301,13 +338,33 @@
 .dp-main-img-wrap {
     position: relative;
     width: 100%;
-    height: 100%;
+    aspect-ratio: 1 / 1;
     border-radius: 0.875rem;
     overflow: hidden;
     background: #f3f4f6;
 }
 .dp-main-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .6s ease; }
 .dp-main-img-wrap:hover img { transform: scale(1.04); }
+
+.dp-view-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.25rem;
+    font-weight: 600;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+.dp-main-img-wrap:hover .dp-view-overlay {
+    opacity: 1;
+}
 
 .dp-category-badge {
     position: absolute;
@@ -527,7 +584,7 @@
 }
 .dp-size-card__price {
     font-weight: 900;
-    color: #ea580c;
+    color: #000000;
     font-size: 0.9rem;
     text-align: left;
 }
@@ -668,5 +725,22 @@
         const firstThumb = document.querySelector('.dp-thumb');
         if (firstThumb) firstThumb.classList.add('active');
     });
+
+    function dpOpenModal() {
+        const modal = document.getElementById('dp-image-modal');
+        const modalImg = document.getElementById('dp-image-modal-img');
+        const mainImg = document.getElementById('dp-main-img');
+        if (modal && modalImg && mainImg) {
+            modal.style.display = "flex";
+            modalImg.src = mainImg.src;
+        }
+    }
+    
+    function dpCloseModal() {
+        const modal = document.getElementById('dp-image-modal');
+        if (modal) {
+            modal.style.display = "none";
+        }
+    }
 </script>
 @endsection

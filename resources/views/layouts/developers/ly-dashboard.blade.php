@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="{{ asset('css/cdn/flaticon.css') }}">
 
     {{-- import ico tab bar --}}
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/logo/logo.ico') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/logo/favicons/favicon.ico') }}">
 
     {{-- import style css --}}
     <link rel="stylesheet" href="{{ asset('css/gradient/gradient-color.css') }}">

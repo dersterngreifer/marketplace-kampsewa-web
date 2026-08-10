@@ -9,7 +9,7 @@
     {{-- todo import dari file css  --}}
     <link rel="stylesheet" href="{{ asset('css/cdn-icon.css') }}">
     <link rel="stylesheet" href="{{ asset('css/gradient/gradient-color.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/logo/logo.ico') }}">
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/logo/favicons/favicon.ico') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -264,7 +264,7 @@
             <div class="login-card">
                 {{-- Logo --}}
                 <div class="logo-wrapper">
-                    <img src="{{ asset('images/logo-test.png') }}" alt="KampSewa Logo">
+                    <img src="{{ asset('assets/logo/favicons/android-chrome-512x512.png') }}" alt="KampSewa Logo" style="height: 50px;">
                 </div>
 
                 {{-- Heading --}}
