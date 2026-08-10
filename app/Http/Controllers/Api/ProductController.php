@@ -31,6 +31,7 @@ class ProductController extends Controller
             )
             ->whereNotNull('rating_produk.rating')
             ->whereNotNull('detail_variant_produk.harga_sewa')
+            ->where('produk.id_user', '!=', auth()->id())
             ->groupBy('produk.id', 'produk.id_user', 'users.name', 'produk.nama', 'produk.foto_depan')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->orderBy(DB::raw('MIN(detail_variant_produk.harga_sewa)'))
@@ -81,8 +82,9 @@ class ProductController extends Controller
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
                 DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
             )
-            ->whereNotNull('rating_produk.rating')
-            ->whereNotNull('detail_variant_produk.harga_sewa');
+            // ->whereNotNull('rating_produk.rating') // Dikomentari agar produk tanpa rating tetap tampil
+            ->whereNotNull('detail_variant_produk.harga_sewa')
+            ->where('produk.id_user', '!=', auth()->id());
 
         // Filter kategori jika bukan 'semua'
         if ($kategori !== 'semua') {
@@ -167,6 +169,7 @@ class ProductController extends Controller
                     $query->where('produk.nama', $parameter)
                         ->orWhere('produk.id', $parameter);
                 })
+                ->where('produk.id_user', '!=', auth()->id())
                 ->get()
                 ->map(function ($item) {
                     $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
@@ -190,7 +193,8 @@ class ProductController extends Controller
                     'detail_variant_produk.stok',
                     'detail_variant_produk.harga_sewa'
                 )
-                ->where('produk.id', $parameter);
+                ->where('produk.id', $parameter)
+                ->where('produk.id_user', '!=', auth()->id());
 
             // Filter berdasarkan warna
             if ($warna) {
@@ -254,6 +258,7 @@ class ProductController extends Controller
                     'users.name as nama_user'
                 )
                 ->where('produk.id', $parameter)
+                ->where('produk.id_user', '!=', auth()->id())
                 ->groupBy(
                     'produk.id',
                     'produk.nama',
@@ -320,5 +325,73 @@ class ProductController extends Controller
             Log::error($error->getMessage());
             return response()->json(['error' => 'Terjadi kesalahan saat mengambil detail produk'], 500);
         }
+    }
+
+    // Fungsi untuk mendapatkan rekomendasi pencarian (berdasarkan rating tertinggi atau random)
+    public function getRekomendasiPencarian()
+    {
+        $produk = Produk::leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+            ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
+            ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
+            ->select(
+                'produk.id as id_produk',
+                'produk.nama as nama_produk',
+                'produk.foto_depan',
+                DB::raw('AVG(rating_produk.rating) as rata_rating'),
+                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
+            )
+            ->whereNotNull('detail_variant_produk.harga_sewa')
+            ->where('produk.id_user', '!=', auth()->id())
+            ->groupBy('produk.id', 'produk.nama', 'produk.foto_depan')
+            ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
+            ->inRandomOrder()
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
+                return $item;
+            });
+
+        if ($produk->isEmpty()) {
+            return response()->json(['message' => 'Data rekomendasi tidak ditemukan!'], 404);
+        }
+
+        return response()->json([
+            'message' => 'success',
+            'data_rekomendasi' => $produk
+        ], 200);
+    }
+
+    // Fungsi khusus untuk menampilkan produk milik user itu sendiri
+    public function getUserProducts()
+    {
+        $produk = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
+            ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
+            ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+            ->select(
+                'produk.id as id_produk',
+                'produk.nama as nama_produk',
+                'produk.foto_depan',
+                'produk.kategori',
+                DB::raw('AVG(rating_produk.rating) as rata_rating'),
+                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
+            )
+            ->where('produk.id_user', '=', auth()->id())
+            ->groupBy('produk.id', 'produk.nama', 'produk.foto_depan', 'produk.kategori')
+            ->orderByDesc('produk.created_at')
+            ->get()
+            ->map(function ($item) {
+                $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
+                return $item;
+            });
+
+        if ($produk->isEmpty()) {
+            return response()->json(['message' => 'Anda belum memiliki produk.'], 404);
+        }
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $produk
+        ], 200);
     }
 }

@@ -21,10 +21,27 @@ class RiwayatPencarianController extends Controller
             return response()->json(['error' => $validasi->errors()], 400);
         }
 
-        $table_riwayat_pencarian = new RiwayatPencarian();
-        $table_riwayat_pencarian->id_user = $id_user;
-        $table_riwayat_pencarian->kata_kunci = $request->kata_kunci;
-        $table_riwayat_pencarian->save();
+        $kata_kunci = $request->kata_kunci;
+
+        if ($kata_kunci) {
+            // Cek apakah pencarian dengan keyword yang sama (mengabaikan huruf besar/kecil) sudah ada
+            $existingRiwayat = RiwayatPencarian::where('id_user', $id_user)
+                ->whereRaw('LOWER(kata_kunci) = ?', [strtolower($kata_kunci)])
+                ->first();
+
+            if ($existingRiwayat) {
+                // Jika sudah ada, update dengan kata kunci terbaru dan perbarui waktunya
+                $existingRiwayat->kata_kunci = $kata_kunci;
+                $existingRiwayat->touch(); // Untuk memperbarui updated_at
+                $existingRiwayat->save();
+            } else {
+                // Jika belum ada, insert data baru
+                $table_riwayat_pencarian = new RiwayatPencarian();
+                $table_riwayat_pencarian->id_user = $id_user;
+                $table_riwayat_pencarian->kata_kunci = $kata_kunci;
+                $table_riwayat_pencarian->save();
+            }
+        }
 
         return response()->json([
             'message' => 'success',
@@ -35,9 +52,11 @@ class RiwayatPencarianController extends Controller
     public function show($id_user)
     {
         $table_riwayat_pencarian = RiwayatPencarian::where('id_user', $id_user)
-            ->select('kata_kunci')->get();
+            ->select('kata_kunci')
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
-        if (!$table_riwayat_pencarian) {
+        if ($table_riwayat_pencarian->isEmpty()) {
             return response()->json([
                 'message' => 'Data tidak ditemukan',
             ], 404);

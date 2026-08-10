@@ -16,7 +16,7 @@ class UserController extends Controller
     {
         try {
             // Ambil data user
-            $get_data_user = User::select('id', 'name', 'email', 'nomor_telephone', 'foto', 'tanggal_lahir')
+            $get_data_user = User::select('id', 'name', 'email', 'nomor_telephone', 'foto', 'tanggal_lahir', 'name_store')
                 ->where('id', $id_user)
                 ->first();
 
@@ -26,6 +26,9 @@ class UserController extends Controller
                     'message' => 'Data tidak ditemukan!',
                 ], 404);
             }
+
+            // Tambahkan field penanda apakah user memiliki toko
+            $get_data_user->is_toko = !empty($get_data_user->name_store);
 
             // Tampilkan respons data
             return response()->json([

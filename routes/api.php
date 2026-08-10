@@ -95,6 +95,8 @@ Route::middleware('auth:sanctum')->group(function () {
         ->controller(ProductController::class)
         ->group(function () {
             Route::get('/produk-rating-tertinggi-limit6', 'produkRatingTertinggiLimit6');
+            Route::get('/rekomendasi-pencarian', 'getRekomendasiPencarian');
+            Route::get('/user-products', 'getUserProducts');
             Route::get('/detail-keranjang-produk/{parameter}', 'getDetailProdukKeranjang');
             Route::get('/detail-produk/{parameter}', 'getDetailProduct');
             Route::get('/{kategori?}', 'getProdukByFilter');
