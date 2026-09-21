@@ -1,4 +1,5 @@
 <?php
+// cspell:disable
 
 namespace App\Http\Controllers\Api;
 
