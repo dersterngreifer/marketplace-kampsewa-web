@@ -53,6 +53,11 @@ class AuthController extends Controller
                     Alert::toast('Login success', 'success');
                     return redirect()->intended('/developer/dashboard/home')->with('success', 'Login success');
                 } elseif ($user->type == 0) {
+                    // todo syarat menjadi mitra: verifikasi identitas harus sudah dilengkapi
+                    if (empty($user->nomor_identitas)) {
+                        Alert::toast('Lengkapi verifikasi identitas (KYC) lewat aplikasi mobile untuk lanjut.', 'info');
+                        return redirect()->route('customer.isi-identitas');
+                    }
                     Alert::toast('Login success', 'success');
                     return redirect()->intended('/customer/dashboard/home/')->with('success', 'Login success');
                 }
@@ -73,6 +78,23 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
         Alert::toast('Logout success', 'success');
         return redirect()->route('login');
+    }
+
+    public function isiIdentitas()
+    {
+        $user = auth()->user();
+
+        // Jika developer, arahkan ke dashboard developer
+        if ($user->type == 1) {
+            return redirect()->route('home.index');
+        }
+
+        // Jika identitas sudah lengkap, langsung arahkan ke dashboard customer
+        if (!empty($user->nomor_identitas)) {
+            return redirect()->intended('/customer/dashboard/home/');
+        }
+
+        return view('auth.isi-identitas', ['title' => 'Lengkapi Verifikasi Identitas']);
     }
 }
 

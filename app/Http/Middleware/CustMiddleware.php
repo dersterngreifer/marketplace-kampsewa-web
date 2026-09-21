@@ -15,7 +15,11 @@ class CustMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if(auth()->user()->type == 0) {
+        if (auth()->user()->type == 0) {
+            // Syarat menjadi mitra: user harus sudah melengkapi verifikasi identitas (KYC)
+            if (empty(auth()->user()->nomor_identitas)) {
+                return redirect()->route('customer.isi-identitas');
+            }
             return $next($request);
         }
         return back();

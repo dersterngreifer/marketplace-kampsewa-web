@@ -24,6 +24,21 @@ class TransaksiController extends Controller
     public function checkout($id_user)
     {
         try {
+            $user = User::find($id_user);
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'User tidak ditemukan.'
+                ], 404);
+            }
+
+            if (empty($user->nomor_identitas)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Harap lengkapi verifikasi identitas (KTP) Anda sebelum melakukan penyewaan barang.'
+                ], 403);
+            }
+
             $message_error = [
                 'tanggal_mulai.required' => 'Tanggal mulai wajib diisi.',
                 'tanggal_mulai.date' => 'Tanggal mulai harus berupa tanggal yang valid.',

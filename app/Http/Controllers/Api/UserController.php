@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Alamat;
 use App\Models\Bank;
+use App\Models\DetailPenyewaan;
+use App\Models\Penyewaan;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -15,8 +17,24 @@ class UserController extends Controller
     public function detailUser($id_user)
     {
         try {
-            // Ambil data user
-            $get_data_user = User::select('id', 'name', 'email', 'nomor_telephone', 'foto', 'tanggal_lahir', 'name_store')
+            // Ambil data user lengkap termasuk field KYC & profil toko
+            $get_data_user = User::select(
+                'id',
+                'name',
+                'email',
+                'nomor_telephone',
+                'foto',
+                'tanggal_lahir',
+                'name_store',
+                'type',
+                'nomor_identitas',
+                'foto_identitas',
+                'is_verified',
+                'deskripsi_toko',
+                'banner_toko',
+                'background',
+                'jenis_kelamin'
+            )
                 ->where('id', $id_user)
                 ->first();
 
@@ -39,6 +57,37 @@ class UserController extends Controller
             // Tangani pengecualian
             return response()->json([
                 'message' => 'Terjadi kesalahan saat mengambil data user.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function pemesananUser($id_user)
+    {
+        try {
+            $user = User::find($id_user);
+            if (!$user) {
+                return response()->json([
+                    'message' => 'Data tidak ditemukan!',
+                ], 404);
+            }
+
+            $list_pemesanan = Penyewaan::where('id_user', $id_user)
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'message' => 'success',
+                'pemesanan_user' => $list_pemesanan,
+            ], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan pada database.',
+                'error' => $e->getMessage(),
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat mengambil data pemesanan.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -336,22 +385,92 @@ class UserController extends Controller
         }
     }
 
+    public function inputKYC($id_user)
+    {
+        try {
+            request()->validate([
+                'nomor_identitas' => 'required|string|digits:16',
+                'foto_identitas' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            $user = User::find($id_user);
+            if (!$user) {
+                return response()->json([
+                    'message' => 'User tidak ditemukan',
+                ], 404);
+            }
+
+            $update_data = [
+                'nomor_identitas' => request()->nomor_identitas,
+                'is_verified' => true,
+            ];
+
+            if (request()->hasFile('foto_identitas')) {
+                $file = request()->file('foto_identitas');
+                $destinationPath = public_path('assets/image/customers/identitas');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move($destinationPath, $filename);
+                $update_data['foto_identitas'] = $filename;
+            }
+
+            $user->update($update_data);
+
+            return response()->json([
+                'message' => 'success',
+                'data_user' => $user,
+            ], 200);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan pada database.',
+                'error' => $e->getMessage(),
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat input identitas.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function tambahStore($id_user)
     {
         try {
             request()->validate([
                 'name_store' => 'required|string',
+                'deskripsi_toko' => 'nullable|string',
+                'banner_toko' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
                 'longitude' => 'required|string',
                 'latitude' => 'required|string',
                 'detail_lainnya' => 'nullable|string|max:255',
             ]);
-            $users = User::where('id', $id_user);
-            if (!$users) {
+            $userCheck = User::find($id_user);
+            if (!$userCheck) {
                 return response()->json([
                     'message' => 'User tidak ada',
-                ], 200);
+                ], 404);
             }
-            $users->update(['name_store' => request()->name_store]);
+
+            if (empty($userCheck->nomor_identitas)) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Harap lengkapi verifikasi identitas (KTP) Anda sebelum membuka layanan penyewaan.'
+                ], 403);
+            }
+
+            $users = User::where('id', $id_user);
+            $update_store = ['name_store' => request()->name_store];
+            if (request()->has('deskripsi_toko') && request()->deskripsi_toko != null) {
+                $update_store['deskripsi_toko'] = request()->deskripsi_toko;
+            }
+            if (request()->hasFile('banner_toko')) {
+                $file = request()->file('banner_toko');
+                $destinationPath = public_path('assets/image/customers/banner');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move($destinationPath, $filename);
+                $update_store['banner_toko'] = $filename;
+            }
+            $users->update($update_store);
+
             $alamat = new Alamat();
             $alamat->id_user = $id_user;
             $alamat->longitude = request()->longitude;

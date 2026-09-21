@@ -118,4 +118,51 @@ class ChartWebController extends Controller
             ]);
         }
     }
+
+    public function apiStatistikPesanan($id_user)
+    {
+        // Total semua pesanan
+        $total_semua_pesanan = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->distinct('penyewaan.id')
+            ->count('penyewaan.id');
+
+        // Total belum dikonfirmasi (Pending)
+        $total_belum_dikonfirmasi = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->where('penyewaan.status_penyewaan', 'Pending')
+            ->distinct('penyewaan.id')
+            ->count('penyewaan.id');
+
+        // Total sedang disewa (Aktif)
+        $total_sedang_disewa = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->where('penyewaan.status_penyewaan', 'Aktif')
+            ->distinct('penyewaan.id')
+            ->count('penyewaan.id');
+
+        // Total QTY produk belum dikonfirmasi
+        $total_produk_belum_dikonfirmasi = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->where('penyewaan.status_penyewaan', 'Pending')
+            ->sum('detail_penyewaan.qty');
+
+        return response()->json([
+            'message' => 'success',
+            'data' => [
+                'total_semua_pesanan' => $total_semua_pesanan,
+                'total_belum_dikonfirmasi' => $total_belum_dikonfirmasi,
+                'total_sedang_disewa' => $total_sedang_disewa,
+                'total_produk_belum_dikonfirmasi' => (int) $total_produk_belum_dikonfirmasi,
+            ]
+        ], 200);
+    }
 }

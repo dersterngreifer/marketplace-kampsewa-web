@@ -50,6 +50,18 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
+/*
+|--------------------------------------------------------------------------
+| Customer Verifikasi Identitas (KYC) Route
+|--------------------------------------------------------------------------
+| Halaman ini meminta user melengkapi verifikasi identitas (KYC) via aplikasi
+| mobile sebelum bisa mengakses dashboard customer.
+*/
+
+Route::get('/customer/isi-identitas', [AuthController::class, 'isiIdentitas'])
+    ->middleware('auth')
+    ->name('customer.isi-identitas');
+
 
 /*
 |--------------------------------------------------------------------------

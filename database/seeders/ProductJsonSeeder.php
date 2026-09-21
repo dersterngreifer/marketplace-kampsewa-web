@@ -8,6 +8,7 @@ use App\Models\VariantProduk;
 use App\Models\DetailVariantProduk;
 use App\Models\FotoProduk;
 use App\Models\User;
+use App\Models\RatingProduk;
 use Illuminate\Support\Facades\File;
 
 class ProductJsonSeeder extends Seeder
@@ -19,15 +20,26 @@ class ProductJsonSeeder extends Seeder
      */
     public function run()
     {
-        $user = User::where('email', 'user@gmail.com')->first();
-        if (!$user) {
-            $this->command->error('User dengan email user@gmail.com tidak ditemukan!');
-            return;
+        // 1. Dapatkan atau buat user test@gmail.com
+        $user = User::firstOrCreate(
+            ['email' => 'test@gmail.com'],
+            [
+                'name' => 'Pemilik Toko Test',
+                'password' => bcrypt('password123'),
+                'nomor_telephone' => '081234567890',
+                'type' => 0,
+            ]
+        );
+
+        // Siapkan reviewer (buat 5 user dummy jika kurang)
+        $reviewers = User::where('email', '!=', 'test@gmail.com')->inRandomOrder()->take(5)->get();
+        if ($reviewers->count() < 5) {
+            $reviewers = User::factory(5)->create();
         }
 
         $jsonPath = public_path('products.json');
         if (!File::exists($jsonPath)) {
-            $this->command->error('File products.json tidak ditemukan!');
+            $this->command->error('File products.json tidak ditemukan di public/products.json!');
             return;
         }
 
@@ -39,8 +51,19 @@ class ProductJsonSeeder extends Seeder
             return;
         }
 
+        $ulasanKomentar = [
+            "Barang sangat bagus dan berkualitas!",
+            "Pengiriman cepat dan barang sesuai deskripsi, recomended!",
+            "Kondisi barang mulus, sangat cocok untuk camping.",
+            "Cukup baik, sesuai dengan harga sewanya.",
+            "Luar biasa, tidak mengecewakan sama sekali.",
+            "Warna dan ukurannya pas, terima kasih!",
+            "Bakal sewa lagi di sini, pelayanannya mantap.",
+            "Sangat memuaskan, kualitas barang original.",
+        ];
+
         foreach ($products as $item) {
-            // Tentukan kategori sederhana dari kata kunci nama
+            // Kategori
             $kategori = 'Perlengkapan';
             $namaLower = strtolower($item['name']);
             if (strpos($namaLower, 'tenda') !== false) {
@@ -53,12 +76,13 @@ class ProductJsonSeeder extends Seeder
                 $kategori = 'Pakaian';
             }
 
-            // Parse harga: Rp2.159.000 -> 2159000
+            // Parse harga
             $priceStr = $item['price'] ?? '0';
             $priceStr = preg_replace('/[^0-9]/', '', $priceStr);
-            $hargaSewa = intval($priceStr);
-            if ($hargaSewa == 0) $hargaSewa = 10000; // Harga default jika tidak ada
+            $hargaDasar = intval($priceStr);
+            if ($hargaDasar == 0) $hargaDasar = 25000; 
 
+            // Create Produk
             $produk = Produk::create([
                 'id_user' => $user->id,
                 'nama' => $item['name'],
@@ -71,7 +95,7 @@ class ProductJsonSeeder extends Seeder
                 'foto_kanan' => 'Belum di isi',
             ]);
 
-            // Insert FotoProduk (unlimited)
+            // Foto produk
             $allPhotos = [];
             if (!empty($item['listing_photo'])) {
                 $allPhotos[] = $item['listing_photo'];
@@ -83,7 +107,6 @@ class ProductJsonSeeder extends Seeder
                     }
                 }
             }
-
             foreach ($allPhotos as $index => $photoUrl) {
                 FotoProduk::create([
                     'id_produk' => $produk->id,
@@ -92,8 +115,6 @@ class ProductJsonSeeder extends Seeder
                     'urutan' => $index + 1
                 ]);
             }
-
-            // Sync fallback
             if (count($allPhotos) > 0) {
                 $produk->foto_depan = $allPhotos[0] ?? 'Belum di isi';
                 $produk->foto_belakang = $allPhotos[1] ?? 'Belum di isi';
@@ -102,20 +123,43 @@ class ProductJsonSeeder extends Seeder
                 $produk->save();
             }
 
-            // Buat default Variant & Detail Variant
-            $variant = VariantProduk::create([
-                'id_produk' => $produk->id,
-                'warna' => 'Default'
-            ]);
+            // Variants: Warnas & Ukurans dengan harga berbeda
+            $warnas = ['Hitam', 'Biru', 'Hijau Army'];
+            $ukurans = ['Medium (M)', 'Large (L)', 'Extra Large (XL)'];
 
-            DetailVariantProduk::create([
-                'id_variant_produk' => $variant->id,
-                'ukuran' => 'Semua Ukuran',
-                'stok' => rand(10, 50),
-                'harga_sewa' => $hargaSewa
-            ]);
+            // Tiap warna punya ukuran yang harganya naik dikit
+            foreach ($warnas as $indexWarna => $warna) {
+                $variant = VariantProduk::create([
+                    'id_produk' => $produk->id,
+                    'warna' => $warna
+                ]);
+
+                foreach ($ukurans as $indexUkuran => $ukuran) {
+                    // Beri harga beda tiap varian dan ukuran
+                    $hargaSewaUkuran = $hargaDasar + ($indexUkuran * 5000) + ($indexWarna * 2000);
+                    DetailVariantProduk::create([
+                        'id_variant_produk' => $variant->id,
+                        'ukuran' => $ukuran,
+                        'stok' => rand(5, 30),
+                        'harga_sewa' => $hargaSewaUkuran
+                    ]);
+                }
+            }
+
+            // Rating & Ulasan (3 sampai 5 ulasan per produk)
+            $jumlahUlasan = rand(3, 5);
+            $reviewerAcak = $reviewers->random($jumlahUlasan);
+            
+            foreach ($reviewerAcak as $reviewer) {
+                RatingProduk::create([
+                    'id_user' => $reviewer->id,
+                    'id_produk' => $produk->id,
+                    'rating' => rand(4, 5), // Rating bagus 4-5
+                    'ulasan' => $ulasanKomentar[array_rand($ulasanKomentar)],
+                ]);
+            }
         }
 
-        $this->command->info('Sukses mengimport ' . count($products) . ' produk!');
+        $this->command->info('Sukses mengimport ' . count($products) . ' produk beserta variant, ukuran (beda harga), dan ulasan rating untuk user test@gmail.com!');
     }
 }

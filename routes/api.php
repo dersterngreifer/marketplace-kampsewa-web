@@ -49,6 +49,7 @@ Route::controller(ChartWebController::class)->group(function () {
     Route::get('/chart-penghasilan-menu-penghasilan', 'apiChartMenuPenghasilan');
     Route::get('/chart-penghasilan-perbulan-menu-penghasilan', 'apiChartTotalPenghasilanPerbulanSaatIniMenuPenghasilan');
     Route::get('/chart-perbandingan-pertahun-web-cust/{id_user}', 'apiPerbandinganPemasukanPertahunWebCust');
+    Route::get('/statistik-pesanan/{id_user}', 'apiStatistikPesanan');
 });
 
 
@@ -80,6 +81,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('/update-password/{id_user}', 'updatePasswordUser');
             Route::post('/tambah-bank', 'tambahBank');
             Route::post('/input-store/{id_user}', 'tambahStore');
+            Route::post('/input-kyc/{id_user}', 'inputKYC');
         });
 
     Route::post('/logout', [UserController::class, 'logout']);

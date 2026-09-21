@@ -27,7 +27,8 @@ class ProductController extends Controller
                 'produk.nama as nama_produk',
                 'produk.foto_depan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
-                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
+                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
+                DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
             ->whereNotNull('rating_produk.rating')
             ->whereNotNull('detail_variant_produk.harga_sewa')
@@ -80,7 +81,8 @@ class ProductController extends Controller
                 'produk.nama as nama_produk',
                 'produk.foto_depan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
-                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
+                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
+                DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
             // ->whereNotNull('rating_produk.rating') // Dikomentari agar produk tanpa rating tetap tampil
             ->whereNotNull('detail_variant_produk.harga_sewa')
@@ -251,6 +253,7 @@ class ProductController extends Controller
                     'produk.foto_kiri',
                     'produk.foto_kanan',
                     DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
+                DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok'),
                     DB::raw('AVG(rating_produk.rating) as rating'),
                     DB::raw('COUNT(rating_produk.ulasan) as total_ulasan'),
                     'users.id as id_user',
@@ -338,7 +341,8 @@ class ProductController extends Controller
                 'produk.nama as nama_produk',
                 'produk.foto_depan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
-                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
+                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
+                DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
             ->whereNotNull('detail_variant_produk.harga_sewa')
             ->where('produk.id_user', '!=', auth()->id())
@@ -374,7 +378,8 @@ class ProductController extends Controller
                 'produk.foto_depan',
                 'produk.kategori',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
-                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa')
+                DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
+                DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
             ->where('produk.id_user', '=', auth()->id())
             ->groupBy('produk.id', 'produk.nama', 'produk.foto_depan', 'produk.kategori')

@@ -20,26 +20,26 @@
                 </a>
                 
                 <!-- Dropdown Transaksi -->
-                <div class="relative h-[70px] flex items-center">
-                    <button id="transaksi-btn" class="inline-flex items-center px-4 h-[70px] text-[15px] font-medium transition-all duration-200 border-b-2 relative focus:outline-none focus:ring-0 outline-none
-                        {{ in_array($title, ['Order Selesai', 'Denda Pelanggan', 'Sewa Berlangsung', 'Terima Order Masuk', 'Order Masuk', 'Kelola Iklan', 'Iklan | Customer']) ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-blue-600' }}">
+                <div class="relative h-[70px] flex items-center group">
+                    <button id="transaksi-btn" class="inline-flex items-center px-4 h-[70px] text-[15px] font-medium transition-all duration-200 border-b-2 relative focus:outline-none focus:ring-0 outline-none cursor-default
+                        {{ in_array($title, ['Order Selesai', 'Denda Pelanggan', 'Sewa Berlangsung', 'Terima Order Masuk', 'Order Masuk', 'Kelola Iklan', 'Iklan | Customer']) ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 group-hover:text-blue-600' }}">
                         <div class="flex items-center gap-2 transition-transform duration-200">
                             <i class="typcn typcn-shopping-bag text-[20px]"></i> Transaksi
-                            <i id="transaksi-chevron" class="bi bi-chevron-down text-[12px] ml-1 transition-transform duration-300"></i>
+                            <i id="transaksi-chevron" class="bi bi-chevron-down text-[12px] ml-1 transition-transform duration-300 group-hover:rotate-180"></i>
                         </div>
                     </button>
                     
-                    <div id="transaksi-dropdown" class="hidden absolute top-[70px] left-0 w-64 rounded-2xl shadow-xl bg-white border border-gray-100 z-50 overflow-hidden transform transition-all">
+                    <div id="transaksi-dropdown" class="absolute top-[70px] left-0 w-max rounded-2xl shadow-xl bg-white border border-gray-100 z-50 overflow-hidden transform transition-all duration-300 opacity-0 pointer-events-none translate-y-4 group-hover:opacity-100 group-hover:pointer-events-auto group-hover:translate-y-0">
                         <div class="p-3 space-y-1">
-                            <a href="{{ route('menu-transaksi.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200">
+                            <a href="{{ route('menu-transaksi.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all duration-200 whitespace-nowrap">
                                 <div class="w-8 h-8 rounded-lg bg-blue-100/50 flex items-center justify-center text-blue-600"><i class="bi bi-cart-check"></i></div>
                                 Penyewaan & Transaksi
                             </a>
-                            <a href="{{ route('kasir-offline.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-200">
+                            <a href="{{ route('kasir-offline.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-200 whitespace-nowrap">
                                 <div class="w-8 h-8 rounded-lg bg-emerald-100/50 flex items-center justify-center text-emerald-600"><i class="bi bi-shop"></i></div>
                                 Kasir / Order Offline
                             </a>
-                            <a href="{{ route('buat-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-600 rounded-xl transition-all duration-200">
+                            <a href="{{ route('buat-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-600 rounded-xl transition-all duration-200 whitespace-nowrap">
                                 <div class="w-8 h-8 rounded-lg bg-purple-100/50 flex items-center justify-center text-purple-600"><i class="bi bi-megaphone"></i></div>
                                 Buat Promosi / Iklan
                             </a>
@@ -310,13 +310,6 @@
                         document.getElementById('profile-chevron').classList.remove('rotate-180');
                     }
                 }
-                // Close transaksi dropdown if open
-                if (document.getElementById('transaksi-dropdown') && !document.getElementById('transaksi-dropdown').classList.contains('hidden')) {
-                    document.getElementById('transaksi-dropdown').classList.add('hidden');
-                    if (document.getElementById('transaksi-chevron')) {
-                        document.getElementById('transaksi-chevron').classList.remove('rotate-180');
-                    }
-                }
                 notifDropdown.classList.toggle('hidden');
             });
         }
@@ -333,39 +326,9 @@
                 if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
                     notifDropdown.classList.add('hidden');
                 }
-                // Close transaksi dropdown if open
-                if (document.getElementById('transaksi-dropdown') && !document.getElementById('transaksi-dropdown').classList.contains('hidden')) {
-                    document.getElementById('transaksi-dropdown').classList.add('hidden');
-                    if (document.getElementById('transaksi-chevron')) {
-                        document.getElementById('transaksi-chevron').classList.remove('rotate-180');
-                    }
-                }
                 profileDropdown.classList.toggle('hidden');
                 if (profileChevron) {
                     profileChevron.classList.toggle('rotate-180');
-                }
-            });
-        }
-
-        // Transaksi dropdown toggle on click (desktop)
-        const transaksiBtn = document.getElementById('transaksi-btn');
-        const transaksiDropdown = document.getElementById('transaksi-dropdown');
-        const transaksiChevron = document.getElementById('transaksi-chevron');
-        if (transaksiBtn && transaksiDropdown) {
-            transaksiBtn.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                // Close other dropdowns
-                if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
-                    notifDropdown.classList.add('hidden');
-                }
-                if (profileDropdown && !profileDropdown.classList.contains('hidden')) {
-                    profileDropdown.classList.add('hidden');
-                    if (profileChevron) profileChevron.classList.remove('rotate-180');
-                }
-                transaksiDropdown.classList.toggle('hidden');
-                if (transaksiChevron) {
-                    transaksiChevron.classList.toggle('rotate-180');
                 }
             });
         }
@@ -379,12 +342,6 @@
                 profileDropdown.classList.add('hidden');
                 if (profileChevron) {
                     profileChevron.classList.remove('rotate-180');
-                }
-            }
-            if (transaksiDropdown && !transaksiDropdown.contains(e.target) && !transaksiBtn.contains(e.target)) {
-                transaksiDropdown.classList.add('hidden');
-                if (transaksiChevron) {
-                    transaksiChevron.classList.remove('rotate-180');
                 }
             }
         });
