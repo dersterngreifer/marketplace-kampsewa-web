@@ -25,6 +25,9 @@ class ProductController extends Controller
                 'produk.id as id_produk',
                 'produk.id_user as id_user',
                 'users.name as nama_user',
+                'users.name_store as nama_toko',
+                'users.foto as foto_toko',
+                DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 'produk.nama as nama_produk',
                 'produk.foto_depan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
@@ -33,8 +36,8 @@ class ProductController extends Controller
             )
             ->whereNotNull('rating_produk.rating')
             ->whereNotNull('detail_variant_produk.harga_sewa')
-            ->where('produk.id_user', '!=', auth()->id())
-            ->groupBy('produk.id', 'produk.id_user', 'users.name', 'produk.nama', 'produk.foto_depan')
+            ->whereNotNull('produk.id_user')
+            ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.foto_depan')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->orderBy(DB::raw('MIN(detail_variant_produk.harga_sewa)'))
             ->limit(6)
@@ -76,6 +79,9 @@ class ProductController extends Controller
                 'produk.id as id_produk',
                 'produk.id_user as id_user',
                 'users.name as nama_user',
+                'users.name_store as nama_toko',
+                'users.foto as foto_toko',
+                DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 DB::raw('MAX(rating_produk.id) as id_rating_produk'),
                 DB::raw('MAX(variant_produk.id) as id_variant_produk'),
                 DB::raw('MAX(detail_variant_produk.id) as id_detail_variant_produk'),
@@ -87,7 +93,7 @@ class ProductController extends Controller
             )
             // ->whereNotNull('rating_produk.rating') // Dikomentari agar produk tanpa rating tetap tampil
             ->whereNotNull('detail_variant_produk.harga_sewa')
-            ->where('produk.id_user', '!=', auth()->id());
+            ->whereNotNull('produk.id_user');
 
         // Filter kategori jika bukan 'semua'
         if ($kategori !== 'semua') {
@@ -131,7 +137,7 @@ class ProductController extends Controller
         }
 
         // Group by produk untuk menghindari duplikasi
-        $produk->groupBy('produk.id', 'produk.id_user', 'users.name', 'produk.nama', 'produk.foto_depan');
+        $produk->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.foto_depan');
 
         // Eksekusi query dan ambil hasil
         $data = $produk->get()
@@ -172,7 +178,7 @@ class ProductController extends Controller
                     $query->where('produk.nama', $parameter)
                         ->orWhere('produk.id', $parameter);
                 })
-                ->where('produk.id_user', '!=', auth()->id())
+                ->whereNotNull('produk.id_user')
                 ->get()
                 ->map(function ($item) {
                     $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
@@ -197,7 +203,7 @@ class ProductController extends Controller
                     'detail_variant_produk.harga_sewa'
                 )
                 ->where('produk.id', $parameter)
-                ->where('produk.id_user', '!=', auth()->id());
+                ->whereNotNull('produk.id_user');
 
             // Filter berdasarkan warna
             if ($warna) {
@@ -244,7 +250,7 @@ class ProductController extends Controller
                 ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
                 ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
                 ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
-                ->leftJoin('users', 'users.id', '=', 'rating_produk.id_user')
+                ->leftJoin('users', 'users.id', '=', 'produk.id_user')
                 ->select(
                     'produk.id as id_produk',
                     'produk.nama as nama_produk',
@@ -259,10 +265,13 @@ class ProductController extends Controller
                     DB::raw('COUNT(rating_produk.ulasan) as total_ulasan'),
                     'users.id as id_user',
                     'users.foto as foto_user',
-                    'users.name as nama_user'
+                    'users.name as nama_user',
+                    'users.name_store as nama_toko',
+                    'users.foto as foto_toko',
+                    DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko')
                 )
                 ->where('produk.id', $parameter)
-                ->where('produk.id_user', '!=', auth()->id())
+                ->whereNotNull('produk.id_user')
                 ->groupBy(
                     'produk.id',
                     'produk.nama',
@@ -273,7 +282,8 @@ class ProductController extends Controller
                     'produk.foto_kanan',
                     'users.id',
                     'users.foto',
-                    'users.name'
+                    'users.name',
+                    'users.name_store'
                 );
 
             if ($warna) {
@@ -334,11 +344,17 @@ class ProductController extends Controller
     // Fungsi untuk mendapatkan rekomendasi pencarian (berdasarkan rating tertinggi atau random)
     public function getRekomendasiPencarian()
     {
-        $produk = Produk::leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+        $produk = Produk::leftJoin('users', 'users.id', '=', 'produk.id_user')
+            ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->select(
                 'produk.id as id_produk',
+                'produk.id_user as id_user',
+                'users.name as nama_user',
+                'users.name_store as nama_toko',
+                'users.foto as foto_toko',
+                DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 'produk.nama as nama_produk',
                 'produk.foto_depan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
@@ -346,8 +362,8 @@ class ProductController extends Controller
                 DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
             ->whereNotNull('detail_variant_produk.harga_sewa')
-            ->where('produk.id_user', '!=', auth()->id())
-            ->groupBy('produk.id', 'produk.nama', 'produk.foto_depan')
+            ->whereNotNull('produk.id_user')
+            ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.foto_depan')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->inRandomOrder()
             ->limit(10)

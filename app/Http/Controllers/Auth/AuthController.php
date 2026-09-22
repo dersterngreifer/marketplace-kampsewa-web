@@ -96,5 +96,6 @@ class AuthController extends Controller
 
         return view('auth.isi-identitas', ['title' => 'Lengkapi Verifikasi Identitas']);
     }
+
 }
 

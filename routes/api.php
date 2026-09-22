@@ -80,8 +80,11 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::delete('/delete-alamat/{id_alamat}', 'deleteAlamatUser');
             Route::put('/update-password/{id_user}', 'updatePasswordUser');
             Route::post('/tambah-bank', 'tambahBank');
+            Route::post('/update-bank/{id_bank}', 'updateBank');
+            Route::get('/delete-bank/{id_bank}', 'deleteBank');
             Route::post('/input-store/{id_user}', 'tambahStore');
             Route::post('/input-kyc/{id_user}', 'inputKYC');
+            Route::post('/verify-ktp', 'verifyKtp');
         });
 
     Route::post('/logout', [UserController::class, 'logout']);

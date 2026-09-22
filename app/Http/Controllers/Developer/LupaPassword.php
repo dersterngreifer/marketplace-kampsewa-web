@@ -34,34 +34,30 @@ class LupaPassword extends Controller
             $resetPassword->expired_at = now()->addMinutes(1);
             $resetPassword->save();
 
-            $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
             $telfon = $validate['nomor_telephone'];
             $encrypt_telfon = Crypt::encryptString($telfon);
             $nama_user = $user->name;
 
-            $curl = curl_init();
+            $message = "*TEAM ABBMA*\n"
+                     . "_Layanan Keamanan & Verifikasi Akun_\n"
+                     . "━━━━━━━━━━━━━━━━━━━━\n\n"
+                     . "Halo *$nama_user*,\n\n"
+                     . "Kami menerima permintaan *Lupa Password* untuk akun KampSewa Anda. Gunakan kode verifikasi berikut untuk melanjutkan:\n\n"
+                     . "👉 *$OTP* 👈\n\n"
+                     . "⚠️ *PENTING:*\n"
+                     . "• Kode ini hanya berlaku selama *1 menit*.\n"
+                     . "• Jangan pernah membagikan kode ini kepada siapa pun, termasuk pihak KampSewa.\n\n"
+                     . "━━━━━━━━━━━━━━━━━━━━\n"
+                     . "_Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan pesan ini._";
 
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => 'https://api.fonnte.com/send',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => array(
-                    'target' => $telfon,
-                    'message' => "*RESET PASSWORD KAMPSEWA ID*\n\nHai *$nama_user*,\n\nKami ingin memberitahu Anda bahwa permintaan reset password Anda telah kami terima. Kode OTP Anda untuk mereset password adalah *$OTP*. Silakan gunakan kode ini dalam aplikasi untuk mengatur ulang kata sandi Anda.\n\nJangan ragu untuk menghubungi tim dukungan kami jika Anda mengalami kesulitan atau memiliki pertanyaan lebih lanjut. Kami selalu siap membantu Anda.\n\nTerima kasih atas kepercayaan Anda pada *KampSewa ID*.",
-                ),
-                CURLOPT_HTTPHEADER => array(
-                    'Authorization: ' . $token,
-                ),
-            ));
-
-            $response_sms = curl_exec($curl);
-
-            curl_close($curl);
+            try {
+                \Illuminate\Support\Facades\Http::timeout(10)->post('http://localhost:3000/api/send-otp', [
+                    'phone'   => $telfon,
+                    'message' => $message
+                ]);
+            } catch (\Exception $e) {
+                // Ignore error and proceed or log it
+            }
 
             Alert::toast('Kode OTP verifikasi terkirim, cek pesan WhatsApp anda!', 'success');
             return redirect('lupa-password/check-kode-otp/' . $encrypt_telfon);
@@ -136,33 +132,29 @@ class LupaPassword extends Controller
             $resetPassword->expired_at = now()->addMinutes(1);
             $resetPassword->save();
 
-            $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
             $telfon = $user->nomor_telephone;
             $nama_user = $user->name;
 
-            $curl = curl_init();
+            $message = "*TEAM ABBMA*\n"
+                     . "_Layanan Keamanan & Verifikasi Akun_\n"
+                     . "━━━━━━━━━━━━━━━━━━━━\n\n"
+                     . "Halo *$nama_user*,\n\n"
+                     . "Kami menerima permintaan *Lupa Password* untuk akun KampSewa Anda. Gunakan kode verifikasi berikut untuk melanjutkan:\n\n"
+                     . "👉 *$OTP* 👈\n\n"
+                     . "⚠️ *PENTING:*\n"
+                     . "• Kode ini hanya berlaku selama *1 menit*.\n"
+                     . "• Jangan pernah membagikan kode ini kepada siapa pun, termasuk pihak KampSewa.\n\n"
+                     . "━━━━━━━━━━━━━━━━━━━━\n"
+                     . "_Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan pesan ini._";
 
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => 'https://api.fonnte.com/send',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => array(
-                    'target' => $telfon,
-                    'message' => "*RESET PASSWORD KAMPSEWA ID*\n\nHai *$nama_user*,\n\nKami ingin memberitahu Anda bahwa permintaan reset password Anda telah kami terima. Kode OTP Anda untuk mereset password adalah *$OTP*. Silakan gunakan kode ini dalam aplikasi untuk mengatur ulang kata sandi Anda.\n\nJangan ragu untuk menghubungi tim dukungan kami jika Anda mengalami kesulitan atau memiliki pertanyaan lebih lanjut. Kami selalu siap membantu Anda.\n\nTerima kasih atas kepercayaan Anda pada *KampSewa ID*.",
-                ),
-                CURLOPT_HTTPHEADER => array(
-                    'Authorization: ' . $token,
-                ),
-            ));
-
-            $response_sms = curl_exec($curl);
-
-            curl_close($curl);
+            try {
+                \Illuminate\Support\Facades\Http::timeout(10)->post('http://localhost:3000/api/send-otp', [
+                    'phone'   => $telfon,
+                    'message' => $message
+                ]);
+            } catch (\Exception $e) {
+                // Ignore error and proceed or log it
+            }
 
             Alert::toast('Kode OTP verifikasi terkirim, cek pesan WhatsApp anda!', 'success');
             return back()->with('success', 'Kode OTP verifikasi terkirim, cek pesan WhatsApp anda!');

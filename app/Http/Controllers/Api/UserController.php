@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 class UserController extends Controller
 {
@@ -48,6 +49,19 @@ class UserController extends Controller
 
             // Tambahkan field penanda apakah user memiliki toko
             $get_data_user->is_toko = !empty($get_data_user->name_store);
+
+            // Kalkulasi Rating Toko dan Jumlah Ulasan (berdasarkan produk milik toko ini)
+            $rating_info = \Illuminate\Support\Facades\DB::table('produk')
+                ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+                ->where('produk.id_user', $id_user)
+                ->select(
+                    \Illuminate\Support\Facades\DB::raw('IFNULL(ROUND(AVG(rating_produk.rating), 1), 0) as rating_toko'),
+                    \Illuminate\Support\Facades\DB::raw('COUNT(rating_produk.id) as total_ulasan_toko')
+                )
+                ->first();
+
+            $get_data_user->rating_toko = $rating_info ? (float) $rating_info->rating_toko : 0;
+            $get_data_user->total_ulasan_toko = $rating_info ? (int) $rating_info->total_ulasan_toko : 0;
 
             // Tampilkan respons data
             return response()->json([
@@ -104,6 +118,7 @@ class UserController extends Controller
                 'nomor_telephone' => 'required|string|max:13|min:11',
                 'tanggal_lahir' => 'required|date',
                 'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'jenis_kelamin' => 'nullable|in:Laki-Laki,Perempuan',
             ]);
 
             // Dapatkan user yang akan diperbarui
@@ -116,6 +131,10 @@ class UserController extends Controller
                 'nomor_telephone' => $request->input('nomor_telephone'),
                 'tanggal_lahir' => $request->input('tanggal_lahir'),
             ];
+
+            if ($request->has('jenis_kelamin')) {
+                $update_data['jenis_kelamin'] = $request->input('jenis_kelamin');
+            }
 
             // Jika ada file foto yang diunggah
             if ($request->hasFile('foto')) {
@@ -357,6 +376,60 @@ class UserController extends Controller
         }
     }
 
+    public function updateBank(Request $request, $id_bank)
+    {
+        try {
+            $request->validate([
+                'rekening' => 'required|string',
+                'bank' => 'required|string',
+            ]);
+
+            $bank = \App\Models\Bank::find($id_bank);
+            if (!$bank) {
+                return response()->json([
+                    'message' => 'Data bank tidak ditemukan.',
+                ], 404);
+            }
+
+            $bank->rekening = $request->rekening;
+            $bank->bank = strtoupper($request->bank);
+            $bank->save();
+
+            return response()->json([
+                'message' => 'Berhasil memperbarui metode pembayaran',
+                'data_result' => $bank,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat update bank.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function deleteBank($id_bank)
+    {
+        try {
+            $bank = \App\Models\Bank::find($id_bank);
+            if (!$bank) {
+                return response()->json([
+                    'message' => 'Data bank tidak ditemukan.',
+                ], 404);
+            }
+
+            $bank->delete();
+
+            return response()->json([
+                'message' => 'Berhasil menghapus metode pembayaran',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat menghapus bank.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
     public function deleteAlamatUser($id_alamat)
     {
         try {
@@ -510,4 +583,91 @@ class UserController extends Controller
             'message' => 'Logged out successfully'
         ]);
     }
+
+     public function verifyKtp(Request $request)
+        {
+            // 1. Validasi berkas upload
+            $request->validate([
+                'foto_identitas' => 'required|image|mimes:jpeg,png,jpg|max:5120', // maks 5MB
+            ]);
+
+            $file = $request->file('foto_identitas');
+
+            // 2. Konversi file gambar ke format base64
+            $imageBase64 = base64_encode(file_get_contents($file->getRealPath()));
+
+            $apiKey  = env('ROBOFLOW_API_KEY');
+            $modelId = env('ROBOFLOW_MODEL_ID');
+            $version = env('ROBOFLOW_VERSION');
+
+            // URL endpoint resmi Roboflow
+            $url = "https://detect.roboflow.com/{$modelId}/{$version}?api_key={$apiKey}";
+
+            try {
+                // 3. Tembak API Roboflow langsung dari Laravel
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/x-www-form-urlencoded',
+                ])->timeout(20)->send('POST', $url, [
+                    'body' => $imageBase64,
+                ]);
+
+                if (!$response->successful()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Gagal menghubungi server AI Roboflow.',
+                    ], 500);
+                }
+
+                $result = $response->json();
+                $predictions = $result['predictions'] ?? [];
+
+                // 4. Logika Validasi: Cek apakah ada objek KTP yang terdeteksi
+                if (empty($predictions)) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Foto ditolak: Objek KTP tidak ditemukan. Pastikan Anda mengunggah foto KTP yang
+  jelas.',
+                    ], 422);
+                }
+
+                // Ambil deteksi dengan tingkat keyakinan tertinggi
+                $bestMatch = $predictions[0];
+                $confidence = $bestMatch['confidence'] ?? 0;
+                $class = strtolower($bestMatch['class'] ?? '');
+
+                // 5. Pastikan nama class-nya adalah "ktpdepan"
+                if ($class !== 'ktpdepan') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Foto ditolak: Pastikan Anda memfoto bagian depan KTP dengan jelas.',
+                    ], 422);
+                }
+
+                // 6. Cek ambang batas keyakinan (KITA NAIKKAN JADI 85% ATAU 0.85)
+                if ($confidence < 0.85) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Foto KTP kurang jelas (Akurasi: ' . round($confidence * 100) . '%). Harap foto
+  ulang dari jarak lebih dekat.',
+                    ], 422);
+                }
+
+                // BERHASIL!
+                // Catatan: Tidak perlu menggunakan $file->move() di sini!
+                // Aplikasi mobile (Flutter) akan melanjutkan alur memanggil endpoint 'input-kyc'
+                // untuk menyimpan file aslinya dan mencatat di database.
+
+                return response()->json([
+                    'success' => true,
+                    'confidence' => round($confidence * 100, 1) . '%',
+                    'message' => 'KTP berhasil diverifikasi dan valid!',
+                ]);
+
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+                ], 500);
+            }
+        }
 }

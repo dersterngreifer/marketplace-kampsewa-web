@@ -27,10 +27,10 @@
                         </div>
                         <div class="w-full">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Deskripsi Produk</label>
-                            <input
+                            <textarea
                                 class="block w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
-                                type="text" id="deskripsi_produk" name="deskripsi_produk"
-                                placeholder="Masukkan deskripsi produk">
+                                id="deskripsi_produk" name="deskripsi_produk" rows="5"
+                                placeholder="Masukkan deskripsi produk" oninput="this.value = this.value.charAt(0).toUpperCase() + this.value.slice(1);"></textarea>
                         </div>
                         <div class="relative w-full">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Kategori Produk</label>
@@ -92,7 +92,7 @@
                                 <input
                                     class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
                                     type="text" id="warna0" name="variants[0][warna]" placeholder="contoh: Merah, Basic, dll"
-                                    required>
+                                    oninput="this.value = this.value.toUpperCase();" required>
                             </div>
                             
                             <div class="size flex flex-col md:flex-row items-end gap-4 mt-4 bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
@@ -101,7 +101,8 @@
                                     <input
                                         class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
                                         type="text" id="ukuran" name="variants[0][sizes][0][ukuran]"
-                                        placeholder="contoh: 3x4 / 4 Orang" required>
+                                        placeholder="contoh: XXL/5x5/1-10 ORANG"
+                                        oninput="this.value = this.value.toUpperCase();" required>
                                 </div>
                                 <div class="w-full">
                                     <label class="block text-xs font-bold text-gray-700 mb-2">Stok (pcs)</label>
@@ -114,8 +115,9 @@
                                     <label class="block text-xs font-bold text-gray-700 mb-2">Harga Sewa / Hari (Rp)</label>
                                     <input
                                         class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
-                                        type="number" id="harga_sewa" name="variants[0][sizes][0][harga_sewa]"
-                                        placeholder="contoh: 15000" required>
+                                        type="text" id="harga_sewa" name="variants[0][sizes][0][harga_sewa]"
+                                        placeholder="contoh: 15.000"
+                                        oninput="formatRupiah(this)" required>
                                 </div>
                             </div>
                             
@@ -153,7 +155,7 @@
             <div class="w-full md:w-1/2 mb-4">
                 <label class="block text-sm font-bold text-gray-700 mb-2">Warna / Jenis Varian</label>
                 <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition-colors"
-                    type="text" id="warna${variantCount}" name="variants[${variantCount}][warna]" placeholder="contoh: Merah, Basic, dll" required>
+                    type="text" id="warna${variantCount}" name="variants[${variantCount}][warna]" placeholder="contoh: Merah, Basic, dll" oninput="this.value = this.value.toUpperCase();" required>
             </div>
             
             <div class="sizeContainer mt-3 text-right w-full">
@@ -172,13 +174,13 @@
 
         function addSize(sizeContainer) {
             const variantIndex = Array.from(document.querySelectorAll('.variant')).indexOf(sizeContainer.parentElement);
-            const sizeCount = sizeContainer.parentElement.querySelectorAll('.size').length + 1;
+            const sizeCount = sizeContainer.parentElement.querySelectorAll('.size').length;
             const newSize = `
         <div class="size flex flex-col md:flex-row items-end gap-4 mt-4 bg-white p-4 border border-gray-200 rounded-lg shadow-sm">
             <div class="w-full">
                 <label class="block text-xs font-bold text-gray-700 mb-2">Ukuran / Kapasitas</label>
                 <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
-                    type="text" name="variants[${variantIndex}][sizes][${sizeCount}][ukuran]" placeholder="contoh: 3x4 / 4 Orang" required>
+                    type="text" name="variants[${variantIndex}][sizes][${sizeCount}][ukuran]" placeholder="contoh: XXL/5x5/1-10 ORANG" oninput="this.value = this.value.toUpperCase();" required>
             </div>
             <div class="w-full">
                 <label class="block text-xs font-bold text-gray-700 mb-2">Stok (pcs)</label>
@@ -188,26 +190,29 @@
             <div class="w-full">
                 <label class="block text-xs font-bold text-gray-700 mb-2">Harga Sewa / Hari (Rp)</label>
                 <input class="block w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors"
-                    type="number" name="variants[${variantIndex}][sizes][${sizeCount}][harga_sewa]" placeholder="contoh: 15000" required>
+                    type="text" name="variants[${variantIndex}][sizes][${sizeCount}][harga_sewa]" placeholder="contoh: 15.000" oninput="formatRupiah(this)" required>
             </div>
-            <div class="pb-1">
+            <div class="pb-1" ${sizeCount === 0 ? 'style="display:none;"' : ''}>
                 <button type="button" class="px-3.5 py-2.5 rounded-lg flex items-center justify-center bg-red-50 text-red-500 hover:bg-red-500 hover:text-white border border-red-100 transition shadow-sm"
                     onclick="removeSize(this)" title="Hapus Sub-varian"><i class="bi bi-trash-fill"></i></button>
             </div>
         </div>
     `;
             sizeContainer.insertAdjacentHTML('beforebegin', newSize);
-            sizeContainer.parentElement.querySelector('.size:last-child button').style.display = 'inline-flex';
         }
 
         function removeVariant(button) {
-            const variant = button.parentElement.parentElement;
-            variant.remove();
+            const variant = button.closest('.variant');
+            if (variant) {
+                variant.remove();
+            }
         }
 
         function removeSize(button) {
-            const size = button.parentElement.parentElement;
-            size.remove();
+            const size = button.closest('.size');
+            if (size) {
+                size.remove();
+            }
         }
 
         function previewMultipleImages(event) {
@@ -317,6 +322,10 @@
                 confirmButtonText: 'Yes, save!'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    // Bersihkan titik format ribuan sebelum submit agar validasi integer backend tidak error
+                    document.querySelectorAll('input[name*="[harga_sewa]"]').forEach(input => {
+                        input.value = input.value.replace(/\./g, '');
+                    });
                     document.getElementById('simpan-produk').submit();
                 } else {
                     Swal.fire('Cancelled', 'Save cancelled', 'info');
@@ -324,6 +333,15 @@
             });
         });
 
+        // Format number to Rupiah (adds dots)
+        function formatRupiah(input) {
+            let value = input.value.replace(/\D/g, ''); // Hapus semua karakter non-angka
+            if (value !== '') {
+                input.value = parseInt(value, 10).toLocaleString('id-ID'); // Format ke ribuan gaya Indonesia (titik)
+            } else {
+                input.value = '';
+            }
+        }
 
         function capitalizeFirstLetter(string) {
             return string.replace(/\b\w/g, function(char) {
@@ -335,12 +353,6 @@
         namaProdukInput.addEventListener('input', function(event) {
             var inputValue = event.target.value;
             var capitalizedValue = capitalizeFirstLetter(inputValue);
-            event.target.value = capitalizedValue;
-        });
-
-        document.getElementById('deskripsi_produk').addEventListener('input', function(event) {
-            var inputValue = event.target.value;
-            var capitalizedValue = inputValue.charAt(0).toUpperCase() + inputValue.slice(1);
             event.target.value = capitalizedValue;
         });
     </script>

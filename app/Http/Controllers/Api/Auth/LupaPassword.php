@@ -34,34 +34,32 @@ class LupaPassword extends Controller
                 $resetPassword->expired_at = now()->addMinutes(1);
                 $resetPassword->save();
 
-                $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
                 $telfon = $validate['nomor_telephone'];
                 $nama_user = $user->name;
 
-                $curl = curl_init();
+                $message = "*TEAM ABBMA*\n"
+                         . "_Layanan Keamanan & Verifikasi Akun_\n"
+                         . "━━━━━━━━━━━━━━━━━━━━\n\n"
+                         . "Halo *$nama_user*,\n\n"
+                         . "Kami menerima permintaan *Lupa Password* untuk akun KampSewa Anda. Gunakan kode verifikasi berikut untuk melanjutkan:\n\n"
+                         . "👉 *$OTP* 👈\n\n"
+                         . "⚠️ *PENTING:*\n"
+                         . "• Kode ini hanya berlaku selama *1 menit*.\n"
+                         . "• Jangan pernah membagikan kode ini kepada siapa pun, termasuk pihak KampSewa.\n\n"
+                         . "━━━━━━━━━━━━━━━━━━━━\n"
+                         . "_Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan pesan ini._";
 
-                curl_setopt_array($curl, array(
-                    CURLOPT_URL => 'https://api.fonnte.com/send',
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_ENCODING => '',
-                    CURLOPT_MAXREDIRS => 10,
-                    CURLOPT_TIMEOUT => 0,
-                    CURLOPT_FOLLOWLOCATION => true,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_CUSTOMREQUEST => 'POST',
-                    CURLOPT_POSTFIELDS => array(
-                        'target' => $telfon,
-                        'message' => "*RESET PASSWORD KAMPSEWA ID*\n\nHai *$nama_user*,\n\nKami ingin memberitahu Anda bahwa permintaan reset password Anda telah kami terima. Kode OTP Anda untuk mereset password adalah *$OTP*. Silakan gunakan kode ini dalam aplikasi untuk mengatur ulang kata sandi Anda.\n\nJangan ragu untuk menghubungi tim dukungan kami jika Anda mengalami kesulitan atau memiliki pertanyaan lebih lanjut. Kami selalu siap membantu Anda.\n\nTerima kasih atas kepercayaan Anda pada *KampSewa ID*.",
-                    ),
-                    CURLOPT_HTTPHEADER => array(
-                        'Authorization: ' . $token,
-                    ),
-                ));
+                try {
+                    $response_sms = \Illuminate\Support\Facades\Http::timeout(10)->post('http://localhost:3000/api/send-otp', [
+                        'phone'   => $telfon,
+                        'message' => $message
+                    ]);
+                    $isSuccess = $response_sms->successful();
+                } catch (\Exception $e) {
+                    $isSuccess = false;
+                }
 
-                $response_sms = curl_exec($curl);
-                curl_close($curl);
-
-                if ($response_sms) {
+                if ($isSuccess) {
                     return response()->json([
                         'status' => 'success',
                         'message' => "OTP berhasil dikirim ke nomor telepon yang terdaftar: $telfon."
@@ -217,38 +215,34 @@ class LupaPassword extends Controller
             $resetPassword->save();
 
             // Konfigurasi untuk mengirim pesan OTP melalui API SMS
-            $token = config('services.fonnte.token', env('FONNTE_TOKEN'));
             $telfon = $data_user->nomor_telephone;
             $nama_user = $data_user->name;
 
-            $curl = curl_init();
+            $message = "*TEAM ABBMA*\n"
+                     . "_Layanan Keamanan & Verifikasi Akun_\n"
+                     . "━━━━━━━━━━━━━━━━━━━━\n\n"
+                     . "Halo *$nama_user*,\n\n"
+                     . "Kami menerima permintaan *Lupa Password* untuk akun KampSewa Anda. Gunakan kode verifikasi berikut untuk melanjutkan:\n\n"
+                     . "👉 *$OTP* 👈\n\n"
+                     . "⚠️ *PENTING:*\n"
+                     . "• Kode ini hanya berlaku selama *1 menit*.\n"
+                     . "• Jangan pernah membagikan kode ini kepada siapa pun, termasuk pihak KampSewa.\n\n"
+                     . "━━━━━━━━━━━━━━━━━━━━\n"
+                     . "_Jika Anda tidak merasa melakukan permintaan ini, silakan abaikan pesan ini._";
 
-            curl_setopt_array($curl, array(
-                CURLOPT_URL => 'https://api.fonnte.com/send',
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_ENCODING => '',
-                CURLOPT_MAXREDIRS => 10,
-                CURLOPT_TIMEOUT => 0,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                CURLOPT_CUSTOMREQUEST => 'POST',
-                CURLOPT_POSTFIELDS => array(
-                    'target' => $telfon,
-                    'message' => "*RESET PASSWORD KAMPSEWA ID*\n\nHai *$nama_user*,\n\nKami ingin memberitahu Anda bahwa permintaan reset password Anda telah kami terima. Kode OTP Anda untuk mereset password adalah *$OTP*. Silakan gunakan kode ini dalam aplikasi untuk mengatur ulang kata sandi Anda.\n\nJangan ragu untuk menghubungi tim dukungan kami jika Anda mengalami kesulitan atau memiliki pertanyaan lebih lanjut. Kami selalu siap membantu Anda.\n\nTerima kasih atas kepercayaan Anda pada *KampSewa ID*.",
-                ),
-                CURLOPT_HTTPHEADER => array(
-                    'Authorization: ' . $token,
-                ),
-            ));
-
-            // Kirim permintaan untuk mengirim pesan OTP
-            $response_sms = curl_exec($curl);
-
-            // Tutup koneksi CURL
-            curl_close($curl);
+            try {
+                // Kirim permintaan untuk mengirim pesan OTP
+                $response_sms = \Illuminate\Support\Facades\Http::timeout(10)->post('http://localhost:3000/api/send-otp', [
+                    'phone'   => $telfon,
+                    'message' => $message
+                ]);
+                $isSuccess = $response_sms->successful();
+            } catch (\Exception $e) {
+                $isSuccess = false;
+            }
 
             // Periksa apakah pengiriman OTP berhasil
-            if ($response_sms) {
+            if ($isSuccess) {
                 // Jika berhasil, kirim respons JSON dengan status 'success'
                 return response()->json([
                     'status' => 'success',
