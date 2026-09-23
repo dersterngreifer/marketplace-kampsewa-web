@@ -104,6 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/user-products', 'getUserProducts');
             Route::get('/detail-keranjang-produk/{parameter}', 'getDetailProdukKeranjang');
             Route::get('/detail-produk/{parameter}', 'getDetailProduct');
+            Route::get('/list-kategori', 'getAllKategori');
             Route::get('/{kategori?}', 'getProdukByFilter');
         });
 

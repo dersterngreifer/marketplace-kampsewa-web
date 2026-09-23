@@ -17,11 +17,12 @@ class ProductController extends Controller
     public function produkRatingTertinggiLimit6()
     {
         // Ambil data produk dengan rata-rata rating
-        $produk = Produk::leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+        $produk = Produk::with('foto')->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->leftJoin('users', 'users.id', '=', 'produk.id_user')
             ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->select(
+                'produk.id',
                 'produk.id as id_produk',
                 'produk.id_user as id_user',
                 'users.name as nama_user',
@@ -29,7 +30,11 @@ class ProductController extends Controller
                 'users.foto as foto_toko',
                 DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 'produk.nama as nama_produk',
+                'produk.kategori',
                 'produk.foto_depan',
+                'produk.foto_belakang',
+                'produk.foto_kiri',
+                'produk.foto_kanan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
                 DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
                 DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
@@ -37,13 +42,47 @@ class ProductController extends Controller
             ->whereNotNull('rating_produk.rating')
             ->whereNotNull('detail_variant_produk.harga_sewa')
             ->whereNotNull('produk.id_user')
-            ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.foto_depan')
+            ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.kategori', 'produk.foto_depan', 'produk.foto_belakang', 'produk.foto_kiri', 'produk.foto_kanan')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->orderBy(DB::raw('MIN(detail_variant_produk.harga_sewa)'))
             ->limit(6)
             ->get()
             ->map(function ($item) {
                 $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
+                $item->foto_belakang = $item->foto_belakang !== 'Belum di isi' && $item->foto_belakang !== null 
+                    ? (str_starts_with($item->foto_belakang ?? '', 'http') ? $item->foto_belakang : PhotoHelper::getPhotoUrl($item->foto_belakang, 'internal'))
+                    : null;
+                $item->foto_kiri = $item->foto_kiri !== 'Belum di isi' && $item->foto_kiri !== null
+                    ? (str_starts_with($item->foto_kiri ?? '', 'http') ? $item->foto_kiri : PhotoHelper::getPhotoUrl($item->foto_kiri, 'internal'))
+                    : null;
+                $item->foto_kanan = $item->foto_kanan !== 'Belum di isi' && $item->foto_kanan !== null
+                    ? (str_starts_with($item->foto_kanan ?? '', 'http') ? $item->foto_kanan : PhotoHelper::getPhotoUrl($item->foto_kanan, 'internal'))
+                    : null;
+
+                $images = [];
+                if ($item->foto_depan) $images[] = $item->foto_depan;
+                if ($item->foto_belakang) $images[] = $item->foto_belakang;
+                if ($item->foto_kiri) $images[] = $item->foto_kiri;
+                if ($item->foto_kanan) $images[] = $item->foto_kanan;
+
+                if ($item->foto && $item->foto->count() > 0) {
+                    $item->foto_array = $item->foto->map(function ($f) use (&$images) {
+                        $url = PhotoHelper::getPhotoUrl($f->url_foto, $f->tipe_sumber);
+                        $images[] = $url;
+                        return [
+                            'id' => $f->id,
+                            'url' => $url,
+                            'urutan' => $f->urutan,
+                            'tipe_sumber' => $f->tipe_sumber
+                        ];
+                    })->toArray();
+                } else {
+                    $item->foto_array = [];
+                }
+                
+                $item->images = $images;
+                unset($item->foto);
+
                 return $item;
             });
 
@@ -71,11 +110,12 @@ class ProductController extends Controller
         $hargaMax = request()->query('hargaMax', null);
 
         // Ambil data dengan join table produk, users, variant_produk, detail_variant_produk, rating_produk
-        $produk = Produk::leftJoin('users', 'users.id', '=', 'produk.id_user')
+        $produk = Produk::with('foto')->leftJoin('users', 'users.id', '=', 'produk.id_user')
             ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->select(
+                'produk.id',
                 'produk.id as id_produk',
                 'produk.id_user as id_user',
                 'users.name as nama_user',
@@ -86,7 +126,11 @@ class ProductController extends Controller
                 DB::raw('MAX(variant_produk.id) as id_variant_produk'),
                 DB::raw('MAX(detail_variant_produk.id) as id_detail_variant_produk'),
                 'produk.nama as nama_produk',
+                'produk.kategori',
                 'produk.foto_depan',
+                'produk.foto_belakang',
+                'produk.foto_kiri',
+                'produk.foto_kanan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
                 DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
                 DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
@@ -137,12 +181,46 @@ class ProductController extends Controller
         }
 
         // Group by produk untuk menghindari duplikasi
-        $produk->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.foto_depan');
+        $produk->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.kategori', 'produk.foto_depan', 'produk.foto_belakang', 'produk.foto_kiri', 'produk.foto_kanan');
 
         // Eksekusi query dan ambil hasil
         $data = $produk->get()
             ->map(function ($item) {
                 $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
+                $item->foto_belakang = $item->foto_belakang !== 'Belum di isi' && $item->foto_belakang !== null 
+                    ? (str_starts_with($item->foto_belakang ?? '', 'http') ? $item->foto_belakang : PhotoHelper::getPhotoUrl($item->foto_belakang, 'internal'))
+                    : null;
+                $item->foto_kiri = $item->foto_kiri !== 'Belum di isi' && $item->foto_kiri !== null
+                    ? (str_starts_with($item->foto_kiri ?? '', 'http') ? $item->foto_kiri : PhotoHelper::getPhotoUrl($item->foto_kiri, 'internal'))
+                    : null;
+                $item->foto_kanan = $item->foto_kanan !== 'Belum di isi' && $item->foto_kanan !== null
+                    ? (str_starts_with($item->foto_kanan ?? '', 'http') ? $item->foto_kanan : PhotoHelper::getPhotoUrl($item->foto_kanan, 'internal'))
+                    : null;
+
+                $images = [];
+                if ($item->foto_depan) $images[] = $item->foto_depan;
+                if ($item->foto_belakang) $images[] = $item->foto_belakang;
+                if ($item->foto_kiri) $images[] = $item->foto_kiri;
+                if ($item->foto_kanan) $images[] = $item->foto_kanan;
+
+                if ($item->foto && $item->foto->count() > 0) {
+                    $item->foto_array = $item->foto->map(function ($f) use (&$images) {
+                        $url = PhotoHelper::getPhotoUrl($f->url_foto, $f->tipe_sumber);
+                        $images[] = $url;
+                        return [
+                            'id' => $f->id,
+                            'url' => $url,
+                            'urutan' => $f->urutan,
+                            'tipe_sumber' => $f->tipe_sumber
+                        ];
+                    })->toArray();
+                } else {
+                    $item->foto_array = [];
+                }
+                
+                $item->images = $images;
+                unset($item->foto);
+
                 return $item;
             });
 
@@ -164,7 +242,8 @@ class ProductController extends Controller
             $all_variants = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
                 ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
                 ->select(
-                    'produk.id as id_produk',
+                    'produk.id',
+                'produk.id as id_produk',
                     'produk.nama as nama_produk',
                     'produk.foto_depan',
                     'variant_produk.id as id_variant_produk',
@@ -192,7 +271,8 @@ class ProductController extends Controller
                     $join->whereNotNull('detail_variant_produk.ukuran');
                 })
                 ->select(
-                    'produk.id as id_produk',
+                    'produk.id',
+                'produk.id as id_produk',
                     'produk.nama as nama_produk',
                     'produk.foto_depan',
                     'variant_produk.id as id_variant_produk',
@@ -252,7 +332,8 @@ class ProductController extends Controller
                 ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
                 ->leftJoin('users', 'users.id', '=', 'produk.id_user')
                 ->select(
-                    'produk.id as id_produk',
+                    'produk.id',
+                'produk.id as id_produk',
                     'produk.nama as nama_produk',
                     'produk.deskripsi as deskripsi_produk',
                     'produk.foto_depan',
@@ -308,12 +389,20 @@ class ProductController extends Controller
                         ? (str_starts_with($item->foto_kanan ?? '', 'http') ? $item->foto_kanan : PhotoHelper::getPhotoUrl($item->foto_kanan, 'internal'))
                         : null;
 
+                    $images = [];
+                    if ($item->foto_depan) $images[] = $item->foto_depan;
+                    if ($item->foto_belakang) $images[] = $item->foto_belakang;
+                    if ($item->foto_kiri) $images[] = $item->foto_kiri;
+                    if ($item->foto_kanan) $images[] = $item->foto_kanan;
+
                     // Tambahkan array foto dari relasi
                     if ($item->foto && $item->foto->count() > 0) {
-                        $item->foto_array = $item->foto->map(function ($f) {
+                        $item->foto_array = $item->foto->map(function ($f) use (&$images) {
+                            $url = PhotoHelper::getPhotoUrl($f->url_foto, $f->tipe_sumber);
+                            $images[] = $url;
                             return [
                                 'id' => $f->id,
-                                'url' => PhotoHelper::getPhotoUrl($f->url_foto, $f->tipe_sumber),
+                                'url' => $url,
                                 'urutan' => $f->urutan,
                                 'tipe_sumber' => $f->tipe_sumber
                             ];
@@ -321,6 +410,9 @@ class ProductController extends Controller
                     } else {
                         $item->foto_array = [];
                     }
+
+                    $item->images = $images;
+                    unset($item->foto);
 
                     return $item;
                 });
@@ -344,11 +436,12 @@ class ProductController extends Controller
     // Fungsi untuk mendapatkan rekomendasi pencarian (berdasarkan rating tertinggi atau random)
     public function getRekomendasiPencarian()
     {
-        $produk = Produk::leftJoin('users', 'users.id', '=', 'produk.id_user')
+        $produk = Produk::with('foto')->leftJoin('users', 'users.id', '=', 'produk.id_user')
             ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->select(
+                'produk.id',
                 'produk.id as id_produk',
                 'produk.id_user as id_user',
                 'users.name as nama_user',
@@ -356,20 +449,58 @@ class ProductController extends Controller
                 'users.foto as foto_toko',
                 DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 'produk.nama as nama_produk',
+                'produk.kategori',
                 'produk.foto_depan',
+                'produk.foto_belakang',
+                'produk.foto_kiri',
+                'produk.foto_kanan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
                 DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
                 DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
             ->whereNotNull('detail_variant_produk.harga_sewa')
             ->whereNotNull('produk.id_user')
-            ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.foto_depan')
+            ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.kategori', 'produk.foto_depan', 'produk.foto_belakang', 'produk.foto_kiri', 'produk.foto_kanan')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->inRandomOrder()
             ->limit(10)
             ->get()
             ->map(function ($item) {
                 $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
+                $item->foto_belakang = $item->foto_belakang !== 'Belum di isi' && $item->foto_belakang !== null 
+                    ? (str_starts_with($item->foto_belakang ?? '', 'http') ? $item->foto_belakang : PhotoHelper::getPhotoUrl($item->foto_belakang, 'internal'))
+                    : null;
+                $item->foto_kiri = $item->foto_kiri !== 'Belum di isi' && $item->foto_kiri !== null
+                    ? (str_starts_with($item->foto_kiri ?? '', 'http') ? $item->foto_kiri : PhotoHelper::getPhotoUrl($item->foto_kiri, 'internal'))
+                    : null;
+                $item->foto_kanan = $item->foto_kanan !== 'Belum di isi' && $item->foto_kanan !== null
+                    ? (str_starts_with($item->foto_kanan ?? '', 'http') ? $item->foto_kanan : PhotoHelper::getPhotoUrl($item->foto_kanan, 'internal'))
+                    : null;
+
+                $images = [];
+                if ($item->foto_depan) $images[] = $item->foto_depan;
+                if ($item->foto_belakang) $images[] = $item->foto_belakang;
+                if ($item->foto_kiri) $images[] = $item->foto_kiri;
+                if ($item->foto_kanan) $images[] = $item->foto_kanan;
+
+                if ($item->foto && $item->foto->count() > 0) {
+                    $item->foto_array = $item->foto->map(function ($f) use (&$images) {
+                        $url = PhotoHelper::getPhotoUrl($f->url_foto, $f->tipe_sumber);
+                        $images[] = $url;
+                        return [
+                            'id' => $f->id,
+                            'url' => $url,
+                            'urutan' => $f->urutan,
+                            'tipe_sumber' => $f->tipe_sumber
+                        ];
+                    })->toArray();
+                } else {
+                    $item->foto_array = [];
+                }
+                
+                $item->images = $images;
+                unset($item->foto);
+
                 return $item;
             });
 
@@ -386,24 +517,75 @@ class ProductController extends Controller
     // Fungsi khusus untuk menampilkan produk milik user itu sendiri
     public function getUserProducts()
     {
-        $produk = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
+        $filterKategori = request()->query('filter');
+
+        $query = Produk::with('foto')->leftJoin('users', 'users.id', '=', 'produk.id_user')
+            ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->select(
+                'produk.id',
                 'produk.id as id_produk',
+                'produk.id_user as id_user',
+                'users.name as nama_user',
+                'users.name_store as nama_toko',
+                'users.foto as foto_toko',
+                DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 'produk.nama as nama_produk',
-                'produk.foto_depan',
                 'produk.kategori',
+                'produk.foto_depan',
+                'produk.foto_belakang',
+                'produk.foto_kiri',
+                'produk.foto_kanan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
                 DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
                 DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
             )
-            ->where('produk.id_user', '=', auth()->id())
-            ->groupBy('produk.id', 'produk.nama', 'produk.foto_depan', 'produk.kategori')
+            ->where('produk.id_user', '=', auth()->id());
+
+        if ($filterKategori && strtolower($filterKategori) !== 'semua') {
+            $query->where('produk.kategori', 'like', '%' . $filterKategori . '%');
+        }
+
+        $produk = $query->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto', 'produk.nama', 'produk.kategori', 'produk.foto_depan', 'produk.foto_belakang', 'produk.foto_kiri', 'produk.foto_kanan')
             ->orderByDesc('produk.created_at')
             ->get()
             ->map(function ($item) {
                 $item->foto_depan = str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : PhotoHelper::getPhotoUrl($item->foto_depan, 'internal');
+                $item->foto_belakang = $item->foto_belakang !== 'Belum di isi' && $item->foto_belakang !== null 
+                    ? (str_starts_with($item->foto_belakang ?? '', 'http') ? $item->foto_belakang : PhotoHelper::getPhotoUrl($item->foto_belakang, 'internal'))
+                    : null;
+                $item->foto_kiri = $item->foto_kiri !== 'Belum di isi' && $item->foto_kiri !== null
+                    ? (str_starts_with($item->foto_kiri ?? '', 'http') ? $item->foto_kiri : PhotoHelper::getPhotoUrl($item->foto_kiri, 'internal'))
+                    : null;
+                $item->foto_kanan = $item->foto_kanan !== 'Belum di isi' && $item->foto_kanan !== null
+                    ? (str_starts_with($item->foto_kanan ?? '', 'http') ? $item->foto_kanan : PhotoHelper::getPhotoUrl($item->foto_kanan, 'internal'))
+                    : null;
+
+                $images = [];
+                if ($item->foto_depan) $images[] = $item->foto_depan;
+                if ($item->foto_belakang) $images[] = $item->foto_belakang;
+                if ($item->foto_kiri) $images[] = $item->foto_kiri;
+                if ($item->foto_kanan) $images[] = $item->foto_kanan;
+
+                if ($item->foto && $item->foto->count() > 0) {
+                    $item->foto_array = $item->foto->map(function ($f) use (&$images) {
+                        $url = PhotoHelper::getPhotoUrl($f->url_foto, $f->tipe_sumber);
+                        $images[] = $url;
+                        return [
+                            'id' => $f->id,
+                            'url' => $url,
+                            'urutan' => $f->urutan,
+                            'tipe_sumber' => $f->tipe_sumber
+                        ];
+                    })->toArray();
+                } else {
+                    $item->foto_array = [];
+                }
+                
+                $item->images = $images;
+                unset($item->foto);
+
                 return $item;
             });
 
@@ -415,5 +597,25 @@ class ProductController extends Controller
             'message' => 'success',
             'data' => $produk
         ], 200);
+    }
+
+    // Fungsi untuk mendapatkan semua kategori unik dari seluruh produk
+    public function getAllKategori()
+    {
+        try {
+            $kategori = Produk::select('kategori')
+                ->whereNotNull('kategori')
+                ->where('kategori', '!=', '')
+                ->distinct()
+                ->pluck('kategori');
+
+            return response()->json([
+                'message' => 'success',
+                'data' => $kategori
+            ], 200);
+        } catch (\Exception $error) {
+            Log::error($error->getMessage());
+            return response()->json(['error' => 'Terjadi kesalahan saat mengambil kategori'], 500);
+        }
     }
 }

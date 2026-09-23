@@ -240,7 +240,7 @@ class ProdukController extends Controller
             $produk->id_user = $request->input('id_user');
             $produk->nama = $request->input('nama_produk');
             $produk->deskripsi = $request->input('deskripsi_produk');
-            $produk->kategori = $request->input('kategori_produk');
+            $produk->kategori = ucwords(strtolower($request->input('kategori_produk')));
 
             // Simpan gambar-gambar
             $processedImages = [];
@@ -506,9 +506,9 @@ class ProdukController extends Controller
             $produk = Produk::findOrFail($id_produk);
             $produk->nama = $validatedData['nama_produk'];
             $produk->deskripsi = $validatedData['deskripsi_produk'];
-            $produk->kategori = $validatedData['kategori_produk_update'];
+            $produk->kategori = ucwords(strtolower($validatedData['kategori_produk_update']));
 
-            Log::info('Kategori Produk: ' . $request->input('kategori_produk_update'));
+            Log::info('Kategori Produk: ' . $produk->kategori);
 
             // Hapus foto yang di-delete dari array deleted_fotos
             if ($request->has('deleted_fotos')) {

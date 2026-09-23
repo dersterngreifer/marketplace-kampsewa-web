@@ -35,6 +35,7 @@
                         <div class="relative w-full">
                             <label class="block text-sm font-bold text-gray-700 mb-2">Kategori Produk</label>
                             <input list="kategoriList" name="kategori_produk" id="grid-state" placeholder="Pilih atau ketik kategori baru..."
+                                oninput="this.value = this.value.toLowerCase().replace(/\b\w/g, s => s.toUpperCase());"
                                 class="block w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50 focus:bg-white transition-colors">
                             <datalist id="kategoriList">
                                 @if(isset($user_categories) && count($user_categories) > 0)
