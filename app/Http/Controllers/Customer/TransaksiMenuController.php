@@ -41,6 +41,10 @@ class TransaksiMenuController extends Controller
                 ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
                 ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
                 ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                ->leftJoin('foto_produk', function ($join) {
+                    $join->on('produk.id', '=', 'foto_produk.id_produk')
+                         ->where('foto_produk.urutan', 1);
+                })
                 ->leftJoin('users as penyewa', 'produk.id_user', '=', 'penyewa.id')
                 ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
                 ->select(
@@ -54,7 +58,7 @@ class TransaksiMenuController extends Controller
                     'pembayaran_penyewaan.status_pembayaran',
                     'pembayaran_penyewaan.metode',
                     'produk.id as id_produk',
-                    'produk.foto_depan',
+                    'foto_produk.url_foto as foto',
                     'produk.nama'
                 )
                 ->where('penyewa.id', $id_user_decrypt)
@@ -84,13 +88,17 @@ class TransaksiMenuController extends Controller
                 if (!isset($seenUsers[$item->id_user_penyewa])) {
                     $first_product = DB::table('detail_penyewaan')
                         ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                        ->leftJoin('foto_produk', function ($join) {
+                            $join->on('produk.id', '=', 'foto_produk.id_produk')
+                                 ->where('foto_produk.urutan', 1);
+                        })
                         ->where('detail_penyewaan.id_penyewaan', $item->id_penyewaan)
-                        ->select('produk.id as id_produk', 'produk.foto_depan', 'produk.nama')
+                        ->select('produk.id as id_produk', 'foto_produk.url_foto as foto', 'produk.nama')
                         ->first();
 
                     if ($first_product) {
                         $item->id_produk = $first_product->id_produk;
-                        $item->foto_depan = $first_product->foto_depan;
+                        $item->foto = $first_product->foto;
                         $item->nama = $first_product->nama;
                     }
 
@@ -158,14 +166,15 @@ class TransaksiMenuController extends Controller
 
         // Query untuk data dari tabel 'detail_penyewaan' dan mengelompokkan berdasarkan id_produk
         $details = DetailPenyewaan::leftJoin('produk', 'produk.id', '=', 'detail_penyewaan.id_produk')
+            ->leftJoin('foto_produk', function ($join) {
+                $join->on('produk.id', '=', 'foto_produk.id_produk')
+                     ->where('foto_produk.urutan', 1);
+            })
             ->select(
                 'produk.id as id_produk',
                 'produk.nama as produk_nama',
                 'produk.kategori as produk_kategori',
-                'produk.foto_depan as produk_foto',
-                'produk.foto_belakang',
-                'produk.foto_kiri',
-                'produk.foto_kanan',
+                'foto_produk.url_foto as produk_foto',
                 'detail_penyewaan.warna_produk',
                 'detail_penyewaan.ukuran',
                 'detail_penyewaan.qty',
@@ -471,6 +480,10 @@ class TransaksiMenuController extends Controller
             ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
             ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
             ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->leftJoin('foto_produk', function ($join) {
+                $join->on('produk.id', '=', 'foto_produk.id_produk')
+                     ->where('foto_produk.urutan', 1);
+            })
             ->leftJoin('users as penyewa', 'produk.id_user', '=', 'penyewa.id')
             ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
             ->select(
@@ -484,7 +497,7 @@ class TransaksiMenuController extends Controller
                 'pembayaran_penyewaan.status_pembayaran',
                 'pembayaran_penyewaan.metode',
                 'produk.id as id_produk',
-                'produk.foto_depan',
+                'foto_produk.url_foto as foto',
                 'produk.nama'
             )
             ->where('penyewa.id', $id_user_decrypt)
@@ -514,13 +527,17 @@ class TransaksiMenuController extends Controller
             if (!isset($seenUsers[$item->id_user_penyewa])) {
                 $first_product = DB::table('detail_penyewaan')
                     ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                    ->leftJoin('foto_produk', function ($join) {
+                        $join->on('produk.id', '=', 'foto_produk.id_produk')
+                             ->where('foto_produk.urutan', 1);
+                    })
                     ->where('detail_penyewaan.id_penyewaan', $item->id_penyewaan)
-                    ->select('produk.id as id_produk', 'produk.foto_depan', 'produk.nama')
+                    ->select('produk.id as id_produk', 'foto_produk.url_foto as foto', 'produk.nama')
                     ->first();
 
                 if ($first_product) {
                     $item->id_produk = $first_product->id_produk;
-                    $item->foto_depan = $first_product->foto_depan;
+                    $item->foto = $first_product->foto;
                     $item->nama = $first_product->nama;
                 }
 
@@ -564,6 +581,10 @@ class TransaksiMenuController extends Controller
                 ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
                 ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
                 ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                ->leftJoin('foto_produk', function ($join) {
+                    $join->on('produk.id', '=', 'foto_produk.id_produk')
+                         ->where('foto_produk.urutan', 1);
+                })
                 ->leftJoin('users as penyewa', 'produk.id_user', '=', 'penyewa.id')
                 ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
                 ->select(
@@ -577,7 +598,7 @@ class TransaksiMenuController extends Controller
                     'pembayaran_penyewaan.status_pembayaran',
                     'pembayaran_penyewaan.metode',
                     'produk.id as id_produk',
-                    'produk.foto_depan',
+                    'foto_produk.url_foto as foto',
                     'produk.nama'
                 )
                 ->where('penyewa.id', $id_user_decrypt);
@@ -608,13 +629,17 @@ class TransaksiMenuController extends Controller
                 if (!isset($seenUsers[$item->id_user_penyewa])) {
                     $first_product = DB::table('detail_penyewaan')
                         ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                        ->leftJoin('foto_produk', function ($join) {
+                            $join->on('produk.id', '=', 'foto_produk.id_produk')
+                                 ->where('foto_produk.urutan', 1);
+                        })
                         ->where('detail_penyewaan.id_penyewaan', $item->id_penyewaan)
-                        ->select('produk.id as id_produk', 'produk.foto_depan', 'produk.nama')
+                        ->select('produk.id as id_produk', 'foto_produk.url_foto as foto', 'produk.nama')
                         ->first();
 
                     if ($first_product) {
                         $item->id_produk = $first_product->id_produk;
-                        $item->foto_depan = $first_product->foto_depan;
+                        $item->foto = $first_product->foto;
                         $item->nama = $first_product->nama;
                     }
 

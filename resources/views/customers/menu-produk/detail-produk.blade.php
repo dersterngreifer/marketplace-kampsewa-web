@@ -27,24 +27,11 @@
                                 onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                         </div>
                     @empty
-                        @php
-                            $fotoLama = [
-                                ['url' => $detail_produk->foto_depan, 'tipe' => 'internal'],
-                                ['url' => $detail_produk->foto_belakang, 'tipe' => 'internal'],
-                                ['url' => $detail_produk->foto_kiri, 'tipe' => 'internal'],
-                                ['url' => $detail_produk->foto_kanan, 'tipe' => 'internal'],
-                            ];
-                        @endphp
-                        @foreach ($fotoLama as $foto)
-                            @if ($foto['url'] && $foto['url'] !== 'Belum di isi')
-                                <div class="dp-thumb"
-                                    onclick="dpChangeImage('{{ $foto['url'] }}', '{{ str_starts_with($foto['url'], 'http') ? 'external' : $foto['tipe'] }}', this)">
-                                    <img src="{{ str_starts_with($foto['url'], 'http') ? $foto['url'] : \App\Helpers\PhotoHelper::getPhotoUrl($foto['url'], $foto['tipe']) }}"
-                                        alt="Thumbnail"
-                                        onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
-                                </div>
-                            @endif
-                        @endforeach
+                        <div class="dp-thumb">
+                            <img src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($detail_produk) }}"
+                                alt="Thumbnail"
+                                onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
+                        </div>
                     @endforelse
                 </div>
             </div>
@@ -52,12 +39,7 @@
             {{-- Main image --}}
             <div class="dp-main-img-wrap group" style="cursor: zoom-in;" onclick="dpOpenModal()">
                 <img id="dp-main-img"
-                    src="{{ str_starts_with($detail_produk->foto->first()?->url_foto ?? $detail_produk->foto_depan ?? '', 'http')
-                        ? ($detail_produk->foto->first()?->url_foto ?? $detail_produk->foto_depan)
-                        : \App\Helpers\PhotoHelper::getPhotoUrl(
-                            $detail_produk->foto->first()?->url_foto ?? $detail_produk->foto_depan ?? '',
-                            $detail_produk->foto->first()?->tipe_sumber ?? 'internal'
-                          ) }}"
+                    src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($detail_produk) }}"
                     alt="{{ $detail_produk->nama_produk }}"
                     onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                 <span class="dp-category-badge">{{ $detail_produk->kategori_produk ?? 'Peralatan Kemah' }}</span>

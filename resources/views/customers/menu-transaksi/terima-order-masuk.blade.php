@@ -176,15 +176,6 @@
                                     <img class="w-[80px] h-[80px] object-cover rounded-lg"
                                         src="{{ asset('assets/image/customers/produk/' . $produk->produk_foto) }}"
                                         alt="{{ $produk->produk_nama }}">
-                                        <img class="w-[80px] h-[80px] object-cover rounded-lg"
-                                        src="{{ asset('assets/image/customers/produk/' . $produk->foto_belakang) }}"
-                                        alt="{{ $produk->produk_nama }}">
-                                        <img class="w-[80px] h-[80px] object-cover rounded-lg"
-                                        src="{{ asset('assets/image/customers/produk/' . $produk->foto_kiri) }}"
-                                        alt="{{ $produk->produk_nama }}">
-                                        <img class="w-[80px] h-[80px] object-cover rounded-lg"
-                                        src="{{ asset('assets/image/customers/produk/' . $produk->foto_kanan) }}"
-                                        alt="{{ $produk->produk_nama }}">
                                 </div>
                                 <div class="--name-kategori flex items-center gap-1">
                                     <p class="text-[20px] font-medium">{{ $produk->produk_nama }}</p>

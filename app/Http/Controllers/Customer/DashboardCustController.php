@@ -65,7 +65,7 @@ class DashboardCustController extends Controller
             $peralatan_terlaris = Produk::where('id_user', $id_user_dec)
                 ->leftJoin('detail_penyewaan', 'produk.id', '=', 'detail_penyewaan.id_produk')
                 ->select('produk.*', DB::raw('COALESCE(SUM(detail_penyewaan.qty), 0) as total_sewa'))
-                ->groupBy('produk.id', 'produk.id_user', 'produk.id_kategori', 'produk.nama', 'produk.deskripsi', 'produk.kode_produk', 'produk.jaminan', 'produk.gender', 'produk.foto_depan', 'produk.foto_belakang', 'produk.foto_kanan', 'produk.foto_kiri', 'produk.video_produk', 'produk.created_at', 'produk.updated_at')
+                ->groupBy('produk.id', 'produk.id_user', 'produk.id_kategori', 'produk.nama', 'produk.deskripsi', 'produk.kode_produk', 'produk.jaminan', 'produk.gender', 'produk.video_produk', 'produk.created_at', 'produk.updated_at')
                 ->orderByDesc('total_sewa')
                 ->take(5)
                 ->get();

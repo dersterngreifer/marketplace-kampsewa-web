@@ -119,7 +119,7 @@
                                     <!-- Image Container -->
                                     <div class="relative w-full aspect-square overflow-hidden bg-gray-50">
                                         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                            src="{{ str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
+                                            src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
                                             alt="{{ $item->nama_produk }}"
                                             onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                                         

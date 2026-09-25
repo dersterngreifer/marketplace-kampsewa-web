@@ -34,6 +34,7 @@ class UserController extends Controller
                 'is_verified',
                 'deskripsi_toko',
                 'banner_toko',
+                'foto_toko',
                 'background',
                 'jenis_kelamin'
             )
@@ -336,7 +337,7 @@ class UserController extends Controller
             ], 500);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Terjadi kesalahan saat update password.',
+                'message' => 'Terjadi kesalahan pada sistem.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -370,7 +371,7 @@ class UserController extends Controller
             ], 500);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Terjadi kesalahan saat update password.',
+                'message' => 'Terjadi kesalahan pada sistem.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -453,7 +454,7 @@ class UserController extends Controller
             ], 500);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Terjadi kesalahan saat update password.',
+                'message' => 'Terjadi kesalahan pada sistem.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -510,11 +511,12 @@ class UserController extends Controller
     {
         try {
             request()->validate([
-                'name_store' => 'required|string',
+                'name_store' => 'sometimes|required|string',
                 'deskripsi_toko' => 'nullable|string',
                 'banner_toko' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-                'longitude' => 'required|string',
-                'latitude' => 'required|string',
+                'foto_toko' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'longitude' => 'sometimes|required|string',
+                'latitude' => 'sometimes|required|string',
                 'detail_lainnya' => 'nullable|string|max:255',
             ]);
             $userCheck = User::find($id_user);
@@ -532,7 +534,10 @@ class UserController extends Controller
             }
 
             $users = User::where('id', $id_user);
-            $update_store = ['name_store' => request()->name_store];
+            $update_store = [];
+            if (request()->has('name_store')) {
+                $update_store['name_store'] = request()->name_store;
+            }
             if (request()->has('deskripsi_toko') && request()->deskripsi_toko != null) {
                 $update_store['deskripsi_toko'] = request()->deskripsi_toko;
             }
@@ -543,18 +548,33 @@ class UserController extends Controller
                 $file->move($destinationPath, $filename);
                 $update_store['banner_toko'] = $filename;
             }
-            $users->update($update_store);
-
-            $alamat = new Alamat();
-            $alamat->id_user = $id_user;
-            $alamat->longitude = request()->longitude;
-            $alamat->latitude = request()->latitude;
-            if (request()->detail_lainnya == null || request()->detail_lainnya == '') {
-                $alamat->detail_lainnya = 'Tidak di isi';
+            if (request()->hasFile('foto_toko')) {
+                $file = request()->file('foto_toko');
+                $destinationPath = public_path('assets/image/customers/logo_toko');
+                $filename = time() . '_' . $file->getClientOriginalName();
+                $file->move($destinationPath, $filename);
+                $update_store['foto_toko'] = $filename;
             }
-            $alamat->detail_lainnya = request()->detail_lainnya;
-            $alamat->type = 1;
-            $alamat->save();
+            if (!empty($update_store)) {
+                $users->update($update_store);
+            }
+
+            if (request()->has('longitude') && request()->has('latitude')) {
+                $alamat = Alamat::where('id_user', $id_user)->where('type', 1)->first();
+                if (!$alamat) {
+                    $alamat = new Alamat();
+                    $alamat->id_user = $id_user;
+                    $alamat->type = 1;
+                }
+                $alamat->longitude = request()->longitude;
+                $alamat->latitude = request()->latitude;
+                if (request()->detail_lainnya == null || request()->detail_lainnya == '') {
+                    $alamat->detail_lainnya = 'Tidak di isi';
+                } else {
+                    $alamat->detail_lainnya = request()->detail_lainnya;
+                }
+                $alamat->save();
+            }
             $get_alamat = Alamat::where('id_user', $id_user)->orderBy('created_at', 'desc');
             return response()->json([
                 'message' => 'success',
@@ -568,7 +588,7 @@ class UserController extends Controller
             ], 500);
         } catch (\Exception $e) {
             return response()->json([
-                'message' => 'Terjadi kesalahan saat update password.',
+                'message' => 'Gagal menyimpan data toko.',
                 'error' => $e->getMessage(),
             ], 500);
         }
@@ -671,3 +691,4 @@ class UserController extends Controller
             }
         }
 }
+

@@ -89,7 +89,7 @@
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-3">
                                         <img class="w-12 h-12 rounded-xl object-cover border border-gray-200 shadow-sm"
-                                            src="{{ asset('assets/image/customers/produk/' . $item->foto_depan) }}" alt="{{ $item->nama }}">
+                                            src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}" alt="{{ $item->nama }}">
                                         <div class="text-sm font-bold text-gray-800 max-w-[200px] truncate" title="{{ $item->nama }}">{{ $item->nama }}</div>
                                     </div>
                                 </td>

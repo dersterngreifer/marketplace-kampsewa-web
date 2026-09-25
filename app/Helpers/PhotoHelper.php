@@ -90,11 +90,6 @@ class PhotoHelper
             }
         }
 
-        // Fallback ke foto_depan jika masih ada
-        if (!empty($produk->foto_depan)) {
-            return self::getPhotoUrl($produk->foto_depan, 'internal');
-        }
-
         return asset('images/placeholder-image.png');
     }
 }

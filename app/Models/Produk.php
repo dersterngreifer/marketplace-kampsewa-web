@@ -17,10 +17,6 @@ class Produk extends Model
         'deskripsi',
         'status',
         'kategori',
-        'foto_depan',
-        'foto_belakang',
-        'foto_kiri',
-        'foto_kanan',
     ];
 
     /**
@@ -38,6 +34,14 @@ class Produk extends Model
     {
         return $this->hasOne(FotoProduk::class, 'id_produk')
             ->orderBy('urutan', 'asc');
+    }
+
+    /**
+     * Get all likes for this product
+     */
+    public function likes()
+    {
+        return $this->hasMany(ProdukLike::class, 'id_produk');
     }
 
     /**

@@ -71,7 +71,7 @@
                                         <div class="flex items-center gap-4">
                                             <div class="relative w-14 h-14 rounded-xl overflow-hidden border border-gray-100 shadow-sm group-hover:shadow transition-all">
                                                 <img class="w-full h-full object-cover"
-                                                    src="{{ str_starts_with($item->foto_depan ?? '', 'http') ? $item->foto_depan : \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
+                                                    src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
                                                     alt="{{ $item->nama_produk }}"
                                                     onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                                             </div>

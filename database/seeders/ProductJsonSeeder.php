@@ -89,10 +89,6 @@ class ProductJsonSeeder extends Seeder
                 'deskripsi' => $item['description'] ?? 'Tidak ada deskripsi',
                 'kategori' => $kategori,
                 'status' => 'Tersedia',
-                'foto_depan' => $item['listing_photo'] ?? 'Belum di isi',
-                'foto_belakang' => 'Belum di isi',
-                'foto_kiri' => 'Belum di isi',
-                'foto_kanan' => 'Belum di isi',
             ]);
 
             // Foto produk
@@ -116,10 +112,6 @@ class ProductJsonSeeder extends Seeder
                 ]);
             }
             if (count($allPhotos) > 0) {
-                $produk->foto_depan = $allPhotos[0] ?? 'Belum di isi';
-                $produk->foto_belakang = $allPhotos[1] ?? 'Belum di isi';
-                $produk->foto_kiri = $allPhotos[2] ?? 'Belum di isi';
-                $produk->foto_kanan = $allPhotos[3] ?? 'Belum di isi';
                 $produk->save();
             }
 

@@ -376,8 +376,8 @@ class TransaksiController extends Controller
                     'penyewaan.id as id_penyewaan',
                     'detail_penyewaan.id as id_detail_penyewaan',
                     'store_user.name_store',
+                    'produk.id as id_produk',
                     'produk.nama as nama_produk',
-                    'produk.foto_depan as foto_produk',
                     'detail_penyewaan.qty as qty',
                     DB::raw("CONCAT('Size ', detail_penyewaan.ukuran, ' / Warna ', detail_penyewaan.warna_produk) as deskripsi_produk"),
                     'detail_penyewaan.ukuran',
@@ -409,8 +409,8 @@ class TransaksiController extends Controller
                 'penyewaan.id',
                 'detail_penyewaan.id',
                 'store_user.name_store',
+                'produk.id',
                 'produk.nama',
-                'produk.foto_depan',
                 'detail_penyewaan.qty',
                 'detail_penyewaan.ukuran',
                 'detail_penyewaan.warna_produk',
@@ -431,6 +431,10 @@ class TransaksiController extends Controller
             $total_produk_lainnya = DB::table('detail_penyewaan')
                 ->where('detail_penyewaan.id_penyewaan', $data_pertama->id_penyewaan)
                 ->count() - 1;
+            
+            $produk = \App\Models\Produk::with('foto')->find($data_pertama->id_produk);
+            $foto_produk = \App\Helpers\PhotoHelper::getThumbnailUrl($produk);
+
             return response()->json([
                 'message' => 'success',
                 'response' => [
@@ -439,7 +443,7 @@ class TransaksiController extends Controller
                     'id_detail_penyewaan' => $data_pertama->id_detail_penyewaan,
                     'nama_toko' => $data_pertama->name_store,
                     'nama_produk' => $data_pertama->nama_produk,
-                    'foto_produk' => $data_pertama->foto_produk,
+                    'foto_produk' => $foto_produk,
                     'qty' => $data_pertama->qty,
                     'deskripsi_produk' => $data_pertama->deskripsi_produk,
                     'ukuran' => $data_pertama->ukuran,

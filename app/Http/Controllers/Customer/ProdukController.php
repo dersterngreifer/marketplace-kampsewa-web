@@ -41,12 +41,12 @@ class ProdukController extends Controller
                     'produk.id_user as id_user',
                     'produk.nama as nama_produk',
                     'produk.kategori as kategori_produk',
-                    'produk.foto_depan',
                     'produk.created_at',
                     DB::raw('SUM(detail_variant_produk.stok) as stok_produk'),
                     DB::raw('MAX(detail_variant_produk.harga_sewa) as harga_sewa_max'),
                     DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa_min'),
                 )
+                ->with('foto')
                 ->where('produk.id_user', $id_user_decrypt);
 
             // Apply search filter
@@ -73,7 +73,7 @@ class ProdukController extends Controller
             }
 
             // Paginate the filtered results
-            $result_table = $table_produk->groupBy('produk.id', 'produk.id_user', 'produk.nama', 'produk.kategori', 'produk.foto_depan', 'produk.created_at')->paginate(32);
+            $result_table = $table_produk->groupBy('produk.id', 'produk.id_user', 'produk.nama', 'produk.kategori', 'produk.created_at')->paginate(32);
 
             // Ambil semua kategori unik milik user
             $user_categories = Produk::where('id_user', $id_user_decrypt)
@@ -112,9 +112,8 @@ class ProdukController extends Controller
                 'produk.id_user as id_user',
                 'produk.nama as nama_produk',
                 'produk.status as status_produk',
-                'produk.foto_depan',
                 DB::raw('SUM(detail_variant_produk.stok) as stok_produk')
-            )->where('produk.id_user', $id);
+            )->with('foto')->where('produk.id_user', $id);
 
         // Clone the base query to count the total number of products
         $count_query = clone $base_query;
@@ -131,7 +130,7 @@ class ProdukController extends Controller
         }
 
         // Apply group by to the main query
-        $data_produk = $base_query->groupBy('produk.id', 'produk.id_user', 'produk.nama', 'produk.status', 'produk.foto_depan');
+        $data_produk = $base_query->groupBy('produk.id', 'produk.id_user', 'produk.nama', 'produk.status');
 
         // Get the results
         $produk_result = $data_produk->paginate(50);
@@ -263,11 +262,7 @@ class ProdukController extends Controller
                 }
             }
 
-            // Fallback for legacy database schema backward compatibility
-            $produk->foto_depan = $processedImages[0]['url'] ?? 'Belum di isi';
-            $produk->foto_belakang = $processedImages[1]['url'] ?? 'Belum di isi';
-            $produk->foto_kiri = $processedImages[2]['url'] ?? 'Belum di isi';
-            $produk->foto_kanan = $processedImages[3]['url'] ?? 'Belum di isi';
+            // Remove legacy database schema backward compatibility
 
             $produk->save();
             
@@ -341,10 +336,6 @@ class ProdukController extends Controller
                 'produk.status as status_produk',
                 'produk.deskripsi as deskripsi_produk',
                 'produk.kategori as kategori_produk',
-                'produk.foto_depan',
-                'produk.foto_belakang',
-                'produk.foto_kiri',
-                'produk.foto_kanan',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
             )
             ->with('foto')
@@ -354,11 +345,7 @@ class ProdukController extends Controller
                 'produk.nama',
                 'produk.status',
                 'produk.deskripsi',
-                'produk.kategori',
-                'produk.foto_depan',
-                'produk.foto_belakang',
-                'produk.foto_kiri',
-                'produk.foto_kanan'
+                'produk.kategori'
             )
             ->first();
 
@@ -552,13 +539,7 @@ class ProdukController extends Controller
                 ]);
             }
             
-            // Sync fallback columns based on current state of FotoProduk for backward compatibility
-            $allPhotos = FotoProduk::where('id_produk', $produk->id)->orderBy('urutan')->get();
-            $produk->foto_depan = $allPhotos->get(0)->url_foto ?? 'Belum di isi';
-            $produk->foto_belakang = $allPhotos->get(1)->url_foto ?? 'Belum di isi';
-            $produk->foto_kiri = $allPhotos->get(2)->url_foto ?? 'Belum di isi';
-            $produk->foto_kanan = $allPhotos->get(3)->url_foto ?? 'Belum di isi';
-            $produk->save();
+            // Fallback sync removed
             // Sinkronisasi varian dan detail varian
             $existingVariantIds = [];
             foreach ($request->input('variants') as $variantData) {
@@ -601,25 +582,5 @@ class ProdukController extends Controller
         }
     }
 
-    private function syncFotoProduk($produk)
-    {
-        try {
-            $fotoFields = [
-                1 => $produk->foto_depan,
-                2 => $produk->foto_belakang,
-                3 => $produk->foto_kiri,
-                4 => $produk->foto_kanan,
-            ];
-            foreach ($fotoFields as $urutan => $urlFoto) {
-                if (!empty($urlFoto) && $urlFoto !== 'Belum di isi') {
-                    FotoProduk::updateOrCreate(
-                        ['id_produk' => $produk->id, 'urutan' => $urutan],
-                        ['url_foto' => $urlFoto, 'tipe_sumber' => 'internal']
-                    );
-                }
-            }
-        } catch (\Exception $e) {
-            Log::error('Error syncFotoProduk: ' . $e->getMessage());
-        }
-    }
+
 }

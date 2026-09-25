@@ -38,7 +38,7 @@
                         @endphp
                         <div class="--card bg-white rounded-[15px] shadow-box-shadow-8 border border-gray-100 overflow-hidden flex flex-col justify-between hover:shadow-lg transition duration-200">
                             <div class="--image-wrapper relative">
-                                <img src="{{ asset('assets/image/customers/produk/' . ($item->foto_depan ?: 'default.png')) }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" alt="{{ $item->nama }}" class="w-full h-[180px] object-cover" />
+                                <img src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" alt="{{ $item->nama }}" class="w-full h-[180px] object-cover" />
                                 <span class="absolute top-3 right-3 bg-[#FFCE56] text-gray-900 text-[11px] font-bold px-3 py-1 rounded-full shadow-sm">
                                     Sedang Disewa
                                 </span>

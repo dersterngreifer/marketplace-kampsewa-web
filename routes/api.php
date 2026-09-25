@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\IklanControlller;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RiwayatPencarianController;
 use App\Http\Controllers\Api\TransaksiController;
+use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,20 @@ Route::controller(ChartWebController::class)->group(function () {
     Route::get('/chart-perbandingan-pertahun-web-cust/{id_user}', 'apiPerbandinganPemasukanPertahunWebCust');
     Route::get('/statistik-pesanan/{id_user}', 'apiStatistikPesanan');
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| Public Store Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('store')
+    ->controller(StoreController::class)
+    ->group(function () {
+        Route::get('/{id_user}', 'showStoreProfile');
+        Route::get('/{id_user}/products', 'showStoreProducts');
+    });
 
 
 /*
@@ -105,6 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/detail-keranjang-produk/{parameter}', 'getDetailProdukKeranjang');
             Route::get('/detail-produk/{parameter}', 'getDetailProduct');
             Route::get('/list-kategori', 'getAllKategori');
+            Route::post('/{id_produk}/toggle-like', 'toggleLike')->middleware('auth:sanctum');
             Route::get('/{kategori?}', 'getProdukByFilter');
         });
 

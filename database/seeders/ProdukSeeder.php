@@ -48,10 +48,6 @@ class ProdukSeeder extends Seeder
                         'deskripsi' => $product['description'],
                         'status' => 'Tersedia',
                         'kategori' => $kategori,
-                        'foto_depan' => $product['listing_photo'], // Simpan foto pertama untuk backward compatibility
-                        'foto_belakang' => 'Belum di isi',
-                        'foto_kiri' => 'Belum di isi',
-                        'foto_kanan' => 'Belum di isi',
                     ]);
 
                     // Tambahkan foto detail

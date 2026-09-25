@@ -152,7 +152,7 @@
                 @forelse ($peralatan_terlaris as $item)
                     <div class="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col">
                         <div class="relative w-full pt-[75%] overflow-hidden bg-gray-50">
-                            <img src="{{ asset('assets/image/customers/produk/' . ($item->foto_depan ?: 'default.png')) }}" 
+                            <img src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}" 
                                 onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" 
                                 alt="{{ $item->nama }}" 
                                 class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
