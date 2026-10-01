@@ -50,6 +50,11 @@ class UserController extends Controller
 
             // Tambahkan field penanda apakah user memiliki toko
             $get_data_user->is_toko = !empty($get_data_user->name_store);
+            
+            $current_user_id = auth('sanctum')->id();
+            $get_data_user->total_followers = \Illuminate\Support\Facades\DB::table('followers')->where('followed_id', $id_user)->count();
+            $get_data_user->total_following = \Illuminate\Support\Facades\DB::table('followers')->where('follower_id', $id_user)->count();
+            $get_data_user->is_followed_by_me = $current_user_id ? \Illuminate\Support\Facades\DB::table('followers')->where('follower_id', $current_user_id)->where('followed_id', $id_user)->exists() : false;
 
             // Kalkulasi Rating Toko dan Jumlah Ulasan (berdasarkan produk milik toko ini)
             $rating_info = \Illuminate\Support\Facades\DB::table('produk')

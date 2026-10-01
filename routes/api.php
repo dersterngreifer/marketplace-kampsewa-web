@@ -102,6 +102,12 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/verify-ktp', 'verifyKtp');
         });
 
+    Route::post('/follow/{user_id}', [\App\Http\Controllers\Api\FollowController::class, 'follow']);
+    Route::post('/unfollow/{user_id}', [\App\Http\Controllers\Api\FollowController::class, 'unfollow']);
+    Route::delete('/follow/{user_id}', [\App\Http\Controllers\Api\FollowController::class, 'unfollow']);
+    Route::get('/user/{user_id}/followers', [\App\Http\Controllers\Api\FollowController::class, 'followers']);
+    Route::get('/user/{user_id}/following', [\App\Http\Controllers\Api\FollowController::class, 'following']);
+
     Route::post('/logout', [UserController::class, 'logout']);
 
 
@@ -192,5 +198,22 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/', 'storeFeedback');
             Route::get('/{feedback}/messages', 'messages');
             Route::post('/{feedback}/messages', 'storeMessage');
+        });
+
+    Route::prefix('chat-room')
+        ->controller(FeedbackChatController::class)
+        ->group(function () {
+            Route::get('/', 'chatRooms');
+            Route::get('/{feedback}/{admin_id}/messages', 'roomMessages');
+            Route::post('/{feedback}/{admin_id}/messages', 'storeRoomMessage');
+        });
+    Route::prefix('chat')
+        ->controller(\App\Http\Controllers\Api\ChatController::class)
+        ->group(function () {
+            Route::get('/rooms', 'getRooms');
+            Route::get('/room/{room_id}/messages', 'getMessagesByRoom');
+            Route::get('/messages/{user_id_lawan}', 'getMessagesByUser');
+            Route::post('/send', 'sendMessage');
+            Route::get('/unread-summary', 'getUnreadSummary');
         });
 });

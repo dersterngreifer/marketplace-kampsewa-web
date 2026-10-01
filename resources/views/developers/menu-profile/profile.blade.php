@@ -1,4 +1,7 @@
 @extends('layouts.developers.ly-dashboard')
+
+@include('components.modals.edit-profile')
+
 @section('content')
     <div class="--container">
         <div class="--component-awal w-full h-auto">
@@ -8,14 +11,22 @@
             <div class="--card-detail-profile-user flex flex-col gap-2 w-full h-full">
                 <div class="--foto-name-id flex flex-col gap-4 w-full bg-white shadow-box-shadow-11 rounded-[20px] p-4">
                     <div class="--image w-full flex justify-center">
-                        <img class="object-cover border-2 border-solid border-white outline outline-[#5038ED] w-[80px] h-[80px] rounded-full"
-                            src="@userPhoto(session('foto'))" alt="">
+                        @include('components.ui.avatar', [
+                            'nama' => session('nama_lengkap'),
+                            'foto' => session('foto'),
+                            'type' => 1,
+                            'class' => 'w-[80px] h-[80px]',
+                            'rounded' => 'rounded-full',
+                            'text' => 'text-2xl',
+                            'extra' => 'border-2 border-solid border-white outline outline-[#5038ED]',
+                        ])
                     </div>
                     <div class="--name-id w-full text-center">
                         <p class="text-[14px] font-bold">{{ session('nama_lengkap') }}</p>
                         <p class="text-[12px] font-medium text-gray-400 whitespace-nowrap">ID : {{ session('id_user') }}</p>
                     </div>
-                    <div class="--button w-full flex justify-center"><button
+                    <div class="--button w-full flex justify-center"><button type="button"
+                            onclick="modalEditProfileHandler(true)"
                             class="px-4 py-2 gradient-1 text-[12px] font-bold cursor-pointer text-white rounded-full">Edit
                             Profile</button></div>
                 </div>

@@ -151,7 +151,23 @@
                 {{-- Bubble chat --}}
                 <div class="space-y-3">
                     @foreach ($messages as $message)
-                        <div class="flex {{ $message->sender_type == 'admin' ? 'justify-end' : 'justify-start' }}">
+                        @php
+                            $senderName = $message->sender_type == 'admin' 
+                                ? (isset($message->sender) ? $message->sender->name : 'Admin / Developer')
+                                : ($data->name ?? 'Customer');
+                            
+                            $rawFoto = $message->sender_type == 'admin' 
+                                ? (isset($message->sender) ? $message->sender->foto : null)
+                                : ($data->foto ?? null);
+                            
+                            $avatarUrl = (!empty($rawFoto) && $rawFoto !== 'Belum Di isi')
+                                ? asset('assets/image/customers/profile/' . $rawFoto)
+                                : 'https://ui-avatars.com/api/?name=' . urlencode($senderName) . '&background=random';
+                        @endphp
+                        <div class="flex {{ $message->sender_type == 'admin' ? 'justify-end' : 'justify-start' }} items-end gap-2 mb-2">
+                            @if ($message->sender_type != 'admin')
+                                <img src="{{ $avatarUrl }}" alt="{{ $senderName }}" class="h-8 w-8 rounded-full object-cover shrink-0" />
+                            @endif
                             <div
                                 class="max-w-[92%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[78%]
                                 {{ $message->sender_type == 'admin'
@@ -163,7 +179,7 @@
                                         class="text-xs font-extrabold
                                         {{ $message->sender_type == 'admin' ? 'text-white/90' : 'text-[#5038ED]' }}"
                                     >
-                                        {{ $message->sender_type == 'admin' ? 'Admin / Developer' : 'Customer' }}
+                                        {{ $senderName }}
                                     </span>
 
                                     @if (!empty($message->is_feedback_awal))
@@ -189,6 +205,9 @@
                                     {{ $message->message }}
                                 </p>
                             </div>
+                            @if ($message->sender_type == 'admin')
+                                <img src="{{ $avatarUrl }}" alt="{{ $senderName }}" class="h-8 w-8 rounded-full object-cover shrink-0" />
+                            @endif
                         </div>
                     @endforeach
 

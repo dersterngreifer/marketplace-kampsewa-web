@@ -118,7 +118,9 @@ class KelolaPenggunaMenuController extends Controller
             $photoPath = 'Belum Di isi';
 
             if ($request->hasFile('photo')) {
-                $photoPath = $request->file('photo')->store('users/customer', 'public');
+                $file = $request->file('photo');
+                $photoPath = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/image/customers/profile/'), $photoPath);
             }
 
             $user = new User();

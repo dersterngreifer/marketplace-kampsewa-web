@@ -195,6 +195,7 @@ class NotificationController extends Controller
                     $message = FeedbackMessage::create([
                         'feedback_id' => $item->id,
                         'sender_id' => $idUserBalas,
+                        'admin_id' => $idUserBalas,
                         'sender_type' => 'admin',
                         'message' => $request->balasan,
                         'read_at' => now(),
@@ -293,6 +294,18 @@ class NotificationController extends Controller
 
         $messages = $feedback->messages()
             ->with('sender')
+            ->where(function($query) {
+                $query->where(function($q) {
+                    $q->where('sender_type', 'customer')
+                      ->where(function($q2) {
+                          $q2->where('admin_id', Auth::id())
+                             ->orWhereNull('admin_id');
+                      });
+                })->orWhere(function($q) {
+                    $q->where('sender_type', 'admin')
+                      ->where('sender_id', Auth::id());
+                });
+            })
             ->oldest()
             ->get()
             ->map(function ($message) {
@@ -319,6 +332,7 @@ class NotificationController extends Controller
         $message = FeedbackMessage::create([
             'feedback_id' => $feedback->id,
             'sender_id' => Auth::id(),
+            'admin_id' => Auth::id(),
             'sender_type' => 'admin',
             'message' => $request->message,
             'read_at' => now(),

@@ -57,8 +57,14 @@
                             <th class="px-6 py-4 font-normal">
                                 <div class="flex items-center gap-3">
                                     <div class="relative h-11 w-11 shrink-0">
-                                        <img class="h-full w-full rounded-2xl object-cover object-center shadow-sm"
-                                            src="@userPhoto($item->foto)" alt="Foto Customer" />
+                                        @include('components.ui.avatar', [
+                                            'nama' => $item->name,
+                                            'foto' => $item->foto,
+                                            'class' => 'h-full w-full',
+                                            'rounded' => 'rounded-2xl',
+                                            'text' => 'text-xs',
+                                            'extra' => 'shadow-sm',
+                                        ])
 
                                         <span class="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
                                     </div>

@@ -8,6 +8,7 @@ use App\Models\Produk;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -93,7 +94,20 @@ class DetailPenggunaController extends Controller
 
     $feedback_terbaru = Feedback::with([
         'messages' => function ($query) {
-            $query->orderBy('created_at', 'asc')
+            $query->with('sender')
+                ->where(function($q) {
+                    $q->where(function($q3) {
+                        $q3->where('sender_type', 'customer')
+                           ->where(function($q4) {
+                               $q4->where('admin_id', Auth::id())
+                                  ->orWhereNull('admin_id');
+                           });
+                    })->orWhere(function($q2) {
+                        $q2->where('sender_type', 'admin')
+                           ->where('sender_id', Auth::id());
+                    });
+                })
+                ->orderBy('created_at', 'asc')
                 ->orderBy('id', 'asc');
         }
     ])
@@ -318,12 +332,18 @@ class DetailPenggunaController extends Controller
         if (
             $fotoLama &&
             !in_array(strtolower(trim($fotoLama)), ['belum di isi', 'belum di isi.']) &&
-            Storage::disk('public')->exists($fotoLama)
+            $fotoLama !== 'man.png'
         ) {
-            Storage::disk('public')->delete($fotoLama);
+            $oldPath = public_path('assets/image/customers/profile/' . $fotoLama);
+            if (file_exists($oldPath)) {
+                unlink($oldPath);
+            }
         }
 
-        $validated['foto'] = $request->file('foto')->store('customers/profile', 'public');
+        $file = $request->file('foto');
+        $filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path('assets/image/customers/profile/'), $filename);
+        $validated['foto'] = $filename;
     }
 
     $user->update($validated);

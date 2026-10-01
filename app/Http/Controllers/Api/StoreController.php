@@ -22,9 +22,11 @@ class StoreController extends Controller
     public function showStoreProfile($id_user)
     {
         try {
-            // Ambil data user (pemilik toko)
+            // Ambil data user (pemilik toko atau user biasa)
             $user = User::select(
                 'id',
+                'name',
+                'foto',
                 'name_store',
                 'deskripsi_toko',
                 'foto_toko',
@@ -37,72 +39,81 @@ class StoreController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Toko tidak ditemukan.',
+                    'message' => 'Pengguna tidak ditemukan.',
                 ], 404);
             }
 
-            if (empty($user->name_store)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User ini belum membuka toko.',
-                ], 404);
+            $is_toko = !empty($user->name_store);
+
+            $ratingInfo = null;
+            $totalProdukAktif = 0;
+            $totalTransaksiSelesai = 0;
+
+            if ($is_toko) {
+                // Hitung rating rata-rata & total ulasan dari seluruh produk toko ini
+                $ratingInfo = DB::table('produk')
+                    ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+                    ->where('produk.id_user', $id_user)
+                    ->select(
+                        DB::raw('IFNULL(ROUND(AVG(rating_produk.rating), 1), 0) as rating_toko'),
+                        DB::raw('COUNT(rating_produk.id) as total_ulasan')
+                    )
+                    ->first();
+
+                // Hitung jumlah produk yang masih aktif (memiliki stok & harga)
+                $totalProdukAktif = DB::table('produk')
+                    ->join('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
+                    ->join('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
+                    ->where('produk.id_user', $id_user)
+                    ->whereNotNull('detail_variant_produk.harga_sewa')
+                    ->where('detail_variant_produk.stok', '>', 0)
+                    ->distinct('produk.id')
+                    ->count('produk.id');
+
+                // Hitung total transaksi yang sudah selesai untuk toko ini
+                $totalTransaksiSelesai = DB::table('penyewaan')
+                    ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+                    ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                    ->where('produk.id_user', $id_user)
+                    ->where('penyewaan.status_penyewaan', 'Selesai')
+                    ->distinct('penyewaan.id')
+                    ->count('penyewaan.id');
             }
 
-            // Hitung rating rata-rata & total ulasan dari seluruh produk toko ini
-            $ratingInfo = DB::table('produk')
-                ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
-                ->where('produk.id_user', $id_user)
-                ->select(
-                    DB::raw('IFNULL(ROUND(AVG(rating_produk.rating), 1), 0) as rating_toko'),
-                    DB::raw('COUNT(rating_produk.id) as total_ulasan')
-                )
-                ->first();
-
-            // Hitung jumlah produk yang masih aktif (memiliki stok & harga)
-            $totalProdukAktif = DB::table('produk')
-                ->join('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
-                ->join('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
-                ->where('produk.id_user', $id_user)
-                ->whereNotNull('detail_variant_produk.harga_sewa')
-                ->where('detail_variant_produk.stok', '>', 0)
-                ->distinct('produk.id')
-                ->count('produk.id');
-
-            // Hitung total transaksi yang sudah selesai untuk toko ini
-            // Transaksi selesai = penyewaan dengan status 'Selesai' yang mengandung produk milik toko ini
-            $totalTransaksiSelesai = DB::table('penyewaan')
-                ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
-                ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
-                ->where('produk.id_user', $id_user)
-                ->where('penyewaan.status_penyewaan', 'Selesai')
-                ->distinct('penyewaan.id')
-                ->count('penyewaan.id');
-
-            // Ambil alamat toko (type = 1)
+            // Ambil alamat utama (type = 1 untuk toko, atau bisa alamat utama user)
             $alamatToko = Alamat::select('provinsi', 'kota_kabupaten', 'detail_lainnya')
                 ->where('id_user', $id_user)
                 ->where('type', 1)
                 ->first();
 
-            // Build URL foto dan banner toko
-            $fotoTokoUrl = ($user->foto_toko && $user->foto_toko !== 'Belum Di isi')
-                ? asset('assets/image/customers/logo_toko/' . $user->foto_toko)
-                : asset('images/placeholder-image.png');
+            // Build URL foto
+            $fotoTokoUrl = null;
+            if ($is_toko && $user->foto_toko && $user->foto_toko !== 'Belum Di isi') {
+                $fotoTokoUrl = asset('assets/image/customers/logo_toko/' . $user->foto_toko);
+            } elseif (!$is_toko && $user->foto && $user->foto !== 'Belum Di isi') {
+                $fotoTokoUrl = asset('assets/image/customers/profile/' . $user->foto);
+            } else {
+                $fotoTokoUrl = asset('images/placeholder-image.png');
+            }
 
-            $bannerTokoUrl = ($user->banner_toko && $user->banner_toko !== 'Belum Di isi')
+            $bannerTokoUrl = ($is_toko && $user->banner_toko && $user->banner_toko !== 'Belum Di isi')
                 ? asset('assets/image/customers/banner/' . $user->banner_toko)
                 : null;
 
             $data = [
                 'id_user'                 => (int) $id_user,
-                'nama_store'              => $user->name_store,
-                'deskripsi_toko'          => $user->deskripsi_toko,
+                'is_toko'                 => $is_toko,
+                'nama_store'              => $is_toko ? $user->name_store : $user->name,
+                'deskripsi_toko'          => $is_toko ? $user->deskripsi_toko : 'Pengguna ini adalah pengguna biasa dan tidak menyewakan produk.',
                 'foto_toko'               => $fotoTokoUrl,
                 'banner_toko'             => $bannerTokoUrl,
                 'rating_toko'             => $ratingInfo ? (float) $ratingInfo->rating_toko : 0.0,
                 'total_ulasan'            => $ratingInfo ? (int) $ratingInfo->total_ulasan : 0,
                 'total_produk_aktif'      => (int) $totalProdukAktif,
                 'total_transaksi_selesai' => (int) $totalTransaksiSelesai,
+                'total_followers'         => DB::table('followers')->where('followed_id', $id_user)->count(),
+                'total_following'         => DB::table('followers')->where('follower_id', $id_user)->count(),
+                'is_followed_by_me'       => auth('sanctum')->id() ? DB::table('followers')->where('follower_id', auth('sanctum')->id())->where('followed_id', $id_user)->exists() : false,
                 'alamat'                  => $alamatToko ? [
                     'provinsi'      => $alamatToko->provinsi,
                     'kota'          => $alamatToko->kota_kabupaten,

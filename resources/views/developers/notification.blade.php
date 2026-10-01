@@ -670,9 +670,17 @@ const customerReplyPagination = document.getElementById('customerReplyPagination
             function messageBubbleHtml(message) {
                 const isAdmin = message.sender_type === 'admin';
                 const id = escapeHtml(message.id);
+                const defaultAvatar = `ui-avatars.com/api/?name=${escapeHtml(message.sender_name)}&background=random`;
+                const avatarUrl = message.sender_foto ? escapeHtml(message.sender_foto) : `https://${defaultAvatar}`;
+
+                const avatarHtml = `
+                    <img src="${avatarUrl}" alt="${escapeHtml(message.sender_name)}" 
+                         class="h-8 w-8 rounded-full object-cover shrink-0 ${isAdmin ? 'ml-2' : 'mr-2'}" />
+                `;
 
                 return `
-                    <div data-message-id="${id}" class="flex ${isAdmin ? 'justify-end' : 'justify-start'}">
+                    <div data-message-id="${id}" class="flex ${isAdmin ? 'justify-end' : 'justify-start'} items-end mb-4">
+                        ${!isAdmin ? avatarHtml : ''}
                         <div class="max-w-[82%] rounded-2xl px-4 py-3 shadow-sm ${
                             isAdmin
                                 ? 'bg-gradient-to-br from-[#B381F4] to-[#5038ED] text-white'
@@ -698,6 +706,7 @@ const customerReplyPagination = document.getElementById('customerReplyPagination
                                 ${escapeHtml(message.created_at)}
                             </p>
                         </div>
+                        ${isAdmin ? avatarHtml : ''}
                     </div>
                 `;
             }

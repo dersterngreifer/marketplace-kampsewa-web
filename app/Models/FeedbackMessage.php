@@ -9,6 +9,7 @@ class FeedbackMessage extends Model
     protected $fillable = [
         'feedback_id',
         'sender_id',
+        'admin_id',
         'sender_type',
         'message',
         'read_at',

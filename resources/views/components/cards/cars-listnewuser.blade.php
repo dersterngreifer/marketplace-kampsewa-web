@@ -23,8 +23,14 @@
                     <a href="{{ route('detail-pengguna.index', [$item->name]) }}"
                         class="group flex items-center gap-3 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-slate-200 hover:bg-slate-50">
 
-                        <img class="h-11 w-11 shrink-0 rounded-2xl object-cover shadow-sm"
-                            src="@userPhoto($item->foto)" alt="Foto Customer">
+                        @include('components.ui.avatar', [
+                            'nama' => $item->name,
+                            'foto' => $item->foto,
+                            'class' => 'h-11 w-11',
+                            'rounded' => 'rounded-2xl',
+                            'text' => 'text-xs',
+                            'extra' => 'shadow-sm',
+                        ])
 
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-bold text-slate-900">

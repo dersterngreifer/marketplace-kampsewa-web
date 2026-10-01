@@ -66,8 +66,15 @@
                     </div>
 
                     <div class="relative">
-                        <img class="h-12 w-12 rounded-2xl object-cover ring-2 ring-white shadow-md"
-                            src="@userPhoto($developerPhoto)" alt="Foto Profil">
+                        @include('components.ui.avatar', [
+                            'nama' => $developerName,
+                            'foto' => $developerPhoto,
+                            'type' => 1,
+                            'class' => 'h-12 w-12',
+                            'rounded' => 'rounded-2xl',
+                            'text' => 'text-[13px]',
+                            'extra' => 'ring-2 ring-white shadow-md',
+                        ])
 
                         <span
                             class="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500"></span>
@@ -119,8 +126,14 @@
                                 <a href="{{ route('detail-pengguna.index', ['user' => $user->id]) }}"
                                     class="group flex gap-4 border-b border-slate-100 px-5 py-4 transition-all duration-300 hover:bg-slate-50">
 
-                                    <img src="@userPhoto($user->foto)"
-                                        class="h-12 w-12 shrink-0 rounded-2xl object-cover shadow-sm" alt="Foto User">
+                                    @include('components.ui.avatar', [
+                                        'nama' => $user->name,
+                                        'foto' => $user->foto,
+                                        'class' => 'h-12 w-12',
+                                        'rounded' => 'rounded-2xl',
+                                        'text' => 'text-[13px]',
+                                        'extra' => 'shadow-sm',
+                                    ])
 
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-start justify-between gap-3">

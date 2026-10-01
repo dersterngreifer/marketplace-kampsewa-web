@@ -212,6 +212,7 @@ Route::middleware('auth')->group(function () {
         */
 
         Route::get('/profile/{nama_lengkap}', [ProfileController::class, 'index'])->name('profile.index');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     });
 
     /*
