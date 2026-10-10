@@ -18,6 +18,9 @@ class Kernel extends ConsoleKernel
         // 1. Menyelesaikan iklan yang sudah melewati tanggal_akhir
         // 2. Mengaktifkan iklan Pending yang tanggal_mulai sudah tercapai (maks 10 aktif)
         $schedule->command('app:update-status-iklan')->dailyAt('00:05');
+        
+        // Membatalkan order yang pending > 2 jam untuk rilis stok
+        $schedule->command('orders:cancel-unpaid')->hourly();
     }
 
     /**

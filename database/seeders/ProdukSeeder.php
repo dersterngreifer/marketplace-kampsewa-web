@@ -19,13 +19,22 @@ class ProdukSeeder extends Seeder
 
         if (file_exists($jsonPath)) {
             $json = file_get_contents($jsonPath);
-            $products = json_decode($json, true);
+            $baseProducts = json_decode($json, true);
+            
+            // Duplicate the products to ensure we have at least 500
+            $products = [];
+            while (count($products) < 500) {
+                $products = array_merge($products, $baseProducts);
+            }
+            // Limit to exactly 500 or slightly more to meet requirements without going crazy
+            $products = array_slice($products, 0, 500);
 
             // Ambil kandidat seller dari database (Tipe 0: Customer)
             $kandidatSellers = \App\Models\User::where('type', 0)->inRandomOrder()->pluck('id')->toArray();
-            $maksimalSellers = floor(count($products) / 5);
-            $sellerIds = array_slice($kandidatSellers, 0, $maksimalSellers > 0 ? $maksimalSellers : 1);
-
+            
+            // Tiap seller minimal punya 5 produk atau lebih
+            $sellerIds = array_slice($kandidatSellers, 0, min(count($kandidatSellers), 100)); // distribute over 100 sellers
+            
             // Kelompokan minimal 5 produk ke tiap seller
             $productChunks = array_chunk($products, 5);
             if (count($productChunks) > 1 && count(end($productChunks)) < 5) {
@@ -50,34 +59,40 @@ class ProdukSeeder extends Seeder
                         'kategori' => $kategori,
                     ]);
 
-                    // Tambahkan foto detail
-                    if (isset($product['detail_photos']) && is_array($product['detail_photos'])) {
-                        foreach ($product['detail_photos'] as $index => $photoUrl) {
-                            FotoProduk::create([
-                                'id_produk' => $produk->id,
-                                'url_foto' => $photoUrl,
-                                'tipe_sumber' => PhotoHelper::detectPhotoSource($photoUrl),
-                                'urutan' => $index,
-                            ]);
+                    // Kumpulkan semua foto (listing_photo + detail_photos)
+                    $allPhotos = [];
+                    if (!empty($product['listing_photo'])) {
+                        $allPhotos[] = $product['listing_photo'];
+                    }
+                    if (!empty($product['detail_photos']) && is_array($product['detail_photos'])) {
+                        foreach ($product['detail_photos'] as $photoUrl) {
+                            if ($photoUrl !== $product['listing_photo']) {
+                                $allPhotos[] = $photoUrl;
+                            }
                         }
                     }
 
-                    // Jika tidak ada detail photos, minimal tambahkan foto listing
-                    if (!isset($product['detail_photos']) || empty($product['detail_photos'])) {
+                    // Jika benar-benar kosong, gunakan placeholder
+                    if (empty($allPhotos)) {
+                        $allPhotos[] = asset('images/placeholder-image.png');
+                    }
+
+                    // Simpan semua foto ke FotoProduk
+                    foreach ($allPhotos as $index => $photoUrl) {
                         FotoProduk::create([
                             'id_produk' => $produk->id,
-                            'url_foto' => $product['listing_photo'],
-                            'tipe_sumber' => PhotoHelper::detectPhotoSource($product['listing_photo']),
-                            'urutan' => 0,
+                            'url_foto' => $photoUrl,
+                            'tipe_sumber' => PhotoHelper::detectPhotoSource($photoUrl),
+                            'urutan' => $index,
                         ]);
                     }
                 }
             }
         } else {
             // Jika products.json tidak ditemukan, buat data dummy menggunakan factory
-            $sellerIds = \App\Models\User::where('type', 0)->inRandomOrder()->limit(10)->pluck('id');
+            $sellerIds = \App\Models\User::where('type', 0)->inRandomOrder()->limit(100)->pluck('id');
             foreach ($sellerIds as $sellerId) {
-                Produk::factory(rand(5, 10))->create(['id_user' => $sellerId]);
+                Produk::factory(5)->create(['id_user' => $sellerId]);
             }
 
             // Buat foto untuk setiap produk

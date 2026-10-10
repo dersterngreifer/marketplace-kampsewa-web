@@ -126,11 +126,21 @@ class TransaksiController extends Controller
             $table_pembayaran->id_penyewaan = $table_penyewaan->id;
             $table_pembayaran->bukti_pembayaran = 'Belum di isi';
             $table_pembayaran->jaminan_sewa = 'Belum di isi';
+            // Hitung durasi hari dari tanggal penyewaan
+            $start = \Carbon\Carbon::parse($table_penyewaan->tanggal_mulai);
+            $end = \Carbon\Carbon::parse($table_penyewaan->tanggal_selesai);
+            $durasi = max(1, $start->diffInDays($end));
+
+            // Hitung total dari subtotal dikali durasi (atau bisa juga langsung terima dari request frontend)
+            $total_semua = collect($resolved_variants)->sum(function($item) use ($durasi) {
+                return $item['input']['subtotal'] * $durasi;
+            });
+
             $table_pembayaran->jumlah_pembayaran = 0;
             $table_pembayaran->kembalian_pembayaran = 0;
             $table_pembayaran->biaya_admin = request()->input('biaya_admin', 0);
-            $table_pembayaran->kurang_pembayaran = 0;
-            $table_pembayaran->total_pembayaran = 0;
+            $table_pembayaran->kurang_pembayaran = $total_semua;
+            $table_pembayaran->total_pembayaran = $total_semua;
             $table_pembayaran->metode = request()->input('metode');
             $table_pembayaran->status_pembayaran = 'Belum lunas';
             $table_pembayaran->save();
@@ -213,6 +223,10 @@ class TransaksiController extends Controller
                 $jaminanSewa = $request->file('jaminan_sewa');
                 $jaminanSewaName = time() . '_jaminan.' . $jaminanSewa->getClientOriginalExtension();
                 $jaminanSewa->move(public_path('assets/image/customers/jaminan/'), $jaminanSewaName);
+                
+                // Add Watermark
+                $this->addWatermarkToImage(public_path('assets/image/customers/jaminan/') . $jaminanSewaName);
+                
                 $pembayaran->jaminan_sewa = $jaminanSewaName;
             }
 
@@ -357,17 +371,26 @@ class TransaksiController extends Controller
             // parameter riwayat berdasarkan nama tab bar UI Flutter
             // belum-bayar(Belum Bayar), pengambilan(Pengambilan),
             // berlangsung(Berlangsung), selesai(Selesai), dibatalkan(Dibatalkan)
-            $tipe_riwayat = $request->query('tipe_riwayat');
+            $tipe_riwayat = $request->query('tipe_riwayat') ?? $request->query('status');
             $id_user = $request->query('id_user');
-            if (!in_array($tipe_riwayat, ['belum-bayar', 'pengambilan', 'berlangsung', 'selesai', 'dibatalkan'])) {
+            
+            // Jika dikirim, validasi. Jika tidak dikirim, ambil semua
+            if ($tipe_riwayat && !in_array($tipe_riwayat, ['belum-bayar', 'pengambilan', 'berlangsung', 'selesai', 'dibatalkan', 'denda-belum-lunas', 'Belum Bayar', 'Pengambilan', 'Berlangsung', 'Selesai', 'Dibatalkan', 'Denda Belum Lunas'])) {
                 return response()->json([
-                    'message' => 'error',
-                    'error' => 'Invalid tipe_riwayat atau tipe riwayat tidak ada!'
+                    'success' => false,
+                    'message' => 'Invalid status atau tipe riwayat!'
                 ], 400);
             }
+
+            // Normalisasi status string dari frontend ke slug format backend
+            if ($tipe_riwayat) {
+                $tipe_riwayat = strtolower(str_replace(' ', '-', $tipe_riwayat));
+            }
+
             $query = User::leftJoin('penyewaan', 'users.id', '=', 'penyewaan.id_user')
                 ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
                 ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
+                ->leftJoin('pengembalian', 'penyewaan.id', '=', 'pengembalian.id_penyewaan')
                 ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
                 ->leftJoin('users as store_user', 'produk.id_user', '=', 'store_user.id')
                 ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
@@ -376,39 +399,50 @@ class TransaksiController extends Controller
                     'penyewaan.id as id_penyewaan',
                     'detail_penyewaan.id as id_detail_penyewaan',
                     'store_user.name_store',
+                    'store_user.id as id_toko_pemilik',
                     'produk.id as id_produk',
                     'produk.nama as nama_produk',
                     'detail_penyewaan.qty as qty',
                     DB::raw("CONCAT('Size ', detail_penyewaan.ukuran, ' / Warna ', detail_penyewaan.warna_produk) as deskripsi_produk"),
                     'detail_penyewaan.ukuran',
                     'detail_penyewaan.warna_produk as warna',
+                    'penyewaan.tanggal_mulai',
+                    'penyewaan.tanggal_selesai',
                     DB::raw(
                         "CASE
                         WHEN DATEDIFF(penyewaan.tanggal_selesai, penyewaan.tanggal_mulai) = 1 THEN CONCAT(DATEDIFF(penyewaan.tanggal_selesai, penyewaan.tanggal_mulai), ' Hari')
                         ELSE CONCAT(DATEDIFF(penyewaan.tanggal_selesai, penyewaan.tanggal_mulai), ' Hari')
                     END as durasi"
                     ),
+                    'penyewaan.status_penyewaan',
                     'pembayaran_penyewaan.status_pembayaran',
+                    'pembayaran_penyewaan.metode',
                     DB::raw('AVG(rating_produk.rating) as rating'),
                     'detail_penyewaan.subtotal as harga',
                     'pembayaran_penyewaan.total_pembayaran',
+                    'pengembalian.status_denda',
+                    'pengembalian.denda as nominal_denda_tersimpan'
                 )->where('users.id', $id_user);
+
             if ($tipe_riwayat === 'belum-bayar') {
-                $query->where('penyewaan.status_penyewaan', 'Pending')->where('pembayaran_penyewaan.status_pembayaran', 'Belum lunas');
+                $query->where('penyewaan.status_penyewaan', 'Pending');
             } elseif ($tipe_riwayat === 'pengambilan') {
-                $query->where('penyewaan.status_penyewaan', 'Pending')->where('pembayaran_penyewaan.status_pembayaran', 'Lunas');
-            } else if ($tipe_riwayat === 'berlangsung') {
+                $query->where('penyewaan.status_penyewaan', 'Pengambilan');
+            } elseif ($tipe_riwayat === 'berlangsung') {
                 $query->where('penyewaan.status_penyewaan', 'Aktif')->where('pembayaran_penyewaan.status_pembayaran', 'Lunas');
-            } else if ($tipe_riwayat === 'selesai') {
+            } elseif ($tipe_riwayat === 'selesai') {
                 $query->where('penyewaan.status_penyewaan', 'Selesai')->where('pembayaran_penyewaan.status_pembayaran', 'Lunas');
-            } else if ($tipe_riwayat === 'dibatalkan') {
+            } elseif ($tipe_riwayat === 'dibatalkan') {
                 $query->where('penyewaan.status_penyewaan', 'Dibatalkan');
+            } elseif ($tipe_riwayat === 'denda-belum-lunas') {
+                $query->where('pengembalian.status_denda', 'belum_dibayar');
             }
             $query->groupBy(
                 'users.id',
                 'penyewaan.id',
                 'detail_penyewaan.id',
                 'store_user.name_store',
+                'store_user.id',
                 'produk.id',
                 'produk.nama',
                 'detail_penyewaan.qty',
@@ -416,45 +450,152 @@ class TransaksiController extends Controller
                 'detail_penyewaan.warna_produk',
                 'penyewaan.tanggal_selesai',
                 'penyewaan.tanggal_mulai',
+                'penyewaan.status_penyewaan',
                 'pembayaran_penyewaan.status_pembayaran',
+                'pembayaran_penyewaan.metode',
                 'pembayaran_penyewaan.total_pembayaran',
-                'detail_penyewaan.subtotal'
+                'detail_penyewaan.subtotal',
+                'pengembalian.status_denda',
+                'pengembalian.denda'
             );
             $result = $query->get();
-            $data_pertama = $result->first();
-            if (!$data_pertama) {
+            if ($result->isEmpty()) {
                 return response()->json([
-                    'message' => 'error',
-                    'error' => 'Tidak ada data terkait!'
-                ], 404);
+                    'success' => true,
+                    'message' => 'Berhasil mengambil riwayat transaksi',
+                    'data' => []
+                ], 200);
             }
-            $total_produk_lainnya = DB::table('detail_penyewaan')
-                ->where('detail_penyewaan.id_penyewaan', $data_pertama->id_penyewaan)
-                ->count() - 1;
-            
-            $produk = \App\Models\Produk::with('foto')->find($data_pertama->id_produk);
-            $foto_produk = \App\Helpers\PhotoHelper::getThumbnailUrl($produk);
+
+            $history_data = [];
+            $grouped = $result->groupBy('id_penyewaan');
+
+            foreach ($grouped as $id_penyewaan => $items) {
+                $first_item = $items->first();
+                $total_produk_lainnya = DB::table('detail_penyewaan')
+                    ->where('id_penyewaan', $id_penyewaan)
+                    ->count() - 1;
+                
+                $produk = \App\Models\Produk::with('foto')->find($first_item->id_produk);
+                $foto_produk = \App\Helpers\PhotoHelper::getThumbnailUrl($produk);
+
+                // Menentukan status transaksi format frontend
+                $status_transaksi = 'Belum Bayar';
+                if ($first_item->status_penyewaan == 'Pending' && $first_item->status_pembayaran == 'Belum lunas') {
+                    $status_transaksi = 'Belum Bayar';
+                } elseif ($first_item->status_penyewaan == 'Pending' && $first_item->status_pembayaran == 'Lunas') {
+                    $status_transaksi = 'Pending';
+                } elseif ($first_item->status_penyewaan == 'Pengambilan') {
+                    $status_transaksi = 'Pengambilan';
+                } elseif ($first_item->status_penyewaan == 'Aktif') {
+                    $status_transaksi = 'Berlangsung';
+                } elseif ($first_item->status_penyewaan == 'Selesai' || $first_item->status_penyewaan == 'Pengembalian') {
+                    if (isset($first_item->status_denda) && $first_item->status_denda == 'belum_dibayar') {
+                        $status_transaksi = 'Selesai (Belum Lunas)';
+                    } else {
+                        $status_transaksi = 'Selesai';
+                    }
+                } elseif ($first_item->status_penyewaan == 'Dibatalkan') {
+                    $status_transaksi = 'Dibatalkan';
+                }
+
+                $bank_toko = \App\Models\Bank::where('id_user', $first_item->id_toko_pemilik)->first();
+
+                // Fallback untuk pesanan lawas yang total_pembayarannya masih 0
+                $total_pembayaran_aktual = $first_item->total_pembayaran;
+                if ($total_pembayaran_aktual == 0) {
+                    $durasi = (int) filter_var($first_item->durasi, FILTER_SANITIZE_NUMBER_INT);
+                    $durasi = max(1, $durasi); // Hindari 0 hari
+                    // Jumlahkan seluruh subtotal dari $items (termasuk produk lainnya), lalu kalikan durasi
+                    $total_pembayaran_aktual = $items->sum('harga') * $durasi;
+                }
+
+                  $mapped_items = $items->map(function ($detail) {
+                      $produk_item = \App\Models\Produk::with('foto')->find($detail->id_produk);
+                      return [
+                          'id_detail_penyewaan' => $detail->id_detail_penyewaan,
+                          'id_produk' => $detail->id_produk,
+                          'nama_produk' => $detail->nama_produk,
+                          'foto_produk' => \App\Helpers\PhotoHelper::getThumbnailUrl($produk_item),
+                          'qty' => $detail->qty,
+                          'ukuran' => $detail->ukuran,
+                          'warna' => $detail->warna,
+                          'harga' => $detail->harga,
+                      ];
+                  })->values()->all();
+
+                  $is_terlambat = false;
+                  $durasi_terlambat = null;
+                  $nominal_denda = null;
+
+                  if ($first_item->status_penyewaan == 'Aktif' || $first_item->status_penyewaan == 'Pengembalian') {
+                      $tanggal_selesai = \Carbon\Carbon::parse($first_item->tanggal_selesai);
+                      $deadline = $tanggal_selesai->copy()->setTime(21, 0, 0);
+                      $now = \Carbon\Carbon::now();
+                      
+                      if ($now->greaterThan($deadline)) {
+                          $is_terlambat = true;
+                          $hours_late = $deadline->diffInHours($now);
+                          $harga_sewa_per_hari = $items->sum('harga');
+                          
+                          if ($hours_late <= 3) {
+                              $durasi_terlambat = "{$hours_late} Jam";
+                              $nominal_denda = 0;
+                          } elseif ($hours_late > 3 && $hours_late <= 6) {
+                              $durasi_terlambat = "{$hours_late} Jam";
+                              $nominal_denda = $harga_sewa_per_hari * 0.25;
+                          } elseif ($hours_late > 6 && $hours_late <= 12) {
+                              $durasi_terlambat = "{$hours_late} Jam";
+                              $nominal_denda = $harga_sewa_per_hari * 0.5;
+                          } else {
+                              $days_late = ceil($hours_late / 24);
+                              $days_late_str = floor($hours_late / 24);
+                              $hours_late_rem = $hours_late % 24;
+                              $durasi_parts = [];
+                              if ($days_late_str > 0) $durasi_parts[] = $days_late_str . " Hari";
+                              if ($hours_late_rem > 0) $durasi_parts[] = $hours_late_rem . " Jam";
+                              if (empty($durasi_parts)) $durasi_parts[] = "{$hours_late} Jam";
+                              
+                              $durasi_terlambat = implode(' ', $durasi_parts);
+                              $nominal_denda = $harga_sewa_per_hari * $days_late;
+                          }
+                          $nominal_denda = round($nominal_denda);
+                      }
+                  }
+
+                  $history_data[] = [
+                      'id_transaksi' => $first_item->id_penyewaan,
+                      'nama_toko' => $first_item->name_store,
+                      'foto_produk' => $foto_produk,
+                      'nama_produk' => $first_item->nama_produk,
+                      'variasi_warna' => $first_item->warna,
+                      'variasi_ukuran' => $first_item->ukuran,
+                      'qty' => $first_item->qty,
+                      'harga' => $first_item->harga,
+                      'total_pesanan' => $total_pembayaran_aktual,
+                      'qty_produk_lain' => max(0, $total_produk_lainnya),
+                      'rating' => $first_item->rating ?? 0,
+                      'hari' => (int) filter_var($first_item->durasi, FILTER_SANITIZE_NUMBER_INT),
+                      'status_transaksi' => $status_transaksi,
+                      'metode' => $first_item->metode,
+                      'tanggal_mulai' => $first_item->tanggal_mulai,
+                      'tanggal_selesai' => $first_item->tanggal_selesai,
+                      'waktu_deadline_pengembalian' => \Carbon\Carbon::parse($first_item->tanggal_selesai)->setTime(21, 0, 0)->toDateTimeString(),
+                      'is_terlambat' => $is_terlambat,
+                      'durasi_terlambat' => $durasi_terlambat,
+                      'nominal_denda' => $nominal_denda,
+                      'status_denda' => $first_item->status_denda,
+                      'nominal_denda_tersimpan' => $first_item->nominal_denda_tersimpan,
+                      'rekening_bank' => $bank_toko ? $bank_toko->rekening : null,
+                      'nama_bank' => $bank_toko ? $bank_toko->bank : null,
+                      'items' => $mapped_items,
+                  ];
+            }
 
             return response()->json([
-                'message' => 'success',
-                'response' => [
-                    'id' => $data_pertama->id_user,
-                    'id_penyewaan' => $data_pertama->id_penyewaan,
-                    'id_detail_penyewaan' => $data_pertama->id_detail_penyewaan,
-                    'nama_toko' => $data_pertama->name_store,
-                    'nama_produk' => $data_pertama->nama_produk,
-                    'foto_produk' => $foto_produk,
-                    'qty' => $data_pertama->qty,
-                    'deskripsi_produk' => $data_pertama->deskripsi_produk,
-                    'ukuran' => $data_pertama->ukuran,
-                    'warna' => $data_pertama->warna,
-                    'qty_produk_lain' => $total_produk_lainnya,
-                    'rating' => $data_pertama->rating,
-                    'subtotal_harga' => $data_pertama->harga,
-                    'total_pesanan' => $data_pertama->total_pembayaran,
-                    'durasi' => $data_pertama->durasi,
-                    'status_transaksi' => $data_pertama->status_pembayaran,
-                ],
+                'success' => true,
+                'message' => 'Berhasil mengambil riwayat transaksi',
+                'data' => $history_data,
             ], 200);
         } catch (\Exception $error) {
             Log::error($error->getMessage());
@@ -505,6 +646,10 @@ class TransaksiController extends Controller
                 $destinationPath = public_path('assets/image/customers/jaminan/');
                 $filename = time() . '_jaminan' . $file->getClientOriginalName();
                 $file->move($destinationPath, $filename);
+                
+                // Add Watermark
+                $this->addWatermarkToImage($destinationPath . $filename);
+                
                 $foto_url = $filename;
                 $update['jaminan_sewa'] = $foto_url;
             }
@@ -574,4 +719,66 @@ class TransaksiController extends Controller
             }
         }
     }
+
+    private function addWatermarkToImage($imagePath)
+    {
+        try {
+            $info = getimagesize($imagePath);
+            $mime = $info['mime'];
+
+            switch ($mime) {
+                case 'image/jpeg':
+                    $image = imagecreatefromjpeg($imagePath);
+                    break;
+                case 'image/png':
+                    $image = imagecreatefrompng($imagePath);
+                    break;
+                default:
+                    return; // Skip if not jpeg or png
+            }
+
+            $width = imagesx($image);
+            $height = imagesy($image);
+
+            $text = "HANYA UNTUK SEWA DI KAMPSEWA - " . date('d-m-Y');
+            
+            // Set watermark color (white with transparency if supported, or just light gray)
+            $color = imagecolorallocatealpha($image, 255, 255, 255, 70); // 70 is alpha (0-127)
+            $shadow = imagecolorallocatealpha($image, 0, 0, 0, 70);
+            
+            // Basic built-in font
+            $font = 5; 
+            
+            // Calculate text dimensions
+            $textWidth = imagefontwidth($font) * strlen($text);
+            $textHeight = imagefontheight($font);
+
+            // Calculate x and y to center the text
+            $x = ($width - $textWidth) / 2;
+            $y = ($height - $textHeight) / 2;
+
+            // Optional: Draw text multiple times across the image for a tiled watermark
+            for ($i = 0; $i < $height; $i += 100) {
+                for ($j = 0; $j < $width; $j += 200) {
+                    imagestring($image, $font, $j + 2, $i + 2, $text, $shadow);
+                    imagestring($image, $font, $j, $i, $text, $color);
+                }
+            }
+
+            // Save the image back
+            switch ($mime) {
+                case 'image/jpeg':
+                    imagejpeg($image, $imagePath, 90);
+                    break;
+                case 'image/png':
+                    imagepng($image, $imagePath);
+                    break;
+            }
+
+            imagedestroy($image);
+        } catch (\Exception $e) {
+            Log::error("Watermark failed: " . $e->getMessage());
+        }
+    }
 }
+

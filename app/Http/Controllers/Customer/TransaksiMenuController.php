@@ -8,6 +8,7 @@ use App\Models\Bank;
 use App\Models\DetailPenyewaan;
 use App\Models\DetailVariantProduk;
 use App\Models\Pemasukan;
+use App\Models\PemasukanPerusahaan;
 use App\Models\PembayaranPenyewaan;
 use App\Models\Pengembalian;
 use App\Models\Penyewaan;
@@ -82,11 +83,11 @@ class TransaksiMenuController extends Controller
             // Membuat koleksi baru untuk hasil akhir
             $result = collect();
 
-            $seenUsers = [];
+            $seenOrders = [];
 
             foreach ($data as $item) {
-                if (!isset($seenUsers[$item->id_user_penyewa])) {
-                    $first_product = DB::table('detail_penyewaan')
+                if (!isset($seenOrders[$item->id_penyewaan])) {
+                    $products = DB::table('detail_penyewaan')
                         ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
                         ->leftJoin('foto_produk', function ($join) {
                             $join->on('produk.id', '=', 'foto_produk.id_produk')
@@ -94,16 +95,20 @@ class TransaksiMenuController extends Controller
                         })
                         ->where('detail_penyewaan.id_penyewaan', $item->id_penyewaan)
                         ->select('produk.id as id_produk', 'foto_produk.url_foto as foto', 'produk.nama')
-                        ->first();
+                        ->get();
 
-                    if ($first_product) {
+                    if ($products->isNotEmpty()) {
+                        $first_product = $products->first();
                         $item->id_produk = $first_product->id_produk;
                         $item->foto = $first_product->foto;
-                        $item->nama = $first_product->nama;
+                        
+                        // Menampilkan semua nama produk jika lebih dari 1
+                        $productNames = $products->pluck('nama')->toArray();
+                        $item->nama = implode(', ', $productNames);
                     }
 
                     $result->push($item);
-                    $seenUsers[$item->id_user_penyewa] = true;
+                    $seenOrders[$item->id_penyewaan] = true;
                 }
             }
 
@@ -127,6 +132,9 @@ class TransaksiMenuController extends Controller
     {
         $id_penyewaan_decrypt = Crypt::decrypt($id_penyewaan);
 
+        // Fetch Pengembalian record if it exists
+        $pengembalian_data = \App\Models\Pengembalian::where('id_penyewaan', $id_penyewaan_decrypt)->first();
+
         // Query untuk data yang hanya mengambil satu baris
         $singleData = Penyewaan::leftJoin('users', 'users.id', '=', 'penyewaan.id_user')
             ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
@@ -147,6 +155,7 @@ class TransaksiMenuController extends Controller
                 'pembayaran_penyewaan.jumlah_pembayaran',
                 'pembayaran_penyewaan.total_pembayaran',
                 'pembayaran_penyewaan.status_pembayaran',
+                'pembayaran_penyewaan.metode',
                 'pembayaran_penyewaan.biaya_admin'
             )->where('penyewaan.id', $id_penyewaan_decrypt)->first();
 
@@ -184,8 +193,21 @@ class TransaksiMenuController extends Controller
             ->get()
             ->groupBy('id_produk');
 
-        $total_harus_dibayar = DetailPenyewaan::where('id_penyewaan', $id_penyewaan_decrypt)->sum('subtotal');
+        $start = \Carbon\Carbon::parse($singleData->tanggal_mulai);
+        $end = \Carbon\Carbon::parse($singleData->tanggal_selesai);
+        // Durasi dihitung berdasarkan selisih hari. Jika sama hari, dianggap 1 hari.
+        $durasi = $start->diffInDays($end);
+        if ($durasi == 0) $durasi = 1;
 
+        $total_items_subtotal = DetailPenyewaan::where('id_penyewaan', $id_penyewaan_decrypt)->sum('subtotal');
+        
+        // Total harus dibayar adalah subtotal dikali durasi (jika dari detail belum dikali durasi)
+        // Namun jika pembayaran_penyewaan.total_pembayaran sudah ada dan lebih dari 0, gunakan itu.
+        if ($singleData->total_pembayaran > 0) {
+            $total_harus_dibayar = $singleData->total_pembayaran;
+        } else {
+            $total_harus_dibayar = $total_items_subtotal * $durasi;
+        }
         // Logic for Denda Keterlambatan
         $denda_keterlambatan = 0;
         $info_keterlambatan = '';
@@ -198,10 +220,7 @@ class TransaksiMenuController extends Controller
             if ($now->greaterThan($deadline)) {
                 $hours_late = $deadline->diffInHours($now);
                 
-                $start = \Carbon\Carbon::parse($singleData->tanggal_mulai);
-                $end = \Carbon\Carbon::parse($singleData->tanggal_selesai);
-                $durasi = $start->diffInDays($end) + 1;
-                $harga_sewa_per_hari = $durasi > 0 ? ($total_harus_dibayar / $durasi) : $total_harus_dibayar;
+                $harga_sewa_per_hari = $total_items_subtotal; // Subtotal of items is the daily price
 
                 if ($hours_late <= 3) {
                     $info_keterlambatan = "Telat {$hours_late} jam (Masih dalam batas toleransi).";
@@ -229,9 +248,11 @@ class TransaksiMenuController extends Controller
             'banks' => $banks,
             'address' => $addressString,
             'details' => $details,
+            'durasi' => $durasi,
             'harus_dibayar' => $total_harus_dibayar,
             'denda_keterlambatan' => $denda_keterlambatan,
             'info_keterlambatan' => $info_keterlambatan,
+            'pengembalian' => $pengembalian_data,
         ]);
     }
 
@@ -302,7 +323,7 @@ class TransaksiMenuController extends Controller
     {
         try {
             if ($parameter == 1) {
-                $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Aktif']);
+                $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Pengambilan']);
                 // Jika pembayaran via Transfer dan masih menunggu verifikasi, set Lunas & catat pemasukan
                 $pembayaran = PembayaranPenyewaan::where('id_penyewaan', $id_penyewaan)->first();
                 if ($pembayaran && ($pembayaran->metode === 'Transfer' || $pembayaran->status_pembayaran === 'Menunggu Verifikasi')) {
@@ -319,8 +340,8 @@ class TransaksiMenuController extends Controller
                 }
 
                 if ($penyewaan) {
-                    Alert::toast('Order diterima! Penyewaan aktif & pembayaran diverifikasi.', 'success');
-                    return redirect('customer/dashboard/transaksi/' . $id_user);
+                    Alert::toast('Order diterima! Pesanan masuk ke tahap Pengambilan.', 'success');
+                return redirect('customer/dashboard/pengambilan/' . $id_user);
                 } else {
                     return response()->json(['message' => 'Update failed'], 500);
                 }
@@ -377,7 +398,7 @@ class TransaksiMenuController extends Controller
             }
 
             $denda = (int) $request->input('denda', 0);
-            $status_denda = $request->input('status_denda', 'Tidak Ada');
+            $status_denda = $request->input('status_denda', 'tidak_ada');
 
             Pengembalian::create([
                 'id_penyewaan' => $id_penyewaan,
@@ -398,7 +419,7 @@ class TransaksiMenuController extends Controller
                 $this->restoreStok($id_penyewaan);
             }
 
-            if ($denda > 0 && $status_denda === 'Lunas') {
+            if ($denda > 0 && $status_denda === 'lunas') {
                 $store_user_id = Crypt::decrypt($id_user);
                 Pemasukan::create([
                     'id_user' => $store_user_id,
@@ -418,6 +439,38 @@ class TransaksiMenuController extends Controller
         }
     }
 
+    public function lunasiDenda(Request $request, $id_penyewaan, $id_user)
+    {
+        try {
+            $pengembalian = Pengembalian::where('id_penyewaan', $id_penyewaan)->first();
+            if (!$pengembalian) {
+                Alert::toast('Data pengembalian tidak ditemukan!', 'error');
+                return redirect()->back();
+            }
+
+            if ($pengembalian->status_denda === 'belum_dibayar') {
+                $pengembalian->status_denda = 'lunas';
+                $pengembalian->save();
+
+                $store_user_id = Crypt::decrypt($id_user);
+                Pemasukan::create([
+                    'id_user' => $store_user_id,
+                    'sumber' => 'Denda Penyewaan',
+                    'deskripsi' => 'Pelunasan Denda Susulan (Order ID: ' . $id_penyewaan . ')',
+                    'nominal' => $pengembalian->denda,
+                    'id_pembayaran_penyewaan' => null,
+                ]);
+
+                Alert::toast('Denda berhasil ditandai sebagai lunas dan dicatat ke pemasukan!', 'success');
+            }
+            return redirect()->back();
+        } catch (\Exception $e) {
+            Log::error('Error lunasiDenda: ' . $e->getMessage());
+            Alert::toast('Gagal memproses pelunasan: ' . $e->getMessage(), 'error');
+            return redirect()->back();
+        }
+    }
+
     private function catatPemasukan($id_user, $pembayaran)
     {
         if (!$pembayaran) return;
@@ -430,9 +483,14 @@ class TransaksiMenuController extends Controller
                 'nominal' => $pembayaran->total_pembayaran,
                 'id_pembayaran_penyewaan' => $pembayaran->id,
             ]);
-            if ($pembayaran->biaya_admin > 0) {
-                Pemasukan::create([
-                    'id_user' => $id_user,
+            
+            // Cek di tabel PemasukanPerusahaan untuk menghindari duplikasi
+            $existsPerusahaan = PemasukanPerusahaan::where('id_pembayaran_penyewaan', $pembayaran->id)
+                ->where('sumber', 'Service')
+                ->exists();
+                
+            if (!$existsPerusahaan && $pembayaran->biaya_admin > 0) {
+                PemasukanPerusahaan::create([
                     'sumber' => 'Service',
                     'deskripsi' => 'Biaya Admin (ID Order: ' . $pembayaran->id_penyewaan . ')',
                     'nominal' => $pembayaran->biaya_admin,
@@ -462,6 +520,109 @@ class TransaksiMenuController extends Controller
                 $variant->stok += $detail->qty;
                 $variant->save();
             }
+        }
+    }
+
+    public function pengambilan($id_user, Request $request)
+    {
+        $id_user_decrypt = Crypt::decrypt($id_user);
+        $filter_tanggal_awal = $request->query('tanggal_awal');
+        $filter_tanggal_akhir = $request->query('tanggal_akhir');
+        $search = $request->query('search');
+
+        $query = User::leftJoin('penyewaan', 'users.id', '=', 'penyewaan.id_user')
+            ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
+            ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->leftJoin('foto_produk', function ($join) {
+                $join->on('produk.id', '=', 'foto_produk.id_produk')
+                     ->where('foto_produk.urutan', 1);
+            })
+            ->leftJoin('users as penyewa', 'produk.id_user', '=', 'penyewa.id')
+            ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+            ->select(
+                'users.id as id_user_penyewa',
+                'users.foto as foto_users',
+                'users.name as nama_penyewa',
+                'penyewaan.id as id_penyewaan',
+                'penyewaan.tanggal_mulai',
+                'penyewaan.tanggal_selesai',
+                'penyewaan.status_penyewaan',
+                'pembayaran_penyewaan.status_pembayaran',
+                'pembayaran_penyewaan.metode',
+                'produk.id as id_produk',
+                'foto_produk.url_foto as foto',
+                'produk.nama'
+            )
+            ->where('penyewa.id', $id_user_decrypt)
+            ->where('penyewaan.status_penyewaan', 'Pengambilan');
+
+        if ($filter_tanggal_awal && $filter_tanggal_akhir) {
+            $query->whereBetween('penyewaan.created_at', [$filter_tanggal_awal, $filter_tanggal_akhir]);
+        } elseif ($filter_tanggal_awal) {
+            $query->whereDate('penyewaan.created_at', $filter_tanggal_awal);
+        } elseif ($filter_tanggal_akhir) {
+            $query->whereDate('penyewaan.created_at', $filter_tanggal_akhir);
+        }
+
+        if ($search) {
+            $query->where('users.name', 'like', '%' . $search . '%');
+        }
+
+        $data = $query->get();
+        $result = collect();
+        $seenOrders = [];
+
+        foreach ($data as $item) {
+            if (!isset($seenOrders[$item->id_penyewaan])) {
+                $first_product = DB::table('detail_penyewaan')
+                    ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                    ->leftJoin('foto_produk', function ($join) {
+                        $join->on('produk.id', '=', 'foto_produk.id_produk')
+                             ->where('foto_produk.urutan', 1);
+                    })
+                    ->where('detail_penyewaan.id_penyewaan', $item->id_penyewaan)
+                    ->select('produk.id as id_produk', 'foto_produk.url_foto as foto', 'produk.nama')
+                    ->first();
+
+                if ($first_product) {
+                    $item->id_produk = $first_product->id_produk;
+                    $item->foto = $first_product->foto;
+                    $item->nama = $first_product->nama;
+                }
+
+                $result->push($item);
+                $seenOrders[$item->id_penyewaan] = true;
+            }
+        }
+
+        if ($request->ajax()) {
+            return response()->json(['data' => $result]);
+        }
+
+        return view('customers.menu-transaksi.pengambilan')->with([
+            'title' => 'Pengambilan',
+            'id_user' => $id_user_decrypt,
+            'data' => $result,
+            'search' => $search,
+        ]);
+    }
+
+    public function serahkanBarang($id_penyewaan, $id_user)
+    {
+        try {
+            $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Aktif']);
+            if ($penyewaan) {
+                Alert::toast('Barang diserahkan! Status penyewaan menjadi Aktif.', 'success');
+                return redirect('customer/dashboard/sewa-berlangsung/' . $id_user);
+            } else {
+                Alert::toast('Gagal mengupdate status penyewaan.', 'error');
+                return redirect()->back();
+            }
+        } catch (\Exception $e) {
+            Log::error('Error in serahkanBarang: ' . $e->getMessage());
+            Alert::toast('Terjadi kesalahan!', 'error');
+            return redirect()->back();
         }
     }
 
@@ -521,10 +682,10 @@ class TransaksiMenuController extends Controller
         // Membuat koleksi baru untuk hasil akhir
         $result = collect();
 
-        $seenUsers = [];
+        $seenOrders = [];
 
         foreach ($data as $item) {
-            if (!isset($seenUsers[$item->id_user_penyewa])) {
+            if (!isset($seenOrders[$item->id_penyewaan])) {
                 $first_product = DB::table('detail_penyewaan')
                     ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
                     ->leftJoin('foto_produk', function ($join) {
@@ -542,7 +703,7 @@ class TransaksiMenuController extends Controller
                 }
 
                 $result->push($item);
-                $seenUsers[$item->id_user_penyewa] = true;
+                $seenOrders[$item->id_penyewaan] = true;
             }
         }
 
@@ -580,6 +741,7 @@ class TransaksiMenuController extends Controller
             $query = User::leftJoin('penyewaan', 'users.id', '=', 'penyewaan.id_user')
                 ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
                 ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
+                ->leftJoin('pengembalian', 'penyewaan.id', '=', 'pengembalian.id_penyewaan')
                 ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
                 ->leftJoin('foto_produk', function ($join) {
                     $join->on('produk.id', '=', 'foto_produk.id_produk')
@@ -597,6 +759,7 @@ class TransaksiMenuController extends Controller
                     'penyewaan.status_penyewaan',
                     'pembayaran_penyewaan.status_pembayaran',
                     'pembayaran_penyewaan.metode',
+                    'pengembalian.status_denda',
                     'produk.id as id_produk',
                     'foto_produk.url_foto as foto',
                     'produk.nama'
@@ -604,9 +767,14 @@ class TransaksiMenuController extends Controller
                 ->where('penyewa.id', $id_user_decrypt);
 
             if ($filter && $filter != 'Semua') {
-                $query->where(function ($query) use ($filter) {
-                    $query->where('penyewaan.status_penyewaan', $filter);
-                });
+                if ($filter == 'Selesai Belum Lunas') {
+                    $query->where('penyewaan.status_penyewaan', 'Selesai')
+                          ->where('pengembalian.status_denda', 'belum_dibayar');
+                } else {
+                    $query->where(function ($query) use ($filter) {
+                        $query->where('penyewaan.status_penyewaan', $filter);
+                    });
+                }
             } else {
                 $query->where(function ($query) {
                     $query->where('penyewaan.status_penyewaan', 'Pengembalian')
@@ -623,10 +791,10 @@ class TransaksiMenuController extends Controller
             // Membuat koleksi baru untuk hasil akhir
             $result = collect();
 
-            $seenUsers = [];
+            $seenOrders = [];
 
             foreach ($data as $item) {
-                if (!isset($seenUsers[$item->id_user_penyewa])) {
+                if (!isset($seenOrders[$item->id_penyewaan])) {
                     $first_product = DB::table('detail_penyewaan')
                         ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
                         ->leftJoin('foto_produk', function ($join) {
@@ -644,7 +812,7 @@ class TransaksiMenuController extends Controller
                     }
 
                     $result->push($item);
-                    $seenUsers[$item->id_user_penyewa] = true;
+                    $seenOrders[$item->id_penyewaan] = true;
                 }
             }
 

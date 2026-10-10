@@ -624,4 +624,80 @@ class ProductController extends Controller
             ]
         ]);
     }
+
+    public function storeReview(Request $request, $id_produk)
+    {
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'ulasan' => 'nullable|string',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+        ]);
+
+        $userId = auth('sanctum')->id();
+
+        // Cek apakah produk ada
+        $produk = Produk::find($id_produk);
+        if (!$produk) {
+            return response()->json(['message' => 'Produk tidak ditemukan.'], 404);
+        }
+
+        $fotoName = null;
+        if ($request->hasFile('foto')) {
+            $file = $request->file('foto');
+            $fotoName = time() . '_' . $file->getClientOriginalName();
+            // Simpan di public/assets/image/reviews
+            $file->move(public_path('assets/image/reviews'), $fotoName);
+        }
+
+        \App\Models\RatingProduk::create([
+            'id_user' => $userId,
+            'id_produk' => $id_produk,
+            'rating' => $request->rating,
+            'ulasan' => $request->ulasan ?? '',
+            'foto_ulasan' => $fotoName
+        ]);
+
+        return response()->json([
+            'message' => 'Ulasan berhasil dikirim.'
+        ], 200);
+    }
+
+    public function getReviews($id_produk)
+    {
+        $reviews = \App\Models\RatingProduk::with(['user' => function($query) {
+            $query->select('id', 'name', 'foto');
+        }])
+        ->where('id_produk', $id_produk)
+        ->orderBy('created_at', 'desc')
+        ->get()
+        ->map(function ($review) {
+            $fotoUser = null;
+            if ($review->user) {
+                $fotoUser = $review->user->foto && $review->user->foto !== 'Belum Di isi' 
+                    ? asset('assets/image/customers/profile/' . $review->user->foto) 
+                    : asset('images/placeholder-image.png');
+            }
+            
+            $fotoUlasanUrl = null;
+            if ($review->foto_ulasan) {
+                $fotoUlasanUrl = asset('assets/image/reviews/' . $review->foto_ulasan);
+            }
+            
+            return [
+                'id_rating' => $review->id,
+                'id_user' => $review->id_user,
+                'nama_user' => $review->user ? $review->user->name : 'Unknown',
+                'foto_user' => $fotoUser,
+                'rating' => $review->rating,
+                'ulasan' => $review->ulasan,
+                'foto_ulasan' => $fotoUlasanUrl,
+                'tanggal_ulasan' => $review->created_at ? $review->created_at->format('Y-m-d H:i:s') : null,
+            ];
+        });
+
+        return response()->json([
+            'message' => 'success',
+            'data' => $reviews
+        ], 200);
+    }
 }

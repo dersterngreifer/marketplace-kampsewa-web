@@ -93,6 +93,17 @@
                     ],
                 ],
             ],
+            [
+                'label' => 'Manajemen Admin',
+                'items' => [
+                    [
+                        'label' => 'Tambah Admin',
+                        'icon' => 'fi fi-rr-user-add',
+                        'href' => route('kelola-pengguna.create-admin'),
+                        'active_titles' => ['Tambah Admin KampSewa | Developer'],
+                    ],
+                ],
+            ],
         ];
     @endphp
 

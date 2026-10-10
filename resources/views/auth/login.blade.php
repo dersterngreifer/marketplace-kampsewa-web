@@ -156,8 +156,8 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            background: #F8FAFC;
-            border: 1.5px solid #E2E8F0;
+            background: #F1F5F9; /* Lebih gelap sedikit agar terlihat (slate-100) */
+            border: 2px solid #CBD5E1; /* Border lebih tegas (slate-300) */
             border-radius: 14px;
             padding: 13px 18px;
             transition: all 0.25s ease;
@@ -165,10 +165,10 @@
         .input-field-wrap:focus-within {
             background: #FFFFFF;
             border-color: #5038ED;
-            box-shadow: 0 0 0 4px rgba(80, 56, 237, 0.10);
+            box-shadow: 0 0 0 4px rgba(80, 56, 237, 0.15);
         }
         .input-field-wrap .field-icon {
-            color: #94A3B8;
+            color: #64748B; /* slate-500 agar lebih terlihat */
             font-size: 15px;
             transition: color 0.2s;
         }
@@ -176,14 +176,20 @@
             color: #5038ED;
         }
         .input-field-wrap input {
-            background: transparent;
-            border: none;
-            outline: none;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
             width: 100%;
             font-size: 14px;
             font-weight: 500;
             color: #0F172A;
             font-family: 'Plus Jakarta Sans', sans-serif;
+            padding: 0 !important;
+        }
+        .input-field-wrap input:focus {
+            box-shadow: none !important;
+            border: none !important;
         }
         .input-field-wrap input::placeholder {
             color: #94A3B8;

@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Pemasukan;
-use App\Models\Pengeluaran;
+use App\Models\PemasukanPerusahaan;
+use App\Models\PengeluaranPerusahaan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,11 +15,11 @@ class ChartWebController extends Controller
 {
     public function ApiTotalKeuntungan()
     {
-        $total_pemasukan_tahun_sekarang = Pemasukan::whereYear('created_at', date('Y'))->sum('nominal');
-        $total_pengeluaran_tahun_sekarang = Pengeluaran::whereYear('created_at', date('Y'))->sum('nominal');
+        $total_pemasukan_tahun_sekarang = PemasukanPerusahaan::whereYear('created_at', date('Y'))->sum('nominal');
+        $total_pengeluaran_tahun_sekarang = PengeluaranPerusahaan::whereYear('created_at', date('Y'))->sum('nominal');
 
-        $total_pemasukan_tahun_lalu = Pemasukan::whereYear('created_at', date('Y') - 1)->sum('nominal');
-        $total_pengeluaran_tahun_lalu = Pengeluaran::whereYear('created_at', date('Y') - 1)->sum('nominal');
+        $total_pemasukan_tahun_lalu = PemasukanPerusahaan::whereYear('created_at', date('Y') - 1)->sum('nominal');
+        $total_pengeluaran_tahun_lalu = PengeluaranPerusahaan::whereYear('created_at', date('Y') - 1)->sum('nominal');
 
         // Menghitung total keuntungan tahun sekarang
         $total_keuntungan = abs($total_pemasukan_tahun_sekarang - $total_pengeluaran_tahun_sekarang);
@@ -72,7 +73,7 @@ class ChartWebController extends Controller
         $totalPemasukanPerBulan = [];
 
         for ($month = 1; $month <= 12; $month++) {
-            $total = DB::table('pemasukan')
+            $total = DB::table('pemasukan_perusahaan')
                 ->whereYear('created_at', $year)
                 ->whereMonth('created_at', $month)
                 ->sum('nominal');
@@ -90,7 +91,7 @@ class ChartWebController extends Controller
         $time = Carbon::now()->month;
 
         for ($month = 1; $month <= $time; $month++) {
-            $total = DB::table('pemasukan')
+            $total = DB::table('pemasukan_perusahaan')
                 ->whereYear('created_at', Carbon::now()->year)
                 ->whereMonth('created_at', $month)
                 ->sum('nominal');
@@ -108,7 +109,6 @@ class ChartWebController extends Controller
         for($bulan = 1; $bulan <= 12; $bulan++) {
             $total_pertahun = Pemasukan::where('id_user', $id_user)
             ->whereYear('created_at', Carbon::now()->year)->whereMonth('created_at', $bulan)
-            ->where('sumber', 'Penyewaan')
             ->sum('nominal');
             $total_perbulan_tahun_kemarin[$bulan] = $total_pertahun;
         }

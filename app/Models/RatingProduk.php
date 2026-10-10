@@ -16,6 +16,7 @@ class RatingProduk extends Model
         'id_produk',
         'rating',
         'ulasan',
+        'foto_ulasan',
     ];
 
     public function user()

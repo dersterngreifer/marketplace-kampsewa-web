@@ -315,13 +315,22 @@ class FeedbackChatController extends Controller
                     $cloned['admin_id'] = $adminId;
                     
                     // Hitung unread untuk spesifik admin ini
-                    $unreadCount = $feedback->messages
+                    $unreadAdminCount = $feedback->messages
                         ->where('sender_type', 'admin')
                         ->where('admin_id', $adminId)
                         ->whereNull('read_at')
                         ->count();
                         
-                    $cloned['unread_admin_messages_count'] = $unreadCount;
+                    $unreadCustomerCount = $feedback->messages
+                        ->where('sender_type', 'customer')
+                        ->where(function($msg) use ($adminId) {
+                            return $msg->admin_id == $adminId || is_null($msg->admin_id);
+                        })
+                        ->whereNull('read_at')
+                        ->count();
+
+                    $cloned['unread_admin_messages_count'] = $unreadAdminCount;
+                    $cloned['unread_customer_messages_count'] = $unreadCustomerCount;
                     
                     // Root Admin Info untuk UI fallback
                     $lastAdminMessage = $feedback->messages
@@ -353,11 +362,27 @@ class FeedbackChatController extends Controller
             }
         }
 
+        // Apply Sorting based on latest_message.created_at DESC
+        $rooms = $rooms->sortByDesc(function ($room) {
+            return $room['latest_message']['created_at'] ?? $room['created_at'];
+        })->values();
+
+        // Apply unread filter if requested
+        if ($request->is_unread == 1 || $request->filter == 'belum_dibaca') {
+            $rooms = $rooms->filter(function ($room) use ($user) {
+                if ((int) $user->type === 1) { // Developer/Admin
+                    return isset($room['unread_customer_messages_count']) && $room['unread_customer_messages_count'] > 0;
+                } else { // Customer
+                    return isset($room['unread_admin_messages_count']) && $room['unread_admin_messages_count'] > 0;
+                }
+            })->values();
+        }
+
         // Paginate manually if needed, or just return all
         return response()->json([
             'success' => true,
             'message' => 'Data chat rooms berhasil diambil.',
-            'data' => $rooms->values(),
+            'data' => $rooms->all(),
         ]);
     }
 
@@ -482,5 +507,33 @@ class FeedbackChatController extends Controller
             return null;
         }
         return asset('assets/image/customers/profile/' . $user->foto);
+    }
+
+    public function unreadCount(Request $request)
+    {
+        $user = Auth::user();
+        $totalUnread = 0;
+
+        if ((int) $user->type === 1) {
+            // Admin/Developer
+            $totalUnread = FeedbackMessage::where('sender_type', 'customer')
+                ->whereNull('read_at')
+                ->count();
+        } else {
+            // Customer
+            $feedbacks = Feedback::where('id_user', $user->id)->pluck('id');
+            $totalUnread = FeedbackMessage::whereIn('feedback_id', $feedbacks)
+                ->where('sender_type', 'admin')
+                ->whereNull('read_at')
+                ->count();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Total unread feedback chat berhasil diambil.',
+            'data' => [
+                'total_unread_feedback_chat' => $totalUnread
+            ]
+        ]);
     }
 }

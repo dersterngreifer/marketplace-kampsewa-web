@@ -170,6 +170,80 @@ class KelolaPenggunaMenuController extends Controller
         }
     }
 
+    public function createAdmin()
+    {
+        return view('developers.tambah-admin')->with([
+            'title' => 'Tambah Admin KampSewa | Developer',
+        ]);
+    }
+
+    public function storeAdmin(Request $request)
+    {
+        $validated = $request->validate([
+            'fullname' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'number_phone' => ['required', 'string', 'max:20', 'unique:users,nomor_telephone'],
+            'password' => ['required', 'string', 'min:6'],
+            'date_of_birth' => ['required', 'date'],
+            'gender' => ['required', 'in:Laki-laki,Perempuan'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
+        ], [
+            'fullname.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan.',
+            'number_phone.required' => 'Nomor telepon wajib diisi.',
+            'number_phone.unique' => 'Nomor telepon sudah digunakan.',
+            'password.required' => 'Password wajib diisi.',
+            'password.min' => 'Password minimal 6 karakter.',
+            'date_of_birth.required' => 'Tanggal lahir wajib diisi.',
+            'gender.required' => 'Jenis kelamin wajib dipilih.',
+            'photo.image' => 'File harus berupa gambar.',
+            'photo.mimes' => 'Foto harus berformat JPG, JPEG, atau PNG.',
+            'photo.max' => 'Ukuran foto maksimal 10 MB.',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            $photoPath = 'Belum Di isi';
+
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $photoPath = time() . '_admin_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/image/customers/profile/'), $photoPath);
+            }
+
+            $user = new User();
+            $user->name = $validated['fullname'];
+            $user->email = $validated['email'];
+            $user->password = Hash::make($validated['password']);
+            $user->type = 1; // 1 for Admin
+            $user->nomor_telephone = $validated['number_phone'];
+            $user->tanggal_lahir = $validated['date_of_birth'];
+            $user->foto = $photoPath;
+            $user->jenis_kelamin = $validated['gender'];
+            $user->status = null;
+            $user->background = 'Belum Di isi';
+            $user->time_login = null;
+            $user->last_login = null;
+            $user->name_store = null;
+            $user->save();
+
+            DB::commit();
+
+            return redirect()
+                ->route('kelola-pengguna.index')
+                ->with('success', 'Admin KampSewa berhasil ditambahkan.');
+        } catch (\Throwable $th) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with('error', 'Gagal menambahkan Admin: ' . $th->getMessage());
+        }
+    }
+
     public function destroy(string $id)
     {
         $user = User::where('type', 0)->findOrFail($id);

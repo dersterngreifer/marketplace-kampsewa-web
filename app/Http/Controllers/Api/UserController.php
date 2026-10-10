@@ -695,5 +695,85 @@ class UserController extends Controller
                 ], 500);
             }
         }
+    public function getLikedProducts()
+    {
+        try {
+            $userId = auth('sanctum')->id();
+            
+            // Get liked product IDs
+            $likedProductIds = \App\Models\ProdukLike::where('id_user', $userId)->pluck('id_produk');
+            
+            if ($likedProductIds->isEmpty()) {
+                return response()->json([
+                    'message' => 'success',
+                    'data' => []
+                ], 200);
+            }
+
+            // Query products
+            $produk = \App\Models\Produk::with(['foto'])
+                ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
+                ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
+                ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
+                ->select(
+                    'produk.id',
+                    'produk.id as id_product',
+                    'produk.nama as nama_product',
+                    \Illuminate\Support\Facades\DB::raw('MIN(detail_variant_produk.harga_sewa) as harga'),
+                    \Illuminate\Support\Facades\DB::raw('ROUND(AVG(rating_produk.rating), 1) as rating_rata_rata')
+                )
+                ->whereIn('produk.id', $likedProductIds)
+                ->groupBy('produk.id', 'produk.nama')
+                ->get()
+                ->map(function ($item) {
+                    $item->gambar_product = \App\Helpers\PhotoHelper::getThumbnailUrl($item);
+                    unset($item->foto);
+                    return $item;
+                });
+
+            return response()->json([
+                'message' => 'success',
+                'data' => $produk
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat mengambil produk yang disukai.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getFeedbackHistory()
+    {
+        try {
+            $userId = auth('sanctum')->id();
+
+            $feedbacks = \App\Models\RatingProduk::with(['produk.foto'])
+                ->where('id_user', $userId)
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($item) {
+                    return [
+                        'id_feedback' => $item->id,
+                        'id_product' => $item->id_produk,
+                        'nama_product' => $item->produk ? $item->produk->nama : null,
+                        'gambar_product' => $item->produk ? \App\Helpers\PhotoHelper::getThumbnailUrl($item->produk) : null,
+                        'rating_diberikan' => $item->rating,
+                        'komentar' => $item->ulasan,
+                        'tanggal_ulasan' => $item->created_at ? $item->created_at->format('Y-m-d H:i:s') : null,
+                    ];
+                });
+
+            return response()->json([
+                'message' => 'success',
+                'data' => $feedbacks
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Terjadi kesalahan saat mengambil riwayat feedback.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
 

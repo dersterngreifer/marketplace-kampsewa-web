@@ -86,7 +86,20 @@ class PhotoHelper
             
             // Jika foto adalah string (misal dari query builder alias)
             if (is_string($produk->foto)) {
-                return self::getPhotoUrl($produk->foto, 'internal');
+                $fotoStr = trim($produk->foto);
+                // Jika berupa JSON array string
+                if (preg_match('/^\[.*\]$/', $fotoStr)) {
+                    $decoded = json_decode($fotoStr, true);
+                    if (is_array($decoded) && count($decoded) > 0) {
+                        return self::getPhotoUrl($decoded[0]);
+                    }
+                }
+                // Jika URL comma separated
+                if (strpos($fotoStr, ',') !== false) {
+                    $parts = explode(',', $fotoStr);
+                    return self::getPhotoUrl(trim($parts[0]));
+                }
+                return self::getPhotoUrl($fotoStr);
             }
         }
 

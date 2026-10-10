@@ -85,6 +85,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('user')
         ->controller(UserController::class)
         ->group(function () {
+            Route::get('/likes', 'getLikedProducts');
+            Route::get('/feedbacks', 'getFeedbackHistory');
             Route::get('/{id_user}', 'detailUser');
             Route::post('/update-profile/{id_user}', 'editProfile');
             Route::get('/pemesanan/{id_user}', 'pemesananUser');
@@ -127,6 +129,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/detail-produk/{parameter}', 'getDetailProduct');
             Route::get('/list-kategori', 'getAllKategori');
             Route::post('/{id_produk}/toggle-like', 'toggleLike')->middleware('auth:sanctum');
+            Route::post('/{id_produk}/review', 'storeReview')->middleware('auth:sanctum');
+            Route::get('/{id_produk}/reviews', 'getReviews');
             Route::get('/{kategori?}', 'getProdukByFilter');
         });
 
@@ -204,6 +208,7 @@ Route::middleware('auth:sanctum')->group(function () {
         ->controller(FeedbackChatController::class)
         ->group(function () {
             Route::get('/', 'chatRooms');
+            Route::get('/unread-count', 'unreadCount');
             Route::get('/{feedback}/{admin_id}/messages', 'roomMessages');
             Route::post('/{feedback}/{admin_id}/messages', 'storeRoomMessage');
         });

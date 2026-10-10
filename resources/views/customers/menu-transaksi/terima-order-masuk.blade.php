@@ -9,11 +9,18 @@
                     menginputkan pembayaran di form Pembayaran COD!</p>
             </div>
         @else
-            <div class="--warnging-alert w-fit p-2 rounded-lg bg-green-500/20 flex items-center gap-2">
-                <div class="--icon"><i class="text-green-500 bi bi-exclamation-diamond-fill"></i></div>
-                <p class="text-[14px] font-medium text-green-500">Status user <b>Lunas</b> anda bisa langsung menyiapkan
-                    barang
-                    sesuai dengan list pesanan user, dan menekan tombol terima!</p>
+            <div class="--warnging-alert w-fit p-2 rounded-lg bg-green-500/20 flex flex-col gap-2">
+                <div class="flex items-center gap-2">
+                    <div class="--icon"><i class="text-green-500 bi bi-check-circle-fill"></i></div>
+                    <p class="text-[14px] font-medium text-green-500">Status user <b>Lunas</b> anda bisa langsung menyiapkan
+                        barang sesuai dengan list pesanan user, dan menekan tombol terima!</p>
+                </div>
+                @if (isset($data->metode) && $data->metode == 'Transfer')
+                <div class="flex items-center gap-2 p-3 mt-2 bg-red-100 border-l-4 border-red-500 rounded shadow-sm">
+                    <div class="--icon"><i class="text-red-600 bi bi-exclamation-triangle-fill text-xl"></i></div>
+                    <p class="text-[14px] font-bold text-red-600 uppercase">PERINGATAN KERAS: Jangan pernah menekan tombol "Terima Order" sebelum Anda mengecek MUTASI MASUK di Aplikasi Bank Anda! Struk/bukti gambar yang diunggah pembeli bisa saja DIPALSUKAN/EDITAN.</p>
+                </div>
+                @endif
             </div>
         @endif
         @if ($data->status_penyewaan == 'Pending')
@@ -102,7 +109,12 @@
                                     <div><i class="bi bi-alarm-fill"></i></div>
                                     <div>
                                         <p class="text-[12px] font-medium">Status:</p>
-                                        <p class="text-[14px] font-bold">{{ $data->status_penyewaan }}</p>
+                                        <p class="text-[14px] font-bold">
+                                            {{ $data->status_penyewaan }}
+                                            @if($data->status_penyewaan == 'Selesai' && isset($pengembalian) && $pengembalian->status_denda == 'belum_dibayar')
+                                                <span class="text-red-600">(Belum Lunas)</span>
+                                            @endif
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -119,43 +131,65 @@
                 <div class="--pembayaran-penyewaan">
                     <div class="--card p-4 shadow-box-shadow-8 flex flex-col gap-4">
                         <div class="--header xl:text-[20px] font-bold ">Informasi Pembayaran</div>
-                        <div class="--body">
-                            <div class="--wrapper-list-data grid grid-cols-3">
-                                <div class="--bukti-pembayaran p-2 rounded-lg flex flex-col gap-2">
-                                    <p class="font-medium text-[14px]">Bukti Pembyaran:</p>
-                                    @if (preg_match('/\.(jpg|jpeg|png|gif)$/i', $data->bukti_pembayaran))
-                                        <img class="w-full object-cover rounded-lg"
-                                            src="{{ asset('assets/image/customers/pembayaran/' . $data->bukti_pembayaran) }}"
-                                            alt="Bukti Jaminan">
+                        <div class="--body grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div class="--images flex flex-col gap-4">
+                                <div class="--bukti-pembayaran p-4 bg-gray-50 rounded-lg border border-gray-100 flex flex-col gap-3">
+                                    <p class="font-bold text-gray-700 text-[14px] flex items-center gap-2">
+                                        <i class="bi bi-receipt"></i> Bukti Pembayaran
+                                    </p>
+                                    @if(isset($data->metode) && $data->metode == 'COD')
+                                        <div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg border border-gray-200 h-full text-center">
+                                            <i class="bi bi-cash-coin text-4xl text-green-500 mb-2"></i>
+                                            <p class="font-bold text-gray-800">Cash on Delivery (COD)</p>
+                                            <p class="text-xs text-gray-500 mt-1">Pembayaran dilakukan saat serah terima barang.</p>
+                                        </div>
+                                    @elseif ($data->bukti_pembayaran && $data->bukti_pembayaran !== 'Belum di isi')
+                                        @php
+                                            $urlBukti = Str::startsWith($data->bukti_pembayaran, ['http://', 'https://']) ? $data->bukti_pembayaran : asset('assets/image/customers/pembayaran/' . $data->bukti_pembayaran);
+                                        @endphp
+                                        <img class="w-full max-h-64 object-contain rounded-lg shadow-sm bg-white"
+                                            src="{{ $urlBukti }}"
+                                            alt="Bukti Pembayaran" onclick="window.open(this.src)" style="cursor: pointer;">
                                     @else
-                                        <p>{{ $data->jaminan_sewa }}</p>
+                                        <p class="text-gray-500 italic px-2 py-4 text-center bg-white rounded-lg border border-dashed">{{ $data->bukti_pembayaran ?: 'Belum diisi' }}</p>
                                     @endif
                                 </div>
-                                <div class="--bukti-jaminan p-2 rounded-lg flex flex-col gap-2">
-                                    <p class="font-medium text-[14px]">Bukti Jaminan / No. KTP:</p>
-                                    @if (preg_match('/\.(jpg|jpeg|png|gif)$/i', $data->jaminan_sewa))
-                                        <img class="w-full object-cover rounded-lg"
-                                            src="{{ asset('assets/image/customers/jaminan/' . $data->jaminan_sewa) }}"
-                                            alt="Bukti Jaminan">
+                                <div class="--bukti-jaminan p-4 bg-gray-50 rounded-lg border border-gray-100 flex flex-col gap-3">
+                                    <p class="font-bold text-gray-700 text-[14px] flex items-center gap-2">
+                                        <i class="bi bi-person-badge"></i> Bukti Jaminan / No. KTP
+                                    </p>
+                                    @if(isset($data->metode) && $data->metode == 'COD' && (!$data->jaminan_sewa || $data->jaminan_sewa == 'Belum di isi'))
+                                        <div class="flex flex-col items-center justify-center p-6 bg-white rounded-lg border border-gray-200 h-full text-center">
+                                            <i class="bi bi-person-vcard text-4xl text-blue-500 mb-2"></i>
+                                            <p class="font-bold text-gray-800">Cek KTP Saat Bertemu</p>
+                                            <p class="text-xs text-gray-500 mt-1">Pastikan untuk memeriksa identitas penyewa saat serah terima.</p>
+                                        </div>
+                                    @elseif ($data->jaminan_sewa && $data->jaminan_sewa !== 'Belum di isi')
+                                        @php
+                                            $urlJaminan = Str::startsWith($data->jaminan_sewa, ['http://', 'https://']) ? $data->jaminan_sewa : asset('assets/image/customers/jaminan/' . $data->jaminan_sewa);
+                                        @endphp
+                                        <img class="w-full max-h-64 object-contain rounded-lg shadow-sm bg-white"
+                                            src="{{ $urlJaminan }}"
+                                            alt="Bukti Jaminan" onclick="window.open(this.src)" style="cursor: pointer;">
                                     @else
-                                        <p>{{ $data->jaminan_sewa }}</p>
+                                        <p class="text-gray-500 italic px-2 py-4 text-center bg-white rounded-lg border border-dashed">{{ $data->jaminan_sewa ?: 'Belum diisi' }}</p>
                                     @endif
                                 </div>
-
-                                <div class="--bukti-pembayaran p-2 rounded-lg  flex flex-col gap-2">
-                                    <p class="font-medium text-[14px]">Jumlah Pembayaran:</p>
-                                    <p class="font-black -mt-2 text-[20px]">Rp.
-                                        {{ number_format($data->jumlah_pembayaran, 0, ',', '.') }}</p>
-                                </div>
-                                <div class="--bukti-pembayaran p-2 rounded-lg  flex flex-col gap-2">
-                                    <p class="font-medium text-[14px]">Biaya Admin:</p>
-                                    <p class="font-black -mt-2 text-[20px]">Rp.
-                                        {{ number_format($data->biaya_admin, 0, ',', '.') }}</p>
-                                </div>
-                                <div class="--bukti-pembayaran p-2 rounded-lg  flex flex-col gap-2">
-                                    <p class="font-medium text-[14px]">Total Pembayaran:</p>
-                                    <p class="font-black -mt-2 text-[20px]">Rp.
-                                        {{ number_format($data->total_pembayaran, 0, ',', '.') }}</p>
+                            </div>
+                            
+                            <div class="--amounts flex flex-col gap-4 h-max">
+                                <div class="p-6 bg-orange-50 rounded-xl border border-orange-100 shadow-sm flex flex-col gap-5">
+                                    <div>
+                                        <p class="font-medium text-gray-500 text-[14px] mb-1">Jumlah Pembayaran (Yg Dibayar)</p>
+                                        <p class="font-black text-gray-800 text-[24px]">Rp {{ number_format($data->jumlah_pembayaran, 0, ',', '.') }}</p>
+                                    </div>
+                                    
+                                    <hr class="border-orange-200">
+                                    
+                                    <div>
+                                        <p class="font-medium text-gray-500 text-[14px] mb-1">Total Harga Sewa</p>
+                                        <p class="font-black text-orange-600 text-[28px]">Rp {{ number_format($data->total_pembayaran, 0, ',', '.') }}</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -206,10 +240,16 @@
                                                     </tr>
                                                 @endforeach
                                                 <tr>
-                                                    <td colspan="3" class="text-left text-[16px] font-medium">Total
+                                                    <td colspan="3" class="text-left text-[14px] font-medium text-gray-500">Subtotal (Per Hari)
                                                     </td>
-                                                    <td colspan="" class="text-[16px] text-left font-medium">Rp.
+                                                    <td colspan="" class="text-[14px] text-left font-medium text-gray-500">Rp.
                                                         {{ number_format($totalSubtotal, 0, ',', '.') }}</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3" class="text-left text-[16px] font-bold text-orange-500">Total (x{{ $durasi }} Hari)
+                                                    </td>
+                                                    <td colspan="" class="text-[16px] text-left font-bold text-orange-500">Rp.
+                                                        {{ number_format($totalSubtotal * $durasi, 0, ',', '.') }}</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -325,7 +365,7 @@
                         </div>
                         <div>
                             <label class="block text-gray-700 text-sm font-bold mb-2">Total Denda (Rp)</label>
-                            <input type="number" name="denda" value="{{ isset($denda_keterlambatan) ? $denda_keterlambatan : 0 }}" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="0">
+                            <input type="number" id="denda_input" name="denda" value="{{ isset($denda_keterlambatan) ? $denda_keterlambatan : 0 }}" min="0" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="0">
                             @if(isset($info_keterlambatan) && $info_keterlambatan != '')
                                 <p class="text-[11px] font-semibold mt-1 {{ $denda_keterlambatan > 0 ? 'text-red-500' : 'text-emerald-500' }}">
                                     <i class="bi {{ $denda_keterlambatan > 0 ? 'bi-exclamation-circle' : 'bi-check-circle' }}"></i> {{ $info_keterlambatan }}
@@ -334,10 +374,10 @@
                         </div>
                         <div>
                             <label class="block text-gray-700 text-sm font-bold mb-2">Status Pembayaran Denda</label>
-                            <select name="status_denda" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                                <option value="Tidak Ada">Tidak Ada Denda</option>
-                                <option value="Belum Lunas">Belum Lunas</option>
-                                <option value="Lunas">Lunas (Catat ke Pemasukan)</option>
+                            <select name="status_denda" id="status_denda" class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="tidak_ada" {{ (isset($denda_keterlambatan) && $denda_keterlambatan > 0) ? 'disabled' : 'selected' }}>Tidak Ada Denda</option>
+                                <option value="belum_dibayar" {{ (isset($denda_keterlambatan) && $denda_keterlambatan > 0) ? 'selected' : '' }}>Belum Dibayar</option>
+                                <option value="lunas">Lunas (Catat ke Pemasukan)</option>
                             </select>
                         </div>
                     </div>
@@ -358,6 +398,27 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        @endif
+
+        @if ($data->status_penyewaan == 'Selesai' && isset($pengembalian) && $pengembalian->status_denda === 'belum_dibayar')
+            <div class="--component-denda shadow-box-shadow-8 p-6 rounded-lg bg-red-50 border border-red-200 mt-6">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <h3 class="font-bold text-[20px] mb-2 text-red-800">
+                            <i class="bi bi-exclamation-triangle-fill mr-2"></i> Tagihan Denda Belum Lunas
+                        </h3>
+                        <p class="font-medium text-[14px] text-red-700 mb-2">Pelanggan ini memiliki tagihan denda keterlambatan/kerusakan sebesar <strong>Rp. {{ number_format($pengembalian->denda, 0, ',', '.') }}</strong> yang berstatus "Belum Dibayar" sejak tanggal selesai.</p>
+                        <p class="text-[13px] text-red-600">Catatan: {{ $pengembalian->catatan }}</p>
+                    </div>
+                    <form action="{{ route('menu-transaksi.lunasi-denda', ['id_penyewaan' => $data->id_penyewaan, 'id_user' => Crypt::encrypt(session('id_user'))]) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="px-6 py-3 rounded-lg bg-red-600 hover:bg-red-700 font-bold text-white shadow-md transition flex items-center gap-2 whitespace-nowrap" onclick="return confirm('Apakah pelanggan sudah melunasi denda ini? Denda akan dicatat ke dalam tabel Pemasukan toko Anda.')">
+                            <i class="bi bi-check-circle-fill"></i>
+                            <span>Tandai Lunas</span>
+                        </button>
+                    </form>
+                </div>
             </div>
         @endif
     </div>
@@ -472,6 +533,25 @@
             var element = document.getElementById('terima-order');
             element.scrollIntoView({
                 behavior: 'smooth'
+            });
+        }
+        var dendaInput = document.getElementById('denda_input');
+        if (dendaInput) {
+            dendaInput.addEventListener('input', function(e) {
+                var val = parseInt(this.value) || 0;
+                var selectDenda = document.getElementById('status_denda');
+                var optionTidakAda = selectDenda.querySelector('option[value="tidak_ada"]');
+                var optionBelumDibayar = selectDenda.querySelector('option[value="belum_dibayar"]');
+                
+                if (val > 0) {
+                    optionTidakAda.disabled = true;
+                    if (selectDenda.value === 'tidak_ada') {
+                        optionBelumDibayar.selected = true;
+                    }
+                } else {
+                    optionTidakAda.disabled = false;
+                    optionTidakAda.selected = true;
+                }
             });
         }
     </script>

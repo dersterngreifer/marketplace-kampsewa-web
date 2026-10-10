@@ -13,6 +13,12 @@ class DetailVariantProdukSeeder extends Seeder
      */
     public function run(): void
     {
-        DetailVariantProduk::factory(500)->create();
+        $variants = \App\Models\VariantProduk::all();
+        
+        foreach ($variants as $variant) {
+            \App\Models\DetailVariantProduk::factory()->create([
+                'id_variant_produk' => $variant->id,
+            ]);
+        }
     }
 }

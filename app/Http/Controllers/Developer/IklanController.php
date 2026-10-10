@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Developer;
 use App\Http\Controllers\Controller;
 use App\Models\DetailIklan;
 use App\Models\Iklan;
-use App\Models\Pemasukan;
+use App\Models\PemasukanPerusahaan;
 use App\Models\PembayaranIklan;
 use App\Models\PembayaranPenyewaan;
 use App\Models\User;
@@ -25,7 +25,7 @@ class IklanController extends Controller
     {
         // ambil user berdasarkan yang baru saja terdaftar
         $user_baru_terdaftar = User::select('users.*')
-            ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+            ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.')
             ->where('users.type', 0)
             ->whereDate('users.created_at', Carbon::today())
             ->where('status_notifikasi_user.status', 'unread')
@@ -59,12 +59,12 @@ class IklanController extends Controller
         $cari = $request->query('cari');
 
         // get data user iklan pending
-        $user_pending = User::join('iklan', 'users.id', '=', 'iklan.id_user')
+        $user_pending = User::join('iklan', 'users.id', '=', 'iklan.')
             ->join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
             ->leftJoin('pembayaran_iklan', 'iklan.id', '=', 'pembayaran_iklan.id_iklan')
             ->where('detail_iklan.status_iklan', 'like', '%pending%')
             ->select(
-                'users.id as id_user',
+                'users.id as ',
                 'users.name',
                 'users.email',
                 'users.foto',
@@ -95,11 +95,11 @@ class IklanController extends Controller
         $user_pending = $user_pending->paginate(10);
 
         // get data iklan selesai
-        $data_iklan_selesai = User::join('iklan', 'users.id', '=', 'iklan.id_user')
+        $data_iklan_selesai = User::join('iklan', 'users.id', '=', 'iklan.')
             ->join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
             ->where('detail_iklan.status_iklan', 'like', '%selesai%')
             ->select(
-                'users.id as id_user',
+                'users.id as ',
                 'users.name',
                 'users.foto',
                 'iklan.judul',
@@ -113,11 +113,11 @@ class IklanController extends Controller
         $get_count_iklan_selesai = $data_iklan_selesai->count();
 
         // get data iklan aktif
-        $data_iklan_aktif = User::join('iklan', 'users.id', '=', 'iklan.id_user')
+        $data_iklan_aktif = User::join('iklan', 'users.id', '=', 'iklan.')
             ->join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
             ->where('detail_iklan.status_iklan', 'like', '%aktif%')
             ->select(
-                'users.id as id_user',
+                'users.id as ',
                 'users.name',
                 'users.foto',
                 'iklan.judul',
@@ -132,7 +132,7 @@ class IklanController extends Controller
 
         // iklan yang akan expired dalam 3 hari ke depan
         $iklan_hampir_expired = DetailIklan::join('iklan', 'detail_iklan.id_iklan', '=', 'iklan.id')
-            ->join('users', 'iklan.id_user', '=', 'users.id')
+            ->join('users', 'iklan.', '=', 'users.id')
             ->where('detail_iklan.status_iklan', 'Aktif')
             ->whereBetween('detail_iklan.tanggal_akhir', [
                 Carbon::today(),
@@ -176,26 +176,22 @@ class IklanController extends Controller
                 'midtrans_transaction_status' => 'settlement',
             ]);
 
-        // Catat ke pemasukan jika belum tercatat
-        $sudahDicatat = Pemasukan::where('id_user', function ($q) use ($detail) {
-            $q->select('id_user')->from('iklan')->where('id', $detail->id_iklan);
-        })
-            ->where('sumber', 'Layanan Iklan')
-            ->whereDate('created_at', Carbon::today())
-            ->exists();
+                // Catat ke pemasukan jika belum tercatat
+        $pembayaran = PembayaranIklan::where('id_iklan', $detail->id_iklan)->first();
+        if ($pembayaran) {
+            $sudahDicatat = PemasukanPerusahaan::where('deskripsi', 'like', '%Aktivasi manual iklan oleh admin%')
+                ->where('sumber', 'Layanan Iklan')
+                ->whereDate('created_at', Carbon::today())
+                ->exists();
 
-        if (!$sudahDicatat) {
-            $pembayaran = PembayaranIklan::where('id_iklan', $detail->id_iklan)->first();
-            if ($pembayaran) {
-                Pemasukan::create([
-                    'id_user'   => $pembayaran->id_user,
+            if (!$sudahDicatat) {
+                PemasukanPerusahaan::create([
                     'sumber'    => 'Layanan Iklan',
-                    'deskripsi' => 'Aktivasi manual iklan oleh admin — ' . now()->format('d M Y'),
+                    'deskripsi' => 'Aktivasi manual iklan oleh admin - ' . now()->format('d M Y'),
                     'nominal'   => $pembayaran->total_bayar,
                 ]);
             }
         }
-
         Alert::toast('Iklan berhasil diaktifkan.', 'success');
         return back();
     }
@@ -231,3 +227,4 @@ class IklanController extends Controller
         return back();
     }
 }
+

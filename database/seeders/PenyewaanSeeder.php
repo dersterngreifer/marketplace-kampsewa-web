@@ -22,11 +22,11 @@ class PenyewaanSeeder extends Seeder
      */
     public function run(): void
     {
-        $userIds  = User::where('type', 0)->inRandomOrder()->limit(50)->pluck('id')->toArray();
-        $produkIds = Produk::inRandomOrder()->limit(50)->pluck('id')->toArray();
+        $userIds  = User::where('type', 0)->inRandomOrder()->limit(500)->pluck('id')->toArray();
+        $produkIds = Produk::inRandomOrder()->limit(500)->pluck('id')->toArray();
 
         if (empty($userIds)) {
-            $userIds = User::inRandomOrder()->limit(50)->pluck('id')->toArray();
+            $userIds = User::inRandomOrder()->limit(500)->pluck('id')->toArray();
         }
 
         if (empty($produkIds)) {
@@ -59,7 +59,7 @@ class PenyewaanSeeder extends Seeder
         // ================================================================
         // 20 Penyewaan SELESAI (masa lalu)
         // ================================================================
-        for ($i = 1; $i <= 20; $i++) {
+        for ($i = 1; $i <= 200; $i++) {
             $userId      = $getNextUser();
             $mulai       = Carbon::today()->subDays(rand(14, 90));
             $selesai     = $mulai->copy()->addDays(rand(3, 10));
@@ -81,7 +81,7 @@ class PenyewaanSeeder extends Seeder
         // ================================================================
         // 15 Penyewaan BERLANGSUNG
         // ================================================================
-        for ($i = 1; $i <= 15; $i++) {
+        for ($i = 1; $i <= 150; $i++) {
             $userId    = $getNextUser();
             $mulai     = Carbon::today()->subDays(rand(1, 5));
             $selesai   = Carbon::today()->addDays(rand(2, 10));
@@ -103,7 +103,7 @@ class PenyewaanSeeder extends Seeder
         // ================================================================
         // 15 Penyewaan PENDING (menunggu konfirmasi)
         // ================================================================
-        for ($i = 1; $i <= 15; $i++) {
+        for ($i = 1; $i <= 150; $i++) {
             $userId    = $getNextUser();
             $mulai     = Carbon::today()->addDays(rand(1, 14));
             $selesai   = $mulai->copy()->addDays(rand(3, 7));

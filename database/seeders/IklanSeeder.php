@@ -99,7 +99,7 @@ class IklanSeeder extends Seeder
         // ================================================================
         // 10 Iklan AKTIF (tayang sekarang)
         // ================================================================
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 170; $i++) {
             $userId    = $getNextUser();
             $harga     = $hargaOptions[array_rand($hargaOptions)];
             $metode    = $metodeOptions[array_rand($metodeOptions)];
@@ -154,7 +154,7 @@ class IklanSeeder extends Seeder
         // ================================================================
         // 10 Iklan PENDING (antrian masa depan)
         // ================================================================
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 170; $i++) {
             $userId    = $getNextUser();
             $harga     = $hargaOptions[array_rand($hargaOptions)];
             $metode    = $metodeOptions[array_rand($metodeOptions)];
@@ -208,7 +208,7 @@ class IklanSeeder extends Seeder
         // ================================================================
         // 10 Iklan SELESAI (sudah berakhir di masa lalu)
         // ================================================================
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= 170; $i++) {
             $userId    = $getNextUser();
             $harga     = $hargaOptions[array_rand($hargaOptions)];
             $metode    = $metodeOptions[array_rand($metodeOptions)];

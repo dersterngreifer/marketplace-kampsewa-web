@@ -10,17 +10,21 @@
             
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-gray-200 pb-4 lg:pb-0">
                 <!-- Tabs -->
-                <nav class="flex overflow-x-auto hide-scrollbar gap-6" aria-label="Tabs">
+                                <nav class="flex overflow-x-auto hide-scrollbar gap-6" aria-label="Tabs">
                     <a href="{{ route('menu-transaksi.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
                        class="{{ $title === 'Order Masuk' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
                         Order Masuk
+                    </a>
+                    <a href="{{ route('menu-transaksi.pengambilan', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
+                       class="{{ $title === 'Pengambilan' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                        Pengambilan
                     </a>
                     <a href="{{ route('menu-transaksi.sewa-berlangsung', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
                        class="{{ $title === 'Sewa Berlangsung' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
                         Sewa Berlangsung
                     </a>
                     <a href="{{ route('menu-transaksi.order-selesai', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" 
-                       class="{{ $title === 'Order Selesai' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
+                       class="{{ $title === 'Selesai Order' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} whitespace-nowrap py-4 px-1 border-b-2 font-bold text-sm lg:text-[15px] transition-colors">
                         Selesai
                     </a>
                 </nav>
@@ -41,10 +45,11 @@
                     <form method="GET" id="form-filter-order-selesai" class="w-full sm:w-auto">
                         <div class="relative">
                             <select name="filter-order-selesai" id="filter-order-selesai"
-                                class="block w-full sm:w-48 pl-3 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm cursor-pointer appearance-none">
+                                class="block w-full sm:w-56 pl-3 pr-10 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm cursor-pointer appearance-none">
                                 <option value="Semua">Semua Status</option>
                                 <option value="Pengembalian">Belum Dikonfirmasi</option>
                                 <option value="Selesai">Sudah Dikonfirmasi</option>
+                                <option value="Selesai Belum Lunas">Selesai (Belum Lunas)</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-gray-400">
                                 <i class="bi bi-chevron-down text-xs"></i>
@@ -110,9 +115,11 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">
-                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold {{ $item->status_penyewaan == 'Pengembalian' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700' }} shadow-sm flex items-center gap-1.5 w-fit">
+                                    <span class="px-3 py-1.5 rounded-lg text-xs font-bold {{ $item->status_penyewaan == 'Pengembalian' ? 'bg-amber-100 text-amber-700' : ($item->status_penyewaan == 'Selesai' && $item->status_denda == 'belum_dibayar' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700') }} shadow-sm flex items-center gap-1.5 w-fit">
                                         @if ($item->status_penyewaan == 'Pengembalian')
                                             <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Belum Dikonfirmasi
+                                        @elseif ($item->status_penyewaan == 'Selesai' && $item->status_denda == 'belum_dibayar')
+                                            <i class="bi bi-exclamation-circle text-[14px]"></i> Selesai (Belum Lunas)
                                         @else
                                             <i class="bi bi-check2-all text-[14px]"></i> Selesai
                                         @endif
@@ -190,3 +197,4 @@
         });
     </script>
 @endsection
+

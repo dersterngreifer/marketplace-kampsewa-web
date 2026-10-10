@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Developer;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\CheckUserLogin;
 use App\Models\Feedback;
-use App\Models\Pemasukan;
+use App\Models\PemasukanPerusahaan;
 use App\Models\PembayaranPenyewaan;
-use App\Models\Pengeluaran;
+use App\Models\PengeluaranPerusahaan;
 use App\Models\StatusNotifikasiUser;
 use App\Models\User;
 use Carbon\Carbon;
@@ -105,11 +105,11 @@ class DashboardController extends Controller
         $percentageMitraChange = round($percentageMitraChange, 2);
 
         // -- total pemasukan bulan ini
-        $pemasukan_bulan_ini = Pemasukan::whereBetween('created_at', [$startOfCurrentMonth, $endOfCurrentMonth])->sum('nominal');
+        $pemasukan_bulan_ini = PemasukanPerusahaan::whereBetween('created_at', [$startOfCurrentMonth, $endOfCurrentMonth])->sum('nominal');
         $pemasukan_bulan_ini_ldr = number_format($pemasukan_bulan_ini, 0, ',', '.');
 
         // -- total pemasukan bulan lalu
-        $pemasukan_bulan_lalu = Pemasukan::whereBetween('created_at', [$startOfPreviousMonth, $endOfPreviousMonth])->sum('nominal');
+        $pemasukan_bulan_lalu = PemasukanPerusahaan::whereBetween('created_at', [$startOfPreviousMonth, $endOfPreviousMonth])->sum('nominal');
         $pemasukan_bulan_lalu_ldr = number_format($pemasukan_bulan_lalu, 0, ',', '.');
 
         // -- perbandingan pemasukan bulan lalu dan sekarang
@@ -121,11 +121,11 @@ class DashboardController extends Controller
         $percentagePemasukanChange = round($percentagePemasukanChange, 2);
 
         // -- total pengeluaran bulan ini
-        $pengeluaran_bulan_ini = Pengeluaran::whereBetween('created_at', [$startOfCurrentMonth, $endOfCurrentMonth])->sum('nominal');
+        $pengeluaran_bulan_ini = PengeluaranPerusahaan::whereBetween('created_at', [$startOfCurrentMonth, $endOfCurrentMonth])->sum('nominal');
         $pengeluaran_bulan_ini_ldr = number_format($pengeluaran_bulan_ini, 0, ',', '.');
 
         // -- total pengeluaran bulan lalu
-        $pengeluaran_bulan_lalu = Pengeluaran::whereBetween('created_at', [$startOfPreviousMonth, $endOfPreviousMonth])->sum('nominal');
+        $pengeluaran_bulan_lalu = PengeluaranPerusahaan::whereBetween('created_at', [$startOfPreviousMonth, $endOfPreviousMonth])->sum('nominal');
         $pengeluaran_bulan_lalu_ldr = number_format($pengeluaran_bulan_lalu, 0, ',', '.');
 
         // -- perbandingan pengeluaran bulan lalu dan sekarang
@@ -137,8 +137,8 @@ class DashboardController extends Controller
         $percentagePengeluaranChange = round($percentagePengeluaranChange, 2);
 
         // -- menghitung total keseluruhan nominal pemasukan dan nominal pengeluaran tahun saat ini
-        $total_pemasukan_tahun_ini = Pemasukan::whereYear('created_at', date('Y'))->sum('nominal');
-        $total_pengeluaran_tahun_ini = Pengeluaran::whereYear('created_at', date('Y'))->sum('nominal');
+        $total_pemasukan_tahun_ini = PemasukanPerusahaan::whereYear('created_at', date('Y'))->sum('nominal');
+        $total_pengeluaran_tahun_ini = PengeluaranPerusahaan::whereYear('created_at', date('Y'))->sum('nominal');
 
         // -- menghitung total keuntungan
         $total_keuntungan = $total_pemasukan_tahun_ini - $total_pengeluaran_tahun_ini;

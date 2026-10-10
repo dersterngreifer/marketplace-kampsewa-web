@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
     {
         // Tier 1: Tabel utama tanpa foreign key
         $this->call(UserSeeder::class);
+        $this->call(AdminSeeder::class);
 
         // Tier 2: Tabel yang hanya bergantung pada users
         $this->call([
@@ -48,6 +49,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RatingSeeder::class,        // FK: produk, users
             VariantProdukSeeder::class, // FK: produk
+            DetailVariantProdukSeeder::class, // FK: variant_produk
         ]);
 
         // Tier 5: Transaksi penyewaan

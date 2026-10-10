@@ -143,6 +143,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/', [KelolaPenggunaMenuController::class, 'store'])
                 ->name('kelola-pengguna.store');
 
+            Route::get('/tambah-admin', [KelolaPenggunaMenuController::class, 'createAdmin'])
+                ->name('kelola-pengguna.create-admin');
+
+            Route::post('/tambah-admin', [KelolaPenggunaMenuController::class, 'storeAdmin'])
+                ->name('kelola-pengguna.store-admin');
+
             Route::delete('/delete-selected', [KelolaPenggunaMenuController::class, 'bulkDestroy'])
                 ->name('kelola-pengguna.bulk-destroy');
 
@@ -330,6 +336,7 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
 
     Route::controller(TransaksiMenuController::class)->name('menu-transaksi.')->group(function () {
         Route::get('/transaksi/{id_user}', 'index')->name('index');
+        Route::get('/pengambilan/{id_user}', 'pengambilan')->name('pengambilan');
         Route::get('/sewa-berlangsung/{id_user}', 'sewaBerlangsung')->name('sewa-berlangsung');
         Route::get('/denda-transaksi/{id_user}', 'dendaTransaksi')->name('denda-transaksi');
         Route::get('/order-selesai/{id_user}', 'orderSelesai')->name('order-selesai');
@@ -337,8 +344,10 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
         Route::get('/transaksi/terima-order-masuk/{id_penyewaan}', 'terimaOrderMasuk')->name('terima-order-masuk');
         Route::put('/transaksi/input-pembayaran-cod/{id_penyewaan}', 'inputPembayaranCOD')->name('input-pembayaran-cod');
         Route::put('/transaksi/confirm-order-masuk/{id_penyewaan}/{id_user}/{parameter}', 'confirmOrderMasuk')->name('confirm-order-masuk');
+        Route::put('/transaksi/serahkan-barang/{id_penyewaan}/{id_user}', 'serahkanBarang')->name('serahkan-barang');
         Route::put('/transaksi/batalkan-order/{id_penyewaan}/{id_user}', 'batalkanOrder')->name('batalkan-order');
         Route::post('/transaksi/proses-pengembalian/{id_penyewaan}/{id_user}', 'prosesPengembalian')->name('proses-pengembalian');
+        Route::post('/transaksi/lunasi-denda/{id_penyewaan}/{id_user}', 'lunasiDenda')->name('lunasi-denda');
     });
 });
 
