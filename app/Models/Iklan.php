@@ -13,11 +13,22 @@ class Iklan extends Model
 
     protected $fillable = [
         'id_user',
+        'id_produk',
+        'target_type',
+        'badge_promo',
+        'tanggal_mulai',
+        'tanggal_selesai',
+        'status',
         'poster',
         'judul',
         'sub_judul',
         'deskripsi',
         'snap_token',
+    ];
+
+    protected $casts = [
+        'tanggal_mulai'   => 'datetime',
+        'tanggal_selesai' => 'datetime',
     ];
 
     public function detailIklan()
@@ -38,5 +49,10 @@ class Iklan extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class, 'id_produk');
     }
 }

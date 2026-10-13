@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Helpers\PhotoHelper;
 use App\Models\Produk;
 use App\Models\ProdukLike;
+use App\Services\PromoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -76,8 +77,12 @@ class ProductController extends Controller
                     ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
                     : asset('images/placeholder-image.png');
 
+                $item->image = $item->foto_depan;
                 return $item;
             });
+
+        // Terapkan kalkulasi diskon aktif
+        PromoService::applyDiscountsToCollection($produk);
 
         // Check apakah data ada
         if ($produk->isEmpty()) {
@@ -206,8 +211,12 @@ class ProductController extends Controller
                     ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
                     : asset('images/placeholder-image.png');
 
+                $item->image = $item->foto_depan;
                 return $item;
             });
+
+        // Terapkan kalkulasi diskon aktif
+        PromoService::applyDiscountsToCollection($data);
 
         return response()->json([
             'message' => 'success',
@@ -301,6 +310,9 @@ class ProductController extends Controller
 
                     return $item;
                 });
+
+            PromoService::applyDiscountsToCollection($all_variants);
+            PromoService::applyDiscountsToCollection($filtered_results);
 
             if ($all_variants->isEmpty()) {
                 return response()->json([
@@ -404,8 +416,12 @@ class ProductController extends Controller
                         ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
                         : asset('images/placeholder-image.png');
 
+                    $item->image = $item->foto_depan;
                     return $item;
                 });
+
+            // Terapkan kalkulasi diskon aktif
+            PromoService::applyDiscountsToCollection($all_variants);
 
             if ($all_variants->isEmpty()) {
                 return response()->json([
@@ -483,8 +499,12 @@ class ProductController extends Controller
                     ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
                     : asset('images/placeholder-image.png');
 
+                $item->image = $item->foto_depan;
                 return $item;
             });
+
+        // Terapkan kalkulasi diskon aktif
+        PromoService::applyDiscountsToCollection($produk);
 
         if ($produk->isEmpty()) {
             return response()->json(['message' => 'Data rekomendasi tidak ditemukan!'], 404);
@@ -560,8 +580,12 @@ class ProductController extends Controller
                     ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
                     : asset('images/placeholder-image.png');
 
+                $item->image = $item->foto_depan;
                 return $item;
             });
+
+        // Terapkan kalkulasi diskon aktif
+        PromoService::applyDiscountsToCollection($produk);
 
         if ($produk->isEmpty()) {
             return response()->json(['message' => 'Anda belum memiliki produk.'], 404);

@@ -16,6 +16,7 @@ class PembayaranPenyewaan extends Model
         'jumlah_pembayaran',
         'kembalian_pembayaran',
         'biaya_admin',
+        'biaya_antar',
         'kurang_pembayaran',
         'total_pembayaran',
         'pajak_platform',

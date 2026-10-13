@@ -2,11 +2,11 @@
     <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-[70px] items-center">
             <!-- Logo -->
-            <div class="flex-shrink-0 flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md shadow-blue-500/30">
-                    K
-                </div>
-                <a href="{{ route('dashboard-cust', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="font-bold text-2xl text-gray-800 tracking-tight hover:text-blue-600 transition-colors">KampSewa.</a>
+            <div class="flex-shrink-0 flex items-center">
+                <a href="{{ route('dashboard-cust', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-2.5 group">
+                    <img src="{{ asset('assets/logo/favicons/android-chrome-512x512.png') }}" alt="KampSewa Logo" class="w-10 h-10 object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-200">
+                    <span class="font-bold text-2xl text-gray-800 tracking-tight group-hover:text-blue-600 transition-colors">KampSewa.</span>
+                </a>
             </div>
 
             <!-- Desktop Menu -->
@@ -22,7 +22,7 @@
                 <!-- Dropdown Transaksi -->
                 <div class="relative h-[70px] flex items-center group">
                     <button id="transaksi-btn" class="inline-flex items-center px-4 h-[70px] text-[15px] font-medium transition-all duration-200 border-b-2 relative focus:outline-none focus:ring-0 outline-none cursor-default
-                        {{ in_array($title, ['Order Selesai', 'Denda Pelanggan', 'Sewa Berlangsung', 'Terima Order Masuk', 'Order Masuk', 'Kelola Iklan', 'Iklan | Customer']) ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 group-hover:text-blue-600' }}">
+                        {{ in_array($title, ['Order Selesai', 'Denda Pelanggan', 'Sewa Berlangsung', 'Terima Order Masuk', 'Order Masuk', 'Kelola Iklan', 'Iklan | Customer', 'Kelola Promo & Diskon | KampSewa', 'Buat Promo & Diskon Baru | KampSewa', 'Edit Promo Toko | KampSewa', 'Pengaturan Biaya Antar | KampSewa']) ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 group-hover:text-blue-600' }}">
                         <div class="flex items-center gap-2 transition-transform duration-200">
                             <i class="typcn typcn-shopping-bag text-[20px]"></i> Transaksi
                             <i id="transaksi-chevron" class="bi bi-chevron-down text-[12px] ml-1 transition-transform duration-300 group-hover:rotate-180"></i>
@@ -38,6 +38,14 @@
                             <a href="{{ route('kasir-offline.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-emerald-50 hover:text-emerald-600 rounded-xl transition-all duration-200 whitespace-nowrap">
                                 <div class="w-8 h-8 rounded-lg bg-emerald-100/50 flex items-center justify-center text-emerald-600"><i class="bi bi-shop"></i></div>
                                 Kasir / Order Offline
+                            </a>
+                            <a href="{{ route('menu-pengiriman.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-teal-50 hover:text-teal-600 rounded-xl transition-all duration-200 whitespace-nowrap">
+                                <div class="w-8 h-8 rounded-lg bg-teal-100/50 flex items-center justify-center text-teal-600"><i class="bi bi-truck"></i></div>
+                                Biaya Antar & Pengiriman
+                            </a>
+                            <a href="{{ route('menu-promo.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-amber-50 hover:text-amber-600 rounded-xl transition-all duration-200 whitespace-nowrap">
+                                <div class="w-8 h-8 rounded-lg bg-amber-100/50 flex items-center justify-center text-amber-600"><i class="bi bi-percent"></i></div>
+                                Diskon Produk Toko
                             </a>
                             <a href="{{ route('buat-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-600 rounded-xl transition-all duration-200 whitespace-nowrap">
                                 <div class="w-8 h-8 rounded-lg bg-purple-100/50 flex items-center justify-center text-purple-600"><i class="bi bi-megaphone"></i></div>
@@ -185,6 +193,14 @@
                 <a href="{{ route('kasir-offline.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                     <div class="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600"><i class="bi bi-shop"></i></div>
                     Kasir / Order Offline
+                </a>
+                <a href="{{ route('menu-pengiriman.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center text-teal-600"><i class="bi bi-truck"></i></div>
+                    Biaya Antar & Pengiriman
+                </a>
+                <a href="{{ route('menu-promo.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                    <div class="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600"><i class="bi bi-percent"></i></div>
+                    Diskon Produk Toko
                 </a>
                 <a href="{{ route('buat-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="flex items-center gap-3 px-4 py-3 rounded-xl text-[15px] font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                     <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500"><i class="bi bi-megaphone"></i></div>

@@ -14,6 +14,18 @@ class Penyewaan extends Model
         'tanggal_mulai',
         'tanggal_selesai',
         'pesan',
+        'opsi_pengiriman',
+        'alamat_pengiriman',
         'status_penyewaan',
     ];
+
+    public function pembayaran()
+    {
+        return $this->hasOne(PembayaranPenyewaan::class, 'id_penyewaan');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
 }

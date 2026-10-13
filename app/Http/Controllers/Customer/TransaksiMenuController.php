@@ -149,6 +149,8 @@ class TransaksiMenuController extends Controller
                 'penyewaan.tanggal_selesai',
                 'penyewaan.status_penyewaan',
                 'penyewaan.pesan',
+                'penyewaan.opsi_pengiriman',
+                'penyewaan.alamat_pengiriman',
                 'pembayaran_penyewaan.id as id_pembayaran',
                 'pembayaran_penyewaan.bukti_pembayaran',
                 'pembayaran_penyewaan.jaminan_sewa',
@@ -156,7 +158,9 @@ class TransaksiMenuController extends Controller
                 'pembayaran_penyewaan.total_pembayaran',
                 'pembayaran_penyewaan.status_pembayaran',
                 'pembayaran_penyewaan.metode',
-                'pembayaran_penyewaan.biaya_admin'
+                'pembayaran_penyewaan.jenis_transaksi',
+                'pembayaran_penyewaan.biaya_admin',
+                'pembayaran_penyewaan.biaya_antar'
             )->where('penyewaan.id', $id_penyewaan_decrypt)->first();
 
         // Query untuk data dari tabel 'bank'

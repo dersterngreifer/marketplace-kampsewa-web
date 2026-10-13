@@ -112,36 +112,68 @@ class TransaksiController extends Controller
                 ];
             }
 
+            // Menentukan opsi pengiriman dan alamat
+            $opsi_pengiriman = request()->input('opsi_pengiriman') 
+                ?? request()->input('jenis_transaksi') 
+                ?? 'Ambil Ditempat';
+            $alamat_pengiriman = request()->input('alamat_pengiriman') 
+                ?? request()->input('alamat') 
+                ?? null;
+
             // Mengisi tabel penyewaan
             $table_penyewaan = new Penyewaan();
             $table_penyewaan->id_user = $id_user;
             $table_penyewaan->tanggal_mulai = request()->input('tanggal_mulai');
             $table_penyewaan->tanggal_selesai = request()->input('tanggal_selesai');
             $table_penyewaan->pesan = request()->input('pesan') ?: 'Tidak ada pesan';
+            $table_penyewaan->opsi_pengiriman = $opsi_pengiriman;
+            $table_penyewaan->alamat_pengiriman = $alamat_pengiriman;
             $table_penyewaan->status_penyewaan = 'Pending';
             $table_penyewaan->save();
+
+            // Hitung durasi hari dari tanggal penyewaan
+            $start = \Carbon\Carbon::parse($table_penyewaan->tanggal_mulai);
+            $end = \Carbon\Carbon::parse($table_penyewaan->tanggal_selesai);
+            $durasi = max(1, $start->diffInDays($end));
+
+            // Hitung subtotal sewa produk
+            $subtotal_produk = collect($resolved_variants)->sum(function($item) use ($durasi) {
+                return $item['input']['subtotal'] * $durasi;
+            });
+
+            // Tentukan biaya antar jika opsi pengantaran dipilih
+            $is_diantar = (strtolower($opsi_pengiriman) === 'diantar' || stripos($opsi_pengiriman, 'antar') !== false);
+            $biaya_antar = 0;
+            if ($is_diantar) {
+                $biaya_antar = (int) request()->input('biaya_antar', 0);
+                // Fallback otomatis ambil dari database jika frontend mengirim 0 tapi opsi antar dipilih
+                if ($biaya_antar <= 0 && !empty($resolved_variants)) {
+                    $first_produk = Produk::find($resolved_variants[0]['input']['id_produk']);
+                    if ($first_produk && $first_produk->id_user) {
+                        $pengaturan = \App\Models\PengaturanPengirimanToko::where('id_user', $first_produk->id_user)->first();
+                        if ($pengaturan && $pengaturan->layanan_antar) {
+                            $biaya_antar = (int) $pengaturan->biaya_antar;
+                        }
+                    }
+                }
+            }
+
+            $biaya_admin = (int) request()->input('biaya_admin', 0);
+            $total_semua = $subtotal_produk + $biaya_antar + $biaya_admin;
 
             // Selalu buat entri PembayaranPenyewaan dengan status default 'Belum lunas'
             $table_pembayaran = new PembayaranPenyewaan();
             $table_pembayaran->id_penyewaan = $table_penyewaan->id;
             $table_pembayaran->bukti_pembayaran = 'Belum di isi';
             $table_pembayaran->jaminan_sewa = 'Belum di isi';
-            // Hitung durasi hari dari tanggal penyewaan
-            $start = \Carbon\Carbon::parse($table_penyewaan->tanggal_mulai);
-            $end = \Carbon\Carbon::parse($table_penyewaan->tanggal_selesai);
-            $durasi = max(1, $start->diffInDays($end));
-
-            // Hitung total dari subtotal dikali durasi (atau bisa juga langsung terima dari request frontend)
-            $total_semua = collect($resolved_variants)->sum(function($item) use ($durasi) {
-                return $item['input']['subtotal'] * $durasi;
-            });
-
             $table_pembayaran->jumlah_pembayaran = 0;
             $table_pembayaran->kembalian_pembayaran = 0;
-            $table_pembayaran->biaya_admin = request()->input('biaya_admin', 0);
+            $table_pembayaran->biaya_admin = $biaya_admin;
+            $table_pembayaran->biaya_antar = $biaya_antar;
             $table_pembayaran->kurang_pembayaran = $total_semua;
             $table_pembayaran->total_pembayaran = $total_semua;
             $table_pembayaran->metode = request()->input('metode');
+            $table_pembayaran->jenis_transaksi = $is_diantar ? 'diantar' : 'ambil ditempat';
             $table_pembayaran->status_pembayaran = 'Belum lunas';
             $table_pembayaran->save();
 
@@ -171,6 +203,7 @@ class TransaksiController extends Controller
             return response()->json([
                 'message' => 'success',
                 'penyewaan' => $table_penyewaan,
+                'pembayaran' => $table_pembayaran,
                 'detail_penyewaan' => $detail_penyewaan,
             ], 200);
         } catch (\Exception $error) {
@@ -206,10 +239,17 @@ class TransaksiController extends Controller
             $pembayaran->jumlah_pembayaran = $request->jumlah_pembayaran;
             $pembayaran->kembalian_pembayaran = $request->kembalian_pembayaran;
             $pembayaran->biaya_admin = $request->biaya_admin;
+            if ($request->has('biaya_antar')) {
+                $pembayaran->biaya_antar = (int) $request->input('biaya_antar');
+            }
             $pembayaran->kurang_pembayaran = $request->kurang_pembayaran;
             $pembayaran->total_pembayaran = $request->total_pembayaran;
             $pembayaran->metode = 'Transfer';
-            $pembayaran->jenis_transaksi = 'Ambil ditempat';
+            if ($request->has('jenis_transaksi') || $request->has('opsi_pengiriman')) {
+                $pembayaran->jenis_transaksi = $request->input('jenis_transaksi') ?? $request->input('opsi_pengiriman');
+            } elseif (empty($pembayaran->jenis_transaksi)) {
+                $pembayaran->jenis_transaksi = 'ambil ditempat';
+            }
             $pembayaran->status_pembayaran = 'Menunggu Verifikasi';
 
             if ($request->hasFile('bukti_pembayaran')) {
@@ -345,8 +385,21 @@ class TransaksiController extends Controller
 
     public function bankToko()
     {
-        $id_user = request()->query('id_user');
-        $name_store = request()->query('name_store');
+        $id_user = request()->query('id_user') ?? request()->input('id_user');
+        $name_store = request()->query('name_store') ?? request()->input('name_store');
+
+        // Jika user terautentikasi dan id_user tidak dikirim, gunakan user yang sedang login
+        if (!$id_user && auth('sanctum')->check()) {
+            $id_user = auth('sanctum')->id();
+        }
+
+        // Jika tidak ada parameter filter, jangan bocorkan bank milik pengguna/toko lain
+        if (!$id_user && !$name_store) {
+            return response()->json([
+                'message' => 'success',
+                'bank' => [],
+            ]);
+        }
 
         $bank = Bank::select('bank.id', 'bank.id_user', 'bank.rekening', DB::raw('UPPER(bank.bank) as bank'))
             ->where(function ($query) use ($id_user, $name_store) {
@@ -354,7 +407,9 @@ class TransaksiController extends Controller
                     $query->where('id_user', $id_user);
                 }
                 if ($name_store) {
-                    $query->orWhere('name_store', $name_store);
+                    $query->orWhereHas('user', function ($q) use ($name_store) {
+                        $q->where('name_store', $name_store);
+                    });
                 }
             })
             ->get();
@@ -420,6 +475,10 @@ class TransaksiController extends Controller
                     DB::raw('AVG(rating_produk.rating) as rating'),
                     'detail_penyewaan.subtotal as harga',
                     'pembayaran_penyewaan.total_pembayaran',
+                    'pembayaran_penyewaan.biaya_antar',
+                    'pembayaran_penyewaan.jenis_transaksi',
+                    'penyewaan.opsi_pengiriman',
+                    'penyewaan.alamat_pengiriman',
                     'pengembalian.status_denda',
                     'pengembalian.denda as nominal_denda_tersimpan'
                 )->where('users.id', $id_user);
@@ -454,6 +513,10 @@ class TransaksiController extends Controller
                 'pembayaran_penyewaan.status_pembayaran',
                 'pembayaran_penyewaan.metode',
                 'pembayaran_penyewaan.total_pembayaran',
+                'pembayaran_penyewaan.biaya_antar',
+                'pembayaran_penyewaan.jenis_transaksi',
+                'penyewaan.opsi_pengiriman',
+                'penyewaan.alamat_pengiriman',
                 'detail_penyewaan.subtotal',
                 'pengembalian.status_denda',
                 'pengembalian.denda'
@@ -588,6 +651,10 @@ class TransaksiController extends Controller
                       'nominal_denda_tersimpan' => $first_item->nominal_denda_tersimpan,
                       'rekening_bank' => $bank_toko ? $bank_toko->rekening : null,
                       'nama_bank' => $bank_toko ? $bank_toko->bank : null,
+                      'jenis_transaksi' => $first_item->jenis_transaksi ?? $first_item->opsi_pengiriman ?? 'Ambil Ditempat',
+                      'opsi_pengiriman' => $first_item->opsi_pengiriman ?? $first_item->jenis_transaksi ?? 'Ambil Ditempat',
+                      'biaya_antar' => (int) ($first_item->biaya_antar ?? 0),
+                      'alamat_pengiriman' => $first_item->alamat_pengiriman ?? null,
                       'items' => $mapped_items,
                   ];
             }

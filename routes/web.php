@@ -4,7 +4,9 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Customer\DashboardCustController;
 use App\Http\Controllers\Customer\IklanController as CustomerIklanController;
 use App\Http\Controllers\Customer\KeuanganController;
+use App\Http\Controllers\Customer\PengirimanController;
 use App\Http\Controllers\Customer\ProdukController;
+use App\Http\Controllers\Customer\PromoController;
 use App\Http\Controllers\Customer\SetDataController;
 use App\Http\Controllers\Customer\TransaksiMenuController;
 use App\Http\Controllers\Developer\DashboardController;
@@ -300,6 +302,33 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
 
         Route::get('/input-pembayaran-iklan/{id_user}/{harga_iklan}/{durasi}', 'inputPembayaranIklan')->name('input-pembayaran-iklan.index');
         Route::post('/simpan-pembayaran-iklan/{id_user}', 'simpanPembayaranIklan')->name('simpan-pembayaran-iklan.simpan');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Promosi & Diskon Toko Customer (Mitra)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('menu-promo')->name('menu-promo.')->controller(PromoController::class)->group(function () {
+        Route::get('/{id_user}', 'index')->name('index');
+        Route::get('/create/{id_user}', 'create')->name('create');
+        Route::post('/store/{id_user}', 'store')->name('store');
+        Route::get('/edit/{id_promo}/{id_user}', 'edit')->name('edit');
+        Route::put('/update/{id_promo}/{id_user}', 'update')->name('update');
+        Route::delete('/destroy/{id_promo}/{id_user}', 'destroy')->name('destroy');
+        Route::put('/toggle/{id_promo}/{id_user}', 'toggle')->name('toggle');
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pengaturan Pengiriman & Biaya Antar Toko Customer (Mitra)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('menu-pengiriman')->name('menu-pengiriman.')->controller(PengirimanController::class)->group(function () {
+        Route::get('/{id_user}', 'index')->name('index');
+        Route::post('/update/{id_user}', 'update')->name('update');
     });
 
     /*

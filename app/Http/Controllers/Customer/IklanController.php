@@ -137,12 +137,16 @@ class IklanController extends Controller
         $harga_sewa_iklan = $paket['harga'];
         $durasi_sewa_iklan = $paket['durasi'];
 
+        // Ambil produk milik toko mitra jika mitra ingin menautkan banner ke produk tertentu
+        $produkList = \App\Models\Produk::where('id_user', $id_user_decrypt)->get();
+
         return view('customers.menu-iklan.input-table-iklan')->with([
             'title' => 'Iklan | Customer',
             'id_user_dec' => $id_user_decrypt,
             'id_user' => $id_user,
             'harga_sewa_iklan' => $harga_sewa_iklan,
             'durasi_sewa_iklan' => $durasi_sewa_iklan,
+            'produkList' => $produkList,
         ]);
     }
 
@@ -188,24 +192,23 @@ class IklanController extends Controller
     public function simpanIklan($id_user, $harga_iklan, $durasi, Request $request)
     {
         $validator = Validator::make(request()->all(), [
-            'poster' => 'required|image|mimes:png,jpg,jpeg|max:2048',
+            'poster' => 'required|image|mimes:png,jpg,jpeg,webp|max:3072',
             'judul' => 'required|string|max:100',
-            'sub_judul' => 'required|string|max:200',
+            'sub_judul' => 'nullable|string|max:200',
             'deskripsi' => 'required|string|max:800',
+            'target_type' => 'nullable|in:toko,produk',
+            'id_produk' => 'nullable',
         ], [
-            'poster.required' => 'Poster harus diunggah.',
-            'poster.image' => 'Poster harus berupa gambar.',
-            'poster.mimes' => 'Poster harus berupa file dengan format: png, jpg, jpeg.',
-            'poster.max' => 'Ukuran poster tidak boleh lebih dari 2048 kilobytes.',
-            'judul.required' => 'Judul iklan harus diisi.',
-            'judul.string' => 'Judul iklan harus berupa teks.',
-            'judul.max' => 'Judul iklan tidak boleh lebih dari 100 karakter.',
-            'sub_judul.required' => 'Sub judul iklan harus diisi.',
-            'sub_judul.string' => 'Sub judul iklan harus berupa teks.',
-            'sub_judul.max' => 'Sub judul iklan tidak boleh lebih dari 200 karakter.',
-            'deskripsi.required' => 'Deskripsi iklan harus diisi.',
-            'deskripsi.string' => 'Deskripsi iklan harus berupa teks.',
-            'deskripsi.max' => 'Deskripsi iklan tidak boleh lebih dari 800 karakter.',
+            'poster.required' => 'Poster banner iklan wajib diunggah.',
+            'poster.image' => 'Poster banner harus berupa file gambar.',
+            'poster.mimes' => 'Format file poster harus: png, jpg, jpeg, webp.',
+            'poster.max' => 'Ukuran poster tidak boleh lebih dari 3MB.',
+            'judul.required' => 'Judul banner iklan wajib diisi.',
+            'judul.string' => 'Judul banner iklan harus berupa teks.',
+            'judul.max' => 'Judul banner iklan tidak boleh lebih dari 100 karakter.',
+            'deskripsi.required' => 'Deskripsi banner iklan wajib diisi.',
+            'deskripsi.string' => 'Deskripsi banner iklan harus berupa teks.',
+            'deskripsi.max' => 'Deskripsi banner iklan tidak boleh lebih dari 800 karakter.',
         ]);
 
         if ($validator->fails()) {
@@ -249,12 +252,19 @@ class IklanController extends Controller
 
         $snapToken = \Midtrans\Snap::getSnapToken($params);
 
-        $iklan = new Iklan($request->all());
+        $iklan = new Iklan();
+        $iklan->id_user = $id_user_dec;
+        $iklan->judul = $request->judul;
+        $iklan->sub_judul = $request->sub_judul ?: null;
+        $iklan->deskripsi = $request->deskripsi;
+        $iklan->target_type = $request->target_type ?: 'toko';
+        $iklan->id_produk = ($request->target_type === 'produk' && !empty($request->id_produk)) ? (int) $request->id_produk : null;
+        $iklan->status = 'active';
         $iklan->snap_token = $snapToken;
 
         if ($request->hasFile('poster')) {
             $poster = $request->file('poster');
-            $posterName = time() . '.' . $poster->getClientOriginalExtension();
+            $posterName = 'advert_' . time() . '_' . Str::random(6) . '.' . $poster->getClientOriginalExtension();
             $poster->move(public_path('assets/image/customers/advert/'), $posterName);
             $iklan->poster = $posterName;
         }

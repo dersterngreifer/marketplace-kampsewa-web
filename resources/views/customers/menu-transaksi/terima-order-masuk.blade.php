@@ -180,6 +180,28 @@
                             <div class="--amounts flex flex-col gap-4 h-max">
                                 <div class="p-6 bg-orange-50 rounded-xl border border-orange-100 shadow-sm flex flex-col gap-5">
                                     <div>
+                                        <p class="font-medium text-gray-500 text-[14px] mb-1">Opsi Pengiriman</p>
+                                        <div class="flex items-center gap-2">
+                                            @if(($data->biaya_antar ?? 0) > 0 || strtolower($data->jenis_transaksi ?? '') == 'diantar' || ($data->opsi_pengiriman ?? '') == 'Antar Ke Alamatmu')
+                                                <span class="px-2.5 py-1 bg-blue-100 text-blue-700 font-bold text-xs rounded-full flex items-center gap-1">
+                                                    <i class="bi bi-truck"></i> Antar Ke Alamat (+Rp {{ number_format($data->biaya_antar ?? 0, 0, ',', '.') }})
+                                                </span>
+                                            @else
+                                                <span class="px-2.5 py-1 bg-gray-100 text-gray-700 font-bold text-xs rounded-full flex items-center gap-1">
+                                                    <i class="bi bi-shop"></i> Ambil Ditempat (Gratis)
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if(!empty($data->alamat_pengiriman))
+                                            <p class="text-xs text-gray-600 mt-2 bg-white p-2.5 rounded-lg border border-orange-200">
+                                                <strong>Alamat Antar:</strong> {{ $data->alamat_pengiriman }}
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <hr class="border-orange-200">
+
+                                    <div>
                                         <p class="font-medium text-gray-500 text-[14px] mb-1">Jumlah Pembayaran (Yg Dibayar)</p>
                                         <p class="font-black text-gray-800 text-[24px]">Rp {{ number_format($data->jumlah_pembayaran, 0, ',', '.') }}</p>
                                     </div>

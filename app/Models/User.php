@@ -70,4 +70,19 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(User::class, 'followers', 'follower_id', 'followed_id')->withTimestamps();
     }
+
+    public function promosiToko()
+    {
+        return $this->hasMany(PromosiToko::class, 'id_user');
+    }
+
+    public function iklan()
+    {
+        return $this->hasMany(Iklan::class, 'id_user');
+    }
+
+    public function pengaturanPengiriman()
+    {
+        return $this->hasOne(PengaturanPengirimanToko::class, 'id_user');
+    }
 }

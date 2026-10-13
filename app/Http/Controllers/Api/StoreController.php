@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Alamat;
 use App\Models\Produk;
 use App\Models\User;
+use App\Services\PromoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -17,7 +18,7 @@ class StoreController extends Controller
      * GET /api/store/{id_user}
      * Menampilkan profil publik sebuah toko berdasarkan id_user pemiliknya.
      * Dilengkapi dengan statistik: rating, jumlah ulasan, total produk aktif,
-     * dan total transaksi yang sudah selesai.
+     * total transaksi yang sudah selesai, serta active_promo jika ada.
      */
     public function showStoreProfile($id_user)
     {
@@ -39,6 +40,7 @@ class StoreController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
+                    'status'  => 'error',
                     'message' => 'Pengguna tidak ditemukan.',
                 ], 404);
             }
@@ -100,12 +102,27 @@ class StoreController extends Controller
                 ? asset('assets/image/customers/banner/' . $user->banner_toko)
                 : null;
 
+            // Ambil promo aktif toko (jika ada)
+            $activePromo = PromoService::getActiveStorePromo($id_user);
+            $activePromoData = $activePromo ? [
+                'id_promo'        => (int) $activePromo->id_promo,
+                'judul_promo'     => $activePromo->judul_promo,
+                'deskripsi'       => $activePromo->deskripsi_promo,
+                'tipe_diskon'     => $activePromo->tipe_diskon,
+                'nilai_diskon'    => (float) $activePromo->nilai_diskon,
+                'cakupan'         => $activePromo->cakupan,
+                'tanggal_selesai' => $activePromo->tanggal_selesai ? $activePromo->tanggal_selesai->toDateTimeString() : null,
+            ] : null;
+
             $data = [
                 'id_user'                 => (int) $id_user,
                 'is_toko'                 => $is_toko,
                 'nama_store'              => $is_toko ? $user->name_store : $user->name,
+                'store_name'              => $is_toko ? $user->name_store : $user->name,
                 'deskripsi_toko'          => $is_toko ? $user->deskripsi_toko : 'Pengguna ini adalah pengguna biasa dan tidak menyewakan produk.',
+                'store_desc'              => $is_toko ? $user->deskripsi_toko : 'Pengguna ini adalah pengguna biasa dan tidak menyewakan produk.',
                 'foto_toko'               => $fotoTokoUrl,
+                'store_logo'              => $fotoTokoUrl,
                 'banner_toko'             => $bannerTokoUrl,
                 'rating_toko'             => $ratingInfo ? (float) $ratingInfo->rating_toko : 0.0,
                 'total_ulasan'            => $ratingInfo ? (int) $ratingInfo->total_ulasan : 0,
@@ -114,6 +131,7 @@ class StoreController extends Controller
                 'total_followers'         => DB::table('followers')->where('followed_id', $id_user)->count(),
                 'total_following'         => DB::table('followers')->where('follower_id', $id_user)->count(),
                 'is_followed_by_me'       => auth('sanctum')->id() ? DB::table('followers')->where('follower_id', auth('sanctum')->id())->where('followed_id', $id_user)->exists() : false,
+                'active_promo'            => $activePromoData,
                 'alamat'                  => $alamatToko ? [
                     'provinsi'      => $alamatToko->provinsi,
                     'kota'          => $alamatToko->kota_kabupaten,
@@ -124,11 +142,13 @@ class StoreController extends Controller
 
             return response()->json([
                 'success' => true,
+                'status'  => 'success',
                 'data'    => $data,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
+                'status'  => 'error',
                 'message' => 'Terjadi kesalahan saat mengambil data profil toko.',
                 'error'   => $e->getMessage(),
             ], 500);
@@ -137,11 +157,13 @@ class StoreController extends Controller
 
     /**
      * GET /api/store/{id_user}/products
-     * Menampilkan daftar produk milik toko tertentu.
+     * Menampilkan daftar produk milik toko tertentu dengan filter, sorting, dan kalkulasi promo diskon.
      *
      * Query Params (optional):
-     *   - kategori : filter berdasarkan nama kategori (string)
-     *   - search   : pencarian berdasarkan nama produk (string)
+     *   - sort        : discount_desc | discount_asc | price_asc | price_desc | latest
+     *   - is_promo    : 1 | 0 (atau is_discount: true/false)
+     *   - category    : nama kategori produk (alias: kategori)
+     *   - search      : pencarian berdasarkan nama/deskripsi produk
      */
     public function showStoreProducts(Request $request, $id_user)
     {
@@ -154,6 +176,7 @@ class StoreController extends Controller
             if (!$user) {
                 return response()->json([
                     'success' => false,
+                    'status'  => 'error',
                     'message' => 'Toko tidak ditemukan.',
                 ], 404);
             }
@@ -161,12 +184,15 @@ class StoreController extends Controller
             if (empty($user->name_store)) {
                 return response()->json([
                     'success' => false,
+                    'status'  => 'error',
                     'message' => 'User ini belum membuka toko.',
                 ], 404);
             }
 
-            $kategori = $request->query('kategori');
+            $kategori = $request->query('kategori') ?? $request->query('category');
             $search   = $request->query('search');
+            $sort     = $request->query('sort');
+            $isPromo  = $request->query('is_promo') ?? $request->query('is_discount');
 
             // Build query produk milik toko ini
             $query = Produk::with(['foto', 'likes'])
@@ -193,7 +219,7 @@ class StoreController extends Controller
                 ->whereNotNull('detail_variant_produk.harga_sewa');
 
             // Filter berdasarkan kategori
-            if ($kategori) {
+            if ($kategori && strtolower($kategori) !== 'semua') {
                 $query->where('produk.kategori', 'like', '%' . $kategori . '%');
             }
 
@@ -248,8 +274,9 @@ class StoreController extends Controller
                         $item->foto_array = [];
                     }
 
-                    $item->images    = $images;
+                    $item->images     = $images;
                     $item->foto_depan = PhotoHelper::getThumbnailUrl($item);
+                    $item->image      = $item->foto_depan; // alias untuk mobile app
                     unset($item->foto);
 
                     // Foto toko
@@ -260,20 +287,65 @@ class StoreController extends Controller
                     unset($item->foto_toko_raw);
 
                     // Normalisasi tipe data
-                    $item->rating      = $item->rating !== null ? round((float) $item->rating, 1) : 0.0;
-                    $item->harga_sewa  = $item->harga_sewa !== null ? (int) $item->harga_sewa : 0;
+                    $item->rating       = $item->rating !== null ? round((float) $item->rating, 1) : 0.0;
+                    $item->rata_rating  = $item->rating; // alias
+                    $item->harga_sewa   = $item->harga_sewa !== null ? (int) $item->harga_sewa : 0;
                     $item->total_disewa = (int) $item->total_disewa;
+                    $item->total_ulasan = (int) $item->total_disewa;
+                    $item->stok         = (int) $item->stok;
 
                     return $item;
                 });
 
+            // Aplikasikan kalkulasi diskon aktif toko secara menyeluruh
+            PromoService::applyDiscountsToCollection($produk);
+
+            // Filter produk sedang promo jika diminta
+            if ($isPromo === '1' || $isPromo === 1 || $isPromo === 'true' || $isPromo === true) {
+                $produk = $produk->filter(function ($p) {
+                    return !empty($p->is_diskon);
+                })->values();
+            }
+
+            // Pengurutan produk (Sorting)
+            switch ($sort) {
+                case 'discount_desc':
+                    $produk = $produk->sortByDesc(function ($p) {
+                        return $p->persentase_diskon ?? 0;
+                    })->values();
+                    break;
+                case 'discount_asc':
+                    $produk = $produk->filter(function ($p) {
+                        return !empty($p->is_diskon);
+                    })->sortBy(function ($p) {
+                        return $p->persentase_diskon ?? 0;
+                    })->values();
+                    break;
+                case 'price_asc':
+                    $produk = $produk->sortBy(function ($p) {
+                        return $p->harga ?? $p->harga_sewa ?? 0;
+                    })->values();
+                    break;
+                case 'price_desc':
+                    $produk = $produk->sortByDesc(function ($p) {
+                        return $p->harga ?? $p->harga_sewa ?? 0;
+                    })->values();
+                    break;
+                case 'latest':
+                default:
+                    // Sudah diurutkan berdasarkan produk.created_at desc dari database query
+                    break;
+            }
+
             return response()->json([
                 'success' => true,
+                'status'  => 'success',
                 'data'    => $produk,
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
+                'status'  => 'error',
                 'message' => 'Terjadi kesalahan saat mengambil produk toko.',
                 'error'   => $e->getMessage(),
             ], 500);

@@ -6,6 +6,8 @@ use App\Http\Controllers\Api\Auth\RegisterController;
 use App\Http\Controllers\Api\ChartWebController;
 use App\Http\Controllers\Api\FeedbackChatController;
 use App\Http\Controllers\Api\IklanControlller;
+use App\Http\Controllers\Api\MitraPromoController;
+use App\Http\Controllers\Api\PengirimanApiController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\RiwayatPencarianController;
 use App\Http\Controllers\Api\TransaksiController;
@@ -65,6 +67,28 @@ Route::prefix('store')
     ->group(function () {
         Route::get('/{id_user}', 'showStoreProfile');
         Route::get('/{id_user}/products', 'showStoreProducts');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Public Diskon Toko Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/diskon/toko/{id_toko}', [MitraPromoController::class, 'getDiskonTokoPublic']);
+
+
+/*
+|--------------------------------------------------------------------------
+| Public Iklan Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('iklan')
+    ->controller(IklanControlller::class)
+    ->group(function () {
+        Route::get('/', 'getAllIklan');
+        Route::get('/{identifier}', 'getDetailIklan');
     });
 
 
@@ -137,15 +161,32 @@ Route::middleware('auth:sanctum')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Iklan Routes
+    | Mitra Diskon & Promo Routes
     |--------------------------------------------------------------------------
     */
 
-    Route::prefix('iklan')
-        ->controller(IklanControlller::class)
+    Route::prefix('mitra/diskon')
+        ->controller(MitraPromoController::class)
         ->group(function () {
-            Route::get('/', 'getAllIklan');
-            Route::get('/{identifier}', 'getDetailIklan');
+            Route::get('/', 'index');
+            Route::get('/available-products', 'availableProducts');
+            Route::get('/{id}', 'show');
+            Route::post('/', 'store');
+            Route::put('/{id}', 'update');
+            Route::post('/{id}', 'update');
+            Route::delete('/{id}', 'destroy');
+        });
+
+    Route::prefix('mitra/promo')
+        ->controller(MitraPromoController::class)
+        ->group(function () {
+            Route::get('/', 'index');
+            Route::get('/available-products', 'availableProducts');
+            Route::get('/{id}', 'show');
+            Route::post('/', 'store');
+            Route::put('/{id}', 'update');
+            Route::post('/{id}', 'update');
+            Route::delete('/{id}', 'destroy');
         });
 
 
@@ -177,6 +218,20 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/pembayaran', 'pembayaran');
             Route::get('/lokasi-toko', 'lokasiToko');
             Route::get('/bank-toko', 'bankToko');
+            Route::get('/biaya-antar', [PengirimanApiController::class, 'getBiayaAntar']);
+        });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Pengiriman & Biaya Antar Toko Routes
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('pengiriman')
+        ->controller(PengirimanApiController::class)
+        ->group(function () {
+            Route::get('/biaya-antar/{id_toko?}', 'getBiayaAntar');
+            Route::post('/biaya-antar', 'setBiayaAntar');
         });
 
 

@@ -122,39 +122,92 @@ class ChartWebController extends Controller
 
     public function apiStatistikPesanan($id_user)
     {
-        // Total semua pesanan
-        $total_semua_pesanan = DB::table('penyewaan')
-            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
-            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
-            ->where('produk.id_user', $id_user)
-            ->distinct('penyewaan.id')
-            ->count('penyewaan.id');
+        $role = request()->query('role'); // 'customer' | 'mitra' | null
 
-        // Total belum dikonfirmasi (Pending)
-        $total_belum_dikonfirmasi = DB::table('penyewaan')
-            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
-            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
-            ->where('produk.id_user', $id_user)
-            ->where('penyewaan.status_penyewaan', 'Pending')
-            ->distinct('penyewaan.id')
-            ->count('penyewaan.id');
+        // 1. STATISTIK SEBAGAI CUSTOMER (Pesanan yang dilakukan oleh user ini sebagai penyewa)
+        // Total semua pesanan sewa customer
+        $cust_total_semua_pesanan = DB::table('penyewaan')
+            ->where('id_user', $id_user)
+            ->count();
 
-        // Total sedang disewa (Aktif)
-        $total_sedang_disewa = DB::table('penyewaan')
-            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
-            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
-            ->where('produk.id_user', $id_user)
-            ->where('penyewaan.status_penyewaan', 'Aktif')
-            ->distinct('penyewaan.id')
-            ->count('penyewaan.id');
+        // Total belum dikonfirmasi / pending / pengambilan
+        $cust_total_belum_dikonfirmasi = DB::table('penyewaan')
+            ->where('id_user', $id_user)
+            ->whereIn(DB::raw('LOWER(status_penyewaan)'), ['pending', 'pengambilan'])
+            ->count();
 
-        // Total QTY produk belum dikonfirmasi
-        $total_produk_belum_dikonfirmasi = DB::table('penyewaan')
+        // Total sedang disewa (Aktif / berlangsung)
+        $cust_total_sedang_disewa = DB::table('penyewaan')
+            ->where('id_user', $id_user)
+            ->whereIn(DB::raw('LOWER(status_penyewaan)'), ['aktif', 'berlangsung'])
+            ->count();
+
+        // Total QTY produk belum dikonfirmasi / pending
+        $cust_total_produk_belum_dikonfirmasi = DB::table('penyewaan')
             ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
-            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
-            ->where('produk.id_user', $id_user)
-            ->where('penyewaan.status_penyewaan', 'Pending')
+            ->where('penyewaan.id_user', $id_user)
+            ->whereIn(DB::raw('LOWER(penyewaan.status_penyewaan)'), ['pending', 'pengambilan'])
             ->sum('detail_penyewaan.qty');
+
+        // 2. STATISTIK SEBAGAI MITRA TOKO (Pesanan masuk dari pelanggan untuk produk milik user ini)
+        // Total semua pesanan masuk toko
+        $mitra_total_semua_pesanan = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->distinct('penyewaan.id')
+            ->count('penyewaan.id');
+
+        // Total belum dikonfirmasi masuk toko
+        $mitra_total_belum_dikonfirmasi = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->whereIn(DB::raw('LOWER(penyewaan.status_penyewaan)'), ['pending', 'pengambilan'])
+            ->distinct('penyewaan.id')
+            ->count('penyewaan.id');
+
+        // Total sedang disewa produk toko
+        $mitra_total_sedang_disewa = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->whereIn(DB::raw('LOWER(penyewaan.status_penyewaan)'), ['aktif', 'berlangsung'])
+            ->distinct('penyewaan.id')
+            ->count('penyewaan.id');
+
+        // Total QTY produk belum dikonfirmasi toko
+        $mitra_total_produk_belum_dikonfirmasi = DB::table('penyewaan')
+            ->join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+            ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+            ->where('produk.id_user', $id_user)
+            ->whereIn(DB::raw('LOWER(penyewaan.status_penyewaan)'), ['pending', 'pengambilan'])
+            ->sum('detail_penyewaan.qty');
+
+        // Menentukan respon top-level berdasarkan role / auto-detect
+        $isMitraUser = DB::table('users')
+            ->where('id', $id_user)
+            ->where(function ($q) {
+                $q->whereNotNull('name_store')
+                  ->where('name_store', '!=', '')
+                  ->orWhere('type', 1);
+            })
+            ->exists() || ($mitra_total_semua_pesanan > 0);
+
+        if ($role === 'mitra' || (!$role && $isMitraUser && $mitra_total_semua_pesanan > 0)) {
+            $effective_role = 'mitra';
+            $total_semua_pesanan = $mitra_total_semua_pesanan;
+            $total_belum_dikonfirmasi = $mitra_total_belum_dikonfirmasi;
+            $total_sedang_disewa = $mitra_total_sedang_disewa;
+            $total_produk_belum_dikonfirmasi = (int) $mitra_total_produk_belum_dikonfirmasi;
+        } else {
+            // Default: customer (profil pribadi mobile penyewa)
+            $effective_role = 'customer';
+            $total_semua_pesanan = $cust_total_semua_pesanan;
+            $total_belum_dikonfirmasi = $cust_total_belum_dikonfirmasi;
+            $total_sedang_disewa = $cust_total_sedang_disewa;
+            $total_produk_belum_dikonfirmasi = (int) $cust_total_produk_belum_dikonfirmasi;
+        }
 
         return response()->json([
             'message' => 'success',
@@ -163,6 +216,19 @@ class ChartWebController extends Controller
                 'total_belum_dikonfirmasi' => $total_belum_dikonfirmasi,
                 'total_sedang_disewa' => $total_sedang_disewa,
                 'total_produk_belum_dikonfirmasi' => (int) $total_produk_belum_dikonfirmasi,
+                'role' => $effective_role,
+                'customer' => [
+                    'total_semua_pesanan' => $cust_total_semua_pesanan,
+                    'total_belum_dikonfirmasi' => $cust_total_belum_dikonfirmasi,
+                    'total_sedang_disewa' => $cust_total_sedang_disewa,
+                    'total_produk_belum_dikonfirmasi' => (int) $cust_total_produk_belum_dikonfirmasi,
+                ],
+                'mitra' => [
+                    'total_semua_pesanan' => $mitra_total_semua_pesanan,
+                    'total_belum_dikonfirmasi' => $mitra_total_belum_dikonfirmasi,
+                    'total_sedang_disewa' => $mitra_total_sedang_disewa,
+                    'total_produk_belum_dikonfirmasi' => (int) $mitra_total_produk_belum_dikonfirmasi,
+                ],
             ]
         ], 200);
     }
