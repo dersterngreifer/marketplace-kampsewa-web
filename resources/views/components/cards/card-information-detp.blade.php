@@ -160,13 +160,12 @@
                                 ? (isset($message->sender) ? $message->sender->foto : null)
                                 : ($data->foto ?? null);
                             
-                            $avatarUrl = (!empty($rawFoto) && $rawFoto !== 'Belum Di isi')
-                                ? asset('assets/image/customers/profile/' . $rawFoto)
-                                : 'https://ui-avatars.com/api/?name=' . urlencode($senderName) . '&background=random';
+                            $userType = $message->sender_type == 'admin' ? 1 : 0;
+                            $svgFallback = 'data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>';
                         @endphp
                         <div class="flex {{ $message->sender_type == 'admin' ? 'justify-end' : 'justify-start' }} items-end gap-2 mb-2">
                             @if ($message->sender_type != 'admin')
-                                <img src="{{ $avatarUrl }}" alt="{{ $senderName }}" class="h-8 w-8 rounded-full object-cover shrink-0" />
+                                <img src="@userPhoto($rawFoto, $userType)" alt="{{ $senderName }}" onerror="this.src='{{ $svgFallback }}'; this.onerror=null;" class="h-8 w-8 rounded-full object-cover shrink-0" />
                             @endif
                             <div
                                 class="max-w-[92%] rounded-2xl px-4 py-3 shadow-sm sm:max-w-[78%]
@@ -206,7 +205,7 @@
                                 </p>
                             </div>
                             @if ($message->sender_type == 'admin')
-                                <img src="{{ $avatarUrl }}" alt="{{ $senderName }}" class="h-8 w-8 rounded-full object-cover shrink-0" />
+                                <img src="@userPhoto($rawFoto, $userType)" alt="{{ $senderName }}" onerror="this.src='{{ $svgFallback }}'; this.onerror=null;" class="h-8 w-8 rounded-full object-cover shrink-0" />
                             @endif
                         </div>
                     @endforeach

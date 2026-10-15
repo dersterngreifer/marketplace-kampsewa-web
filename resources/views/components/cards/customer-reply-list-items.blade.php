@@ -21,7 +21,8 @@
 
                 <img class="h-11 w-11 shrink-0 rounded-2xl object-cover shadow-sm ring-1 ring-slate-100"
                     src="@userPhoto($item->user?->foto)"
-                    alt="Foto {{ $item->user?->name ?? 'Customer' }}">
+                    alt="Foto {{ $item->user?->name ?? 'Customer' }}"
+                    onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;">
 
                 <div class="min-w-0 flex-1">
                     <div class="flex items-start justify-between gap-2">

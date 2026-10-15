@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
 use Throwable;
 
@@ -290,6 +290,7 @@ class DetailPenggunaController extends Controller
 
     return view('developers.detail-barang-sedangdisewa', [
         'title' => 'Detail Produk Sedang Disewa',
+        'user' => $user,
         'name' => $user->name,
         'nama_produk' => $namaproduk,
         'user_baru_terdaftar' => $user_baru_terdaftar,
@@ -362,10 +363,15 @@ public function destroy($id)
 
         if (
             $fotoLama &&
-            !in_array(strtolower(trim($fotoLama)), ['belum di isi', 'belum di isi.']) &&
-            Storage::disk('public')->exists($fotoLama)
+            !in_array(strtolower(trim($fotoLama)), ['belum di isi', 'belum di isi.', 'belum diisi', 'belum diisi.', 'man.png', 'null', '-'], true) &&
+            !str_starts_with($fotoLama, 'http://') &&
+            !str_starts_with($fotoLama, 'https://') &&
+            !str_starts_with($fotoLama, '//')
         ) {
-            Storage::disk('public')->delete($fotoLama);
+            $customerPhotoPath = public_path('assets/image/customers/profile/' . ltrim($fotoLama, '/'));
+            if (File::exists($customerPhotoPath)) {
+                @File::delete($customerPhotoPath);
+            }
         }
 
         $user->delete();

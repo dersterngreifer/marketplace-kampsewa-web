@@ -81,14 +81,13 @@
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     {{-- import chart js style --}}
-    <script src="{{ asset('js/chart-finance.js') }}"></script>
-    <script src="{{ asset('js/chart-keuntungan.js') }}"></script>
-    <script src="{{ asset('js/chart-kerugian.js') }}"></script>
-    <script src="{{ asset('js/char-penghasilan-pertahun.js') }}"></script>
-    <script src="{{ asset('js/chart-totalperbulan.js') }}"></script>
-    <script src="{{ asset('js/chart-totalperminggu.js') }}"></script>
-    <script src="{{ asset('js/chart-pengeluaran.js') }}"></script>
-    <script src="{{ asset('js/chart-pebandingan-keuntungan.js') }}"></script>
+    <script src="{{ asset('js/chart-keuntungan.js') }}?v={{ file_exists(public_path('js/chart-keuntungan.js')) ? filemtime(public_path('js/chart-keuntungan.js')) : '1' }}"></script>
+    <script src="{{ asset('js/chart-kerugian.js') }}?v={{ file_exists(public_path('js/chart-kerugian.js')) ? filemtime(public_path('js/chart-kerugian.js')) : '1' }}"></script>
+    <script src="{{ asset('js/char-penghasilan-pertahun.js') }}?v={{ file_exists(public_path('js/char-penghasilan-pertahun.js')) ? filemtime(public_path('js/char-penghasilan-pertahun.js')) : '1' }}"></script>
+    <script src="{{ asset('js/chart-totalperbulan.js') }}?v={{ file_exists(public_path('js/chart-totalperbulan.js')) ? filemtime(public_path('js/chart-totalperbulan.js')) : '1' }}"></script>
+    <script src="{{ asset('js/chart-totalperminggu.js') }}?v={{ file_exists(public_path('js/chart-totalperminggu.js')) ? filemtime(public_path('js/chart-totalperminggu.js')) : '1' }}"></script>
+    <script src="{{ asset('js/chart-pengeluaran.js') }}?v={{ file_exists(public_path('js/chart-pengeluaran.js')) ? filemtime(public_path('js/chart-pengeluaran.js')) : '1' }}"></script>
+    <script src="{{ asset('js/chart-pebandingan-keuntungan.js') }}?v={{ file_exists(public_path('js/chart-pebandingan-keuntungan.js')) ? filemtime(public_path('js/chart-pebandingan-keuntungan.js')) : '1' }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     @stack('scripts')
     @include('sweetalert::alert')

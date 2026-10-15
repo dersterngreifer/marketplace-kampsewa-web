@@ -56,6 +56,7 @@ class DatabaseSeeder extends Seeder
         // PenyewaanSeeder sudah mengurus detail_penyewaan & pembayaran_penyewaan sekaligus
         $this->call([
             PenyewaanSeeder::class,
+            PemasukanPengeluaranPerusahaanSeeder::class,
         ]);
     }
 }

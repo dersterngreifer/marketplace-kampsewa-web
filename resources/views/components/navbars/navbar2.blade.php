@@ -72,6 +72,26 @@
                 </a>
             </div>
 
+@php
+    $navUserId = session('id_user') ?? (auth()->check() ? auth()->id() : null);
+    $navSuspendedAds = collect();
+    if ($navUserId) {
+        $navSuspendedAds = \App\Models\Iklan::join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
+            ->leftJoin('iklan_suspends', function ($join) {
+                $join->on('iklan.id', '=', 'iklan_suspends.id_iklan')
+                     ->whereRaw('iklan_suspends.id = (SELECT MAX(id) FROM iklan_suspends WHERE iklan_suspends.id_iklan = iklan.id)');
+            })
+            ->where('iklan.id_user', $navUserId)
+            ->where('detail_iklan.status_iklan', 'Nonaktif')
+            ->where(function($q) {
+                $q->whereNull('iklan_suspends.status_revisi')
+                  ->orWhere('iklan_suspends.status_revisi', '!=', 'selesai');
+            })
+            ->select('iklan.id', 'iklan.judul', 'iklan_suspends.alasan', 'iklan_suspends.status_revisi', 'iklan_suspends.created_at')
+            ->take(5)
+            ->get();
+    }
+@endphp
             <!-- Right side (Profile & Messages) -->
             <div class="hidden md:flex items-center space-x-6">
                 <!-- Notifications Dropdown -->
@@ -79,8 +99,8 @@
                     <button type="button" id="notif-btn" class="relative p-2 text-gray-400 hover:text-blue-600 transition-colors bg-gray-50 hover:bg-blue-50 rounded-full focus:outline-none">
                         <i class="typcn typcn-messages text-[22px]"></i>
                         <span class="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500 border-2 border-white"></span>
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ $navSuspendedAds->count() > 0 ? 'bg-red-400' : 'bg-blue-400' }} opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 {{ $navSuspendedAds->count() > 0 ? 'bg-red-500' : 'bg-blue-500' }} border-2 border-white"></span>
                         </span>
                     </button>
                     
@@ -88,9 +108,28 @@
                     <div id="notif-dropdown" class="hidden absolute right-0 top-14 w-80 rounded-2xl shadow-xl bg-white border border-gray-100 z-50 overflow-hidden transform transition-all">
                         <div class="px-4 py-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                             <h3 class="text-sm font-bold text-gray-800">Notifikasi</h3>
-                            <span class="text-xs font-semibold bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">3 Baru</span>
+                            <span class="text-xs font-semibold {{ $navSuspendedAds->count() > 0 ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600' }} px-2 py-0.5 rounded-full">
+                                {{ $navSuspendedAds->count() > 0 ? ($navSuspendedAds->count() . ' Perhatian') : '3 Baru' }}
+                            </span>
                         </div>
                         <div class="max-h-[300px] overflow-y-auto">
+                            @foreach ($navSuspendedAds as $navSusp)
+                            <a href="{{ route('kelola-iklan.update-iklan-view', ['id_iklan' => Crypt::encrypt($navSusp->id)]) }}" class="flex gap-3 px-4 py-3 bg-red-50/70 hover:bg-red-100/60 transition-colors border-b border-red-100 relative group">
+                                <div class="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-shrink-0">
+                                    <i class="bi bi-exclamation-octagon text-lg"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-xs font-bold text-red-900 truncate">Iklan Ditangguhkan!</p>
+                                        <span class="text-[9px] font-bold text-red-600 bg-red-100 px-1.5 py-0.5 rounded">Wajib Revisi</span>
+                                    </div>
+                                    <p class="text-xs text-gray-800 font-semibold line-clamp-1 mt-0.5">{{ $navSusp->judul }}</p>
+                                    <p class="text-[11px] text-red-600 line-clamp-1 mt-0.5">{{ $navSusp->alasan ?? 'Perlu perbaikan konten' }}</p>
+                                    <p class="text-[10px] text-gray-400 mt-1">Klik untuk segera perbaiki iklan &rarr;</p>
+                                </div>
+                                <span class="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0 animate-ping"></span>
+                            </a>
+                            @endforeach
                             <!-- Dummy Item 1 -->
                             <a href="#" class="flex gap-3 px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50/50 relative">
                                 <div class="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -140,7 +179,10 @@
                 <!-- Profile Dropdown -->
                 <div class="relative">
                     <button type="button" id="profile-btn" class="flex items-center gap-3 p-1.5 pr-3 rounded-full hover:bg-gray-50 transition-colors focus:outline-none border border-transparent hover:border-gray-100">
-                        <img class="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" src="@userPhoto(session('foto'))" alt="User avatar">
+                        <img class="h-10 w-10 rounded-full object-cover border-2 border-white shadow-sm" 
+                            src="@userPhoto(session('foto'))" 
+                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                            alt="User avatar">
                         <div class="text-left hidden lg:block">
                             <p class="text-[14px] font-bold text-gray-800 leading-none">{{ session('nama_lengkap') ?? 'Customer' }}</p>
                             <p class="text-[12px] font-medium text-gray-500 mt-1">Customer Area</p>
@@ -223,7 +265,10 @@
             <div class="h-px bg-gray-100 my-4"></div>
             
             <div class="flex items-center px-4 py-2">
-                <img class="h-12 w-12 rounded-full object-cover border-2 border-gray-100" src="@userPhoto(session('foto'))" alt="">
+                <img class="h-12 w-12 rounded-full object-cover border-2 border-gray-100" 
+                    src="@userPhoto(session('foto'))" 
+                    onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                    alt="">
                 <div class="ml-4 flex-1">
                     <div class="text-[15px] font-bold text-gray-800">{{ session('nama_lengkap') ?? 'Customer' }}</div>
                     <div class="text-[12px] font-medium text-gray-500">Customer Area</div>
@@ -238,10 +283,28 @@
             
             <!-- Mobile Notification Dropdown -->
             <div id="mobile-notif-dropdown" class="hidden px-2 mt-1 mx-4 bg-gray-50 border border-gray-100 rounded-xl overflow-hidden">
-                <div class="py-2 px-3 border-b border-gray-200">
-                    <h4 class="text-xs font-bold text-gray-700">Notifikasi Baru (3)</h4>
+                <div class="py-2 px-3 border-b border-gray-200 flex justify-between items-center">
+                    <h4 class="text-xs font-bold text-gray-700">Notifikasi</h4>
+                    <span class="text-[10px] font-bold {{ $navSuspendedAds->count() > 0 ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600' }} px-2 py-0.5 rounded-full">
+                        {{ $navSuspendedAds->count() > 0 ? ($navSuspendedAds->count() . ' Perhatian') : '3 Baru' }}
+                    </span>
                 </div>
                 <div class="max-h-[250px] overflow-y-auto">
+                    @foreach ($navSuspendedAds as $navSusp)
+                    <a href="{{ route('kelola-iklan.update-iklan-view', ['id_iklan' => Crypt::encrypt($navSusp->id)]) }}" class="flex gap-2.5 px-3 py-2.5 bg-red-50/80 border-b border-red-100 hover:bg-red-100/60 transition-colors">
+                        <div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                            <i class="bi bi-exclamation-octagon text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <p class="text-[11px] font-bold text-red-900 truncate">Iklan Ditangguhkan</p>
+                                <span class="text-[8px] font-bold text-red-600 bg-red-100 px-1 py-0.2 rounded">Revisi</span>
+                            </div>
+                            <p class="text-[11px] text-gray-800 font-semibold truncate">{{ $navSusp->judul }}</p>
+                            <p class="text-[10px] text-red-600 truncate">{{ $navSusp->alasan }}</p>
+                        </div>
+                    </a>
+                    @endforeach
                     <!-- Dummy Item 1 -->
                     <a href="#" class="flex gap-3 px-3 py-3 border-b border-gray-200 hover:bg-gray-100 transition-colors">
                         <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">

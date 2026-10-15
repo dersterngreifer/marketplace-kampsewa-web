@@ -1,109 +1,89 @@
-async function fetchDataTotalPerbandinganPenghasilanDariTigaBulanLalu() {
-    const url = 'http://192.168.1.3:8000/api/chart-penghasilan-perbulan-menu-penghasilan';
-    try {
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Accept' : 'application/json',
-            }
-        });
-        const data = response.json();
-        return data
-    } catch(error) {
-        console.error(error);
-        return null;
+function initChartTotalPerbulan() {
+    const canvas = document.getElementById("penghasilan-perbulan");
+    if (!canvas) {
+        return;
     }
-}
 
-fetchDataTotalPerbandinganPenghasilanDariTigaBulanLalu().then(data => {
-    if(data) {
-        console.log(data.total_pemasukan_per_bulan);
+    if (typeof Chart === 'undefined') {
+        return;
     }
-});
-const labelsPenghasilanPerbulan = [
-    "Feb",
-    "Mar",
-    "Apr",
-    "Mei",
-];
 
-const dataPenghasilanPerbulan = {
-    labels: labelsPenghasilanPerbulan,
-    datasets: [
-        {
-            label: "My First Dataset",
-            data: [
-                30_435_142, 25_234_134, 30_345_123, 50_456_250
-            ],
-            fill: true,
-            borderWidth: 3,
-            borderColor: "rgb(124,169,207)",
-            tension: 0.4,
-            backgroundColor: createGradientPenghasilanPerbulan(),
-        },
-    ],
-};
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
 
-function createGradientPenghasilanPerbulan() {
-    const ctx = document.getElementById("penghasilan-perbulan").getContext("2d");
-    const gradient = ctx.createLinearGradient(0, 0, 0, 70); // Sesuaikan lebar gradien dengan ukuran grafik Anda
-    gradient.addColorStop(0, "rgb(124,169,207)"); // Warna atas
-    gradient.addColorStop(1, "rgba(8,14,46,1)"); // Transparansi putih di bagian bawah
-    return gradient;
-}
+    const labels = window.penghasilanPerbulanLabels || ["Jul", "Agu", "Sep", "Okt"];
+    const values = window.penghasilanPerbulanData || [30435142, 25234134, 30345123, 50456250];
 
-const configPenghasilanPerbulan = {
-    type: "line",
-    data: dataPenghasilanPerbulan,
-    options: {
-        layout: {
-            padding: {
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0,
+    function createGradientPenghasilanPerbulan() {
+        const ctx = canvas.getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 70);
+        gradient.addColorStop(0, "rgb(124,169,207)");
+        gradient.addColorStop(1, "rgba(8,14,46,1)");
+        return gradient;
+    }
+
+    const dataPenghasilanPerbulan = {
+        labels: labels,
+        datasets: [
+            {
+                label: "Total Bulanan",
+                data: values,
+                fill: true,
+                borderWidth: 3,
+                borderColor: "rgb(124,169,207)",
+                tension: 0.4,
+                backgroundColor: createGradientPenghasilanPerbulan(),
             },
-        },
-        tooltips: {
-            line: false,
-        },
-        plugins: {
-            legend: {
-                display: false,
+        ],
+    };
+
+    const configPenghasilanPerbulan = {
+        type: "line",
+        data: dataPenghasilanPerbulan,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            layout: {
+                padding: { left: 0, right: 0, top: 0, bottom: 0 },
             },
-        },
-        scales: {
-            x: {
-                grid: {
-                    display: false,
-                },
-                border: {
-                    display: false,
-                },
-                ticks: {
-                    color : 'white',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            if (context.parsed.y !== null) {
+                                return 'Rp. ' + Number(context.parsed.y).toLocaleString('id-ID');
+                            }
+                            return '';
+                        }
+                    }
                 }
             },
-            y: {
-                ticks: {
-                    callback: function (value) {
-                        // Hanya tampilkan label jika nilainya bukan 0
-                        if (value !== 0) {
-                            return value;
-                        }
-                    },
-                    display: false
+            scales: {
+                x: {
+                    grid: { display: false },
+                    border: { display: false },
+                    ticks: { color: 'white' },
                 },
-                beginAtZero: true,
-                border: {
-                    display: false,
-                },
-                grid: {
-                    display: false, // hilangkan garis vertikal
+                y: {
+                    ticks: { display: false },
+                    beginAtZero: true,
+                    border: { display: false },
+                    grid: { display: false },
                 },
             },
         },
-    },
-};
-const penghasilanPerbulan = document.getElementById("penghasilan-perbulan");
-new Chart(penghasilanPerbulan, configPenghasilanPerbulan);
+    };
+
+    new Chart(canvas, configPenghasilanPerbulan);
+}
+
+window.initChartTotalPerbulan = initChartTotalPerbulan;
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initChartTotalPerbulan);
+} else {
+    initChartTotalPerbulan();
+}

@@ -12,7 +12,9 @@
                     </p>
                 </div>
                 <img class="w-full h-[180px] rounded-[10px] object-cover"
-                    src="{{ asset('assets/image/customers/produk/gerber.png') }}" alt="">
+                    src="{{ asset('assets/image/customers/produk/gerber.png') }}" 
+                    onerror="this.src='{{ \App\Helpers\PhotoHelper::getThumbnailUrl(null) }}'; this.onerror=null;"
+                    alt="">
             </div>
         </div>
     </a>
@@ -25,6 +27,7 @@
                 <div class="_pemilik-barang flex items-center gap-2">
                     <div class="_img"><img class="w-[30px] h-[30px] object-cover rounded-full"
                             src="{{ asset('assets/image/customers/profile/pexels-pixabay-164763.jpg') }}"
+                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
                             alt="">
                     </div>
                     <p class="text-[14px] line-clamp-1 max-w-[75%] font-medium">Mas Rudi Camping Jaya

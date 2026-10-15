@@ -104,6 +104,30 @@ class DashboardCustController extends Controller
                 ->take(5)
                 ->get();
 
+            // Iklan Mitra yang sedang ditangguhkan (Suspend / Nonaktif)
+            $iklan_suspended = \App\Models\Iklan::join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
+                ->leftJoin('iklan_suspends', function ($join) {
+                    $join->on('iklan.id', '=', 'iklan_suspends.id_iklan')
+                         ->whereRaw('iklan_suspends.id = (SELECT MAX(id) FROM iklan_suspends WHERE iklan_suspends.id_iklan = iklan.id)');
+                })
+                ->where('iklan.id_user', $id_user_dec)
+                ->where('detail_iklan.status_iklan', 'Nonaktif')
+                ->select(
+                    'iklan.id as id_iklan',
+                    'iklan.judul',
+                    'iklan.sub_judul',
+                    'iklan.poster',
+                    'detail_iklan.id as id_detail_iklan',
+                    'detail_iklan.tanggal_mulai',
+                    'detail_iklan.tanggal_akhir',
+                    'iklan_suspends.alasan',
+                    'iklan_suspends.catatan',
+                    'iklan_suspends.bagian_revisi',
+                    'iklan_suspends.status_revisi',
+                    'iklan_suspends.created_at as tgl_suspend'
+                )
+                ->get();
+
             return view('customers.menu-dashboard-cust.dashboard')->with([
                 'title' => 'Dashboard | Customer',
                 'user_name' => $user_name,
@@ -124,6 +148,7 @@ class DashboardCustController extends Controller
                 'penyewa_berlangsung' => $penyewa_berlangsung,
                 'riwayat_penyewa' => $riwayat_penyewa,
                 'denda_penyewa' => $denda_penyewa,
+                'iklan_suspended' => $iklan_suspended,
             ]);
         } catch (\Exception $e) {
             Log::error('Error DashboardCustController: ' . $e->getMessage());

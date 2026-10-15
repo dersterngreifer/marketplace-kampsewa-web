@@ -58,13 +58,12 @@ class ProfileController extends Controller
             $file->move(public_path($folderDeveloper), $filename);
 
             $data['foto'] = $filename;
+            $this->hapusFotoLama($fotoLama, $folderDeveloper);
         } elseif (empty($fotoLama) || in_array(strtolower(trim((string) $fotoLama)), ['belum di isi', 'belum di isi.', 'belum diisi', 'belum diisi.', 'man.png', 'null', '-'], true)) {
             $data['foto'] = null;
         }
 
         $user->update($data);
-
-        $this->hapusFotoLama($fotoLama, $folderDeveloper);
 
         $request->session()->put([
             'nama_lengkap' => $user->name,
@@ -84,7 +83,7 @@ class ProfileController extends Controller
             return;
         }
 
-        if (str_starts_with($fotoLama, 'http://') || str_starts_with($fotoLama, 'https://') || str_starts_with($fotoLama, 'storage/')) {
+        if (str_starts_with($fotoLama, 'http://') || str_starts_with($fotoLama, 'https://') || str_starts_with($fotoLama, '//')) {
             return;
         }
 

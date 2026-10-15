@@ -222,7 +222,8 @@
 
                             <div class="mt-4 flex items-center gap-3 border-t border-slate-100 pt-3">
                                 <img class="h-10 w-10 shrink-0 rounded-2xl object-cover shadow-sm ring-1 ring-slate-100"
-                                    src="@userPhoto($item->foto)" alt="Foto {{ $item->name }}">
+                                    src="@userPhoto($item->foto)" alt="Foto {{ $item->name }}"
+                                    onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;">
 
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-black text-slate-900">

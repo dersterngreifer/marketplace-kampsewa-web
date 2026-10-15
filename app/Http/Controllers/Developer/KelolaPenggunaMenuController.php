@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class KelolaPenggunaMenuController extends Controller
 {
@@ -308,12 +308,20 @@ class KelolaPenggunaMenuController extends Controller
 
     private function deleteUserPhoto(?string $photo): void
     {
-        if (!$photo || $photo === 'Belum Di isi') {
+        if (
+            !$photo ||
+            in_array(strtolower(trim($photo)), ['belum di isi', 'belum di isi.', 'belum diisi', 'belum diisi.', 'man.png', 'null', '-'], true) ||
+            str_starts_with($photo, 'http://') ||
+            str_starts_with($photo, 'https://') ||
+            str_starts_with($photo, '//')
+        ) {
             return;
         }
 
-        if (Storage::disk('public')->exists($photo)) {
-            Storage::disk('public')->delete($photo);
+        $cleanPhoto = ltrim($photo, '/');
+        $customerPhotoPath = public_path('assets/image/customers/profile/' . $cleanPhoto);
+        if (File::exists($customerPhotoPath)) {
+            @File::delete($customerPhotoPath);
         }
     }
 }

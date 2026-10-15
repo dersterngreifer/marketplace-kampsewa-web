@@ -19,23 +19,30 @@ class IklanControlller extends Controller
      */
     public function getAllIklan()
     {
+        // Sinkronisasi otomatis: selesaikan yang kadaluarsa dan batasi slot aktif maksimal 15
+        \App\Services\IklanService::autoSyncStatusIklan();
+
         $today = Carbon::today();
         $now = Carbon::now();
 
         // Ambil iklan yang aktif baik dari detail_iklan maupun tabel iklan langsung
         $iklanList = DB::table('iklan')
             ->leftJoin('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
+            ->leftJoin('pembayaran_iklan', 'iklan.id', '=', 'pembayaran_iklan.id_iklan')
             ->leftJoin('users', 'iklan.id_user', '=', 'users.id')
+            ->where('iklan.status', 'active')
             ->where(function ($query) use ($today, $now) {
-                // Skenario 1: Lewat detail_iklan (alur pembayaran iklan sewa)
+                // Skenario 1: Lewat detail_iklan sewa mitra (wajib pembayaran lunas & status iklan Aktif)
                 $query->where(function ($q) use ($today) {
-                    $q->whereDate('detail_iklan.tanggal_mulai', '<=', $today)
-                      ->whereDate('detail_iklan.tanggal_akhir', '>=', $today)
-                      ->where('detail_iklan.status_iklan', 'like', '%aktif%');
+                    $q->whereNotNull('detail_iklan.id')
+                      ->where('pembayaran_iklan.status_bayar', 'lunas')
+                      ->where('detail_iklan.status_iklan', 'Aktif')
+                      ->whereDate('detail_iklan.tanggal_mulai', '<=', $today)
+                      ->whereDate('detail_iklan.tanggal_akhir', '>=', $today);
                 })
-                // Skenario 2: Lewat tabel iklan langsung (iklan campaign / promo mandiri)
+                // Skenario 2: Lewat tabel iklan langsung (iklan campaign / promo mandiri developer tanpa detail_iklan)
                 ->orWhere(function ($q) use ($now) {
-                    $q->where('iklan.status', 'active')
+                    $q->whereNull('detail_iklan.id')
                       ->where(function ($sub) use ($now) {
                           $sub->whereNull('iklan.tanggal_mulai')
                               ->orWhere('iklan.tanggal_mulai', '<=', $now);
@@ -59,8 +66,8 @@ class IklanControlller extends Controller
                 'users.name as user_name',
                 'users.name_store'
             )
-            ->distinct('iklan.id')
-            ->limit(10)
+            ->distinct()
+            ->limit(\App\Services\IklanService::MAX_IKLAN_AKTIF)
             ->get();
 
         if ($iklanList->isEmpty()) {
@@ -137,10 +144,19 @@ class IklanControlller extends Controller
     public function getDetailIklan($identifier)
     {
         $iklan = DB::table('iklan')
+            ->leftJoin('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
+            ->leftJoin('pembayaran_iklan', 'iklan.id', '=', 'pembayaran_iklan.id_iklan')
             ->leftJoin('users', 'iklan.id_user', '=', 'users.id')
             ->select('users.id as user_id', 'users.name as user_name', 'users.name_store', 'iklan.*')
-            ->where('iklan.id', $identifier)
-            ->orWhere('iklan.judul', 'like', '%' . $identifier . '%')
+            ->where(function ($q) use ($identifier) {
+                $q->where('iklan.id', $identifier)
+                  ->orWhere('iklan.judul', 'like', '%' . $identifier . '%');
+            })
+            ->where('iklan.status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('detail_iklan.id')
+                  ->orWhere('pembayaran_iklan.status_bayar', 'lunas');
+            })
             ->first();
 
         if (!$iklan) {

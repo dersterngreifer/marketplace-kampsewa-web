@@ -5,13 +5,15 @@
         !$fotoUser ||
         in_array(strtolower($fotoUser), ['belum di isi', 'belum di isi.', 'belum diisi', 'belum diisi.', 'null', '-']);
 
+    $svgProfileFallback = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';
+
     if ($fotoKosong) {
-        $fotoUrl = asset('assets/image/default/profile.png');
-    } elseif (str_starts_with($fotoUser, 'http://') || str_starts_with($fotoUser, 'https://')) {
+        $fotoUrl = $svgProfileFallback;
+    } elseif (str_starts_with($fotoUser, 'http://') || str_starts_with($fotoUser, 'https://') || str_starts_with($fotoUser, '//')) {
         $fotoUrl = $fotoUser;
     } elseif (str_starts_with($fotoUser, 'customers/profile/')) {
-        $fotoUrl = asset('storage/' . $fotoUser) . '?v=' . strtotime($data->updated_at ?? now());
-    } elseif (str_starts_with($fotoUser, 'storage/')) {
+        $fotoUrl = asset('assets/image/' . $fotoUser) . '?v=' . strtotime($data->updated_at ?? now());
+    } elseif (str_starts_with($fotoUser, 'assets/') || str_starts_with($fotoUser, 'images/')) {
         $fotoUrl = asset($fotoUser) . '?v=' . strtotime($data->updated_at ?? now());
     } else {
         $fotoUrl = asset('assets/image/customers/profile/' . $fotoUser);
@@ -80,8 +82,8 @@
         <div class="-mt-12 flex items-end justify-between gap-4">
             <div
                 class="relative z-20 h-24 w-24 shrink-0 overflow-hidden rounded-[28px] border-4 border-white bg-slate-100 shadow-xl">
-                <img class="h-full w-full object-cover" src="{{ $fotoUrl }}" alt="Foto {{ $data->name }}">
-                >
+                <img class="h-full w-full object-cover" src="{{ $fotoUrl }}" alt="Foto {{ $data->name }}"
+                    onerror="this.onerror=null; this.src='{{ $svgProfileFallback }}';">
             </div>
 
             <span

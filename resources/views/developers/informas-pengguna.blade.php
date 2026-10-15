@@ -1,4 +1,4 @@
-﻿@extends('layouts.developers.ly-dashboard')
+@extends('layouts.developers.ly-dashboard')
 
 @section('content')
 <div class="w-full px-4 py-5 sm:px-5 lg:px-6">
@@ -174,7 +174,8 @@
                         {{-- Avatar + status online --}}
                         <div class="relative shrink-0">
                             <img class="h-12 w-12 rounded-2xl object-cover"
-                                src="@userPhoto($item->foto)" alt="{{ $item->name }}">
+                                src="@userPhoto($item->foto)" alt="{{ $item->name }}"
+                                onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                             @if (($item->status ?? '') === 'online')
                             <span class="absolute -bottom-0.5 -right-0.5 flex h-3.5 w-3.5">
                                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
@@ -257,7 +258,8 @@
                         @foreach ($get_customer_online as $item)
                         <div class="flex items-center gap-3 px-4 py-3 hover:bg-emerald-50/30 transition">
                             <div class="relative shrink-0">
-                                <img src="@userPhoto($item->foto)" class="h-9 w-9 rounded-xl object-cover" alt="">
+                                <img src="@userPhoto($item->foto)" class="h-9 w-9 rounded-xl object-cover" alt=""
+                                    onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                                 <span class="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
                                     <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                                     <span class="relative inline-flex h-3 w-3 rounded-full border-2 border-white bg-emerald-500"></span>
@@ -294,7 +296,8 @@
                         <div class="px-4 py-3 hover:bg-violet-50/20 transition">
                             <div class="flex items-start gap-3">
                                 <img src="@userPhoto($sewa->foto_penyewa)"
-                                    class="h-9 w-9 shrink-0 rounded-xl object-cover mt-0.5" alt="">
+                                    class="h-9 w-9 shrink-0 rounded-xl object-cover mt-0.5" alt=""
+                                    onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center justify-between gap-1">
                                         <p class="truncate text-sm font-bold text-slate-900">{{ $sewa->nama_penyewa }}</p>

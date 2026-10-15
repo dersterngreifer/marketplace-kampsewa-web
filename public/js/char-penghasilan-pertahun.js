@@ -1,62 +1,50 @@
-async function fetchApiChartPenghasilan() {
-    const url = 'http://192.168.1.3:8000/api/chart-penghasilan-menu-penghasilan';
-    try {
-        const response = await fetch(url);
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Error fetching data:', error);
-        return null;
+function initPenghasilanPertahunChart() {
+    const canvas = document.getElementById("penghasilan");
+    if (!canvas) {
+        return;
     }
-}
 
-fetchApiChartPenghasilan().then(data => {
-    if (data) {
-        const getTotalPenghasilan = data.total_pemasukan_per_bulan;
-        console.log(getTotalPenghasilan);
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded.');
+        return;
+    }
 
-        const labels = [
-            "January",
-            "February",
-            "March",
-            "April",
-            "May",
-            "June",
-            "July",
-            "August",
-            "September",
-            "October",
-            "November",
-            "December",
-        ];
+    // Destroy previous instance if any
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
 
-        const labelsCadangan = [
-            "Jan",
-            "Feb",
-            "Mar",
-            "Apr",
-            "Mei",
-            "Jun",
-            "Jul",
-            "Ag",
-            "Sep",
-            "Okt",
-            "Nov",
-            "Des",
-        ];
+    const labelsCadangan = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mei",
+        "Jun",
+        "Jul",
+        "Ag",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Des",
+    ];
 
-        // Extract the total income for each month from the API response
-        const dataPenghasilan = labels.map(month => {
-            const monthData = getTotalPenghasilan.find(item => item.month === month);
-            return monthData ? parseInt(monthData.total, 10) : 0;
-        });
+    function createGradient() {
+        const ctx = canvas.getContext("2d");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, "rgb(124,169,207)");
+        gradient.addColorStop(1, "rgba(255,255,255,0)");
+        return gradient;
+    }
 
+    function renderChart(dataValues) {
         const dataPenghasilanPertahun = {
             labels: labelsCadangan,
             datasets: [
                 {
                     label: "Total Penghasilan",
-                    data: dataPenghasilan,
+                    data: dataValues,
                     fill: true,
                     borderWidth: 3,
                     borderColor: "rgb(124,169,207)",
@@ -66,77 +54,88 @@ fetchApiChartPenghasilan().then(data => {
             ],
         };
 
-        function createGradient() {
-            const ctx = document.getElementById("penghasilan").getContext("2d");
-            const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-            gradient.addColorStop(0, "rgb(124,169,207)");
-            gradient.addColorStop(1, "rgba(255,255,255,0)");
-            return gradient;
-        }
-
         const configPenghasilanPertahun = {
             type: "line",
             data: dataPenghasilanPertahun,
             options: {
+                responsive: true,
+                maintainAspectRatio: true,
                 layout: {
-                    padding: {
-                        left: 0,
-                        right: 0,
-                        top: 0,
-                        bottom: 0,
-                    },
-                },
-                tooltips: {
-                    line: false,
-                    mode: 'index',
-            intersect: false,
-            callbacks: {
-                label: function(tooltipItem, data) {
-                    let label = data.datasets[tooltipItem.datasetIndex].label || '';
-                    if (label) {
-                        label += ': ';
-                    }
-                    label += tooltipItem.yLabel.toLocaleString(); // Mengubah nilai menjadi format angka dengan tanda pemisah ribuan
-                    return label;
-                }
-            }
+                    padding: { left: 0, right: 0, top: 0, bottom: 0 },
                 },
                 plugins: {
-                    legend: {
-                        display: false,
-                    },
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    label += 'Rp. ' + Number(context.parsed.y).toLocaleString('id-ID');
+                                }
+                                return label;
+                            }
+                        }
+                    }
                 },
                 scales: {
                     x: {
-                        grid: {
-                            display: false,
-                        },
-                        border: {
-                            display: false,
-                        },
+                        grid: { display: false },
+                        border: { display: false },
                     },
                     y: {
                         ticks: {
                             callback: function (value) {
-                                // Hanya tampilkan label jika nilainya bukan 0
-                                if (value !== 0) {
-                                    return value.toLocaleString(); // Mengubah nilai menjadi format angka dengan tanda pemisah ribuan
+                                if (value >= 1000000) {
+                                    return (value / 1000000).toLocaleString('id-ID') + ' Jt';
                                 }
+                                if (value !== 0) {
+                                    return value.toLocaleString('id-ID');
+                                }
+                                return 0;
                             },
                         },
                         beginAtZero: true,
-                        border: {
-                            display: false,
-                        },
-                        grid: {
-                            display: false,
-                        },
+                        border: { display: false },
+                        grid: { display: false },
                     },
                 },
             },
         };
 
-        const penghasilan = document.getElementById("penghasilan");
-        new Chart(penghasilan, configPenghasilanPertahun);
+        new Chart(canvas, configPenghasilanPertahun);
     }
-});
+
+    if (window.penghasilanPertahunData && Array.isArray(window.penghasilanPertahunData)) {
+        renderChart(window.penghasilanPertahunData);
+    } else {
+        fetch('/api/chart-penghasilan-menu-penghasilan')
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.total_pemasukan_per_bulan) {
+                    const monthNames = [
+                        "January", "February", "March", "April", "May", "June",
+                        "July", "August", "September", "October", "November", "December"
+                    ];
+                    const values = monthNames.map(m => {
+                        const found = data.total_pemasukan_per_bulan.find(item => item.month === m);
+                        return found ? parseInt(found.total, 10) : 0;
+                    });
+                    renderChart(values);
+                }
+            })
+            .catch(err => {
+                console.error('Error fetching penghasilan chart data:', err);
+            });
+    }
+}
+
+window.initPenghasilanPertahunChart = initPenghasilanPertahunChart;
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initPenghasilanPertahunChart);
+} else {
+    initPenghasilanPertahunChart();
+}

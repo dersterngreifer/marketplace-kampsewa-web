@@ -21,6 +21,8 @@ use App\Http\Controllers\Developer\PenghasilanController;
 use App\Http\Controllers\Developer\Penyewaan;
 use App\Http\Controllers\Developer\ProfileController;
 use App\Http\Controllers\Developer\RekapKeuanganController;
+use App\Http\Controllers\Developer\WisataController as DeveloperWisataController;
+use App\Http\Controllers\Developer\BeritaController as DeveloperBeritaController;
 use App\Http\Controllers\LandingPageController;
 use Illuminate\Support\Facades\Route;
 
@@ -188,7 +190,32 @@ Route::middleware('auth')->group(function () {
             Route::delete('/delete-iklan-pending/{id_iklan}', 'deleteIklanPending')->name('delete-iklan-pending');
             Route::put('/aktivasi/{id_detail_iklan}', 'aktivasiIklan')->name('aktivasi');
             Route::put('/nonaktifkan/{id_detail_iklan}', 'nonaktifkanIklan')->name('nonaktifkan');
+            Route::get('/nonaktifkan/{id_detail_iklan}', function () {
+                return redirect()->route('iklan.index');
+            });
             Route::put('/selesaikan/{id_detail_iklan}', 'selesaikanIklan')->name('selesaikan');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
+        | Konten & Edukasi (Wisata & Berita)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('wisata')->name('developer.wisata.')->controller(DeveloperWisataController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{id}', 'show')->name('show');
+            Route::put('/{id}', 'update')->name('update');
+            Route::delete('/{id}', 'destroy')->name('destroy');
+        });
+
+        Route::prefix('berita')->name('developer.berita.')->controller(DeveloperBeritaController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{id}', 'show')->name('show');
+            Route::put('/{id}', 'update')->name('update');
+            Route::delete('/{id}', 'destroy')->name('destroy');
         });
 
         /*
@@ -208,6 +235,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/penghasilan', [PenghasilanController::class, 'index'])->name('penghasilan.index');
         Route::post('/penghasilan/tambah-penghasila-dev/{id_user}', [PenghasilanController::class, 'tambahPenghasilan'])
             ->name('penghasilan.tambah-penghasilan-dev');
+        Route::delete('/penghasilan/{id}', [PenghasilanController::class, 'hapusPenghasilan'])
+            ->name('penghasilan.destroy');
 
         Route::get('/pengeluaran', [PengeluaranController::class, 'index'])->name('pengeluaran.index');
 
@@ -302,6 +331,9 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
 
         Route::get('/input-pembayaran-iklan/{id_user}/{harga_iklan}/{durasi}', 'inputPembayaranIklan')->name('input-pembayaran-iklan.index');
         Route::post('/simpan-pembayaran-iklan/{id_user}', 'simpanPembayaranIklan')->name('simpan-pembayaran-iklan.simpan');
+        Route::get('/lanjut-pembayaran-iklan/{id_iklan}', 'lanjutPembayaranIklan')->name('lanjut-pembayaran-iklan');
+        Route::delete('/batal-iklan/{id_iklan}', 'batalIklan')->name('batal-iklan');
+        Route::get('/cek-status-pembayaran-iklan/{id_iklan}', 'cekStatusPembayaranIklan')->name('cek-status-pembayaran-iklan');
     });
 
     /*
@@ -397,3 +429,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/download-pdf-pengeluaran/{id_user}/{tahun}', [KeuanganController::class, 'downloadPengeluaran'])
         ->name('keuangan.download-pengeluaran-customer');
 });
+
+/*
+|--------------------------------------------------------------------------
+| Developer Action Routes Outside Prefix (Fallback & Aliases)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'dev'])->group(function () {
+    Route::match(['put', 'post'], '/iklan/nonaktifkan/{id_detail_iklan}', [\App\Http\Controllers\Developer\IklanController::class, 'nonaktifkanIklan']);
+    Route::get('/iklan/nonaktifkan/{id_detail_iklan}', function () {
+        return redirect()->route('iklan.index');
+    });
+});
+

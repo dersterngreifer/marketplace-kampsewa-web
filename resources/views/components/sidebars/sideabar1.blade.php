@@ -66,6 +66,23 @@
                 ],
             ],
             [
+                'label' => 'Konten & Edukasi',
+                'items' => [
+                    [
+                        'label' => 'Rekomendasi Wisata',
+                        'icon' => 'fi fi-rr-map-marker-home',
+                        'href' => route('developer.wisata.index'),
+                        'active_titles' => ['Rekomendasi Wisata | Developer Kamp Sewa'],
+                    ],
+                    [
+                        'label' => 'Berita Terkini',
+                        'icon' => 'fi fi-rr-newspaper',
+                        'href' => route('developer.berita.index'),
+                        'active_titles' => ['Berita Terkini | Developer Kamp Sewa'],
+                    ],
+                ],
+            ],
+            [
                 'label' => 'Keuangan & Laporan',
                 'items' => [
                     [
@@ -88,7 +105,7 @@
                     [
                         'label' => 'Profile',
                         'icon' => null,
-                        'href' => route('profile.index', ['nama_lengkap' => session('nama_lengkap')]),
+                        'href' => route('profile.index', ['nama_lengkap' => session('nama_lengkap') ?? 'developer']),
                         'active_titles' => ['Profile | Developer Kamp Sewa'],
                     ],
                 ],
@@ -119,8 +136,8 @@
             <a href="{{ route('home.index') }}"
                 class="group flex items-center gap-3 rounded-3xl border border-slate-100 bg-gradient-to-br from-white to-slate-50 p-3 transition-all duration-300 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-100/70">
 
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50">
-                    <img class="w-9 object-contain" src="{{ asset('assets/logo/logo-kampsewa.png') }}" alt="KampSewa">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-xs border border-slate-100 overflow-hidden">
+                    <img class="w-9 h-9 object-contain rounded-xl" src="{{ asset('assets/logo/favicons/android-chrome-192x192.png') }}" alt="KampSewa">
                 </div>
 
                 <div class="min-w-0">

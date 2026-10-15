@@ -164,7 +164,8 @@
                             <div
                                 class="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-4 ring-slate-50">
                                 <img src="@userPhoto($item->foto)" alt="Foto {{ $item->name }}"
-                                    class="h-full w-full object-cover">
+                                    class="h-full w-full object-cover"
+                                    onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                             </div>
 
                             {{-- Identity --}}

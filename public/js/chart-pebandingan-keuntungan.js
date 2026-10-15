@@ -3,143 +3,141 @@
 /- chart perbandingan keuntungan pertahun -/
 /---------------------------------/
 */
-const labelsPerbandinganKeuntunganPertahun = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "Mei",
-    "Jun",
-    "Jul",
-    "Ag",
-    "Sep",
-    "Okt",
-    "Nov",
-    "Des"
-];
-const dataPerbandinganPenghasilanPertahun = {
-    labels: labelsPerbandinganKeuntunganPertahun,
-    datasets: [
+function initChartPerbandinganKeuntungan() {
+    const canvas = document.getElementById("pebandingan-keuntungan-pertahun");
+    if (!canvas) {
+        return;
+    }
+
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js is not loaded.');
+        return;
+    }
+
+    const existingChart = Chart.getChart(canvas);
+    if (existingChart) {
+        existingChart.destroy();
+    }
+
+    const labelsPerbandinganKeuntunganPertahun = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "Mei",
+        "Jun",
+        "Jul",
+        "Ag",
+        "Sep",
+        "Okt",
+        "Nov",
+        "Des"
+    ];
+
+    const defaultDatasets = [
         {
-            label: "Total:",
-            data: [65, 59, 80, 81, 56, 55, 40, 65, 59, 80, 81, 56],
+            label: "Tahun 2026",
+            data: [42.4, 29.0, 29.3, 26.5, 35.4, 39.9, 37.6, 63.0, 97.6, 133.5, 0, 0],
             borderWidth: 3,
-            borderColor: "rgb(51,145,133)",
+            borderColor: "rgb(40, 127, 113)", // #287f71
             tension: 0.4,
+            fill: false,
         },
         {
-            label: "Total:",
-            data: [65, 23, 80, 31, 56, 85, 48, 25, 98, 80, 75, 56],
+            label: "Tahun 2025",
+            data: [29.0, 34.4, 33.0, 28.9, 33.2, 26.5, 30.3, 36.2, 29.3, 27.1, 32.2, 43.4],
             borderWidth: 3,
-            borderColor: "rgb(235,134,43)",
+            borderColor: "rgb(235, 134, 43)", // #EB862B
             tension: 0.4,
-            yAxisID: "precentage",
+            fill: false,
         },
         {
-            label: "Total:",
-            data: [65, 23, 20, 31, 51, 85, 48, 25, 28, 80, 75, 56],
+            label: "Tahun 2024",
+            data: [20.2, 20.4, 18.9, 23.4, 22.3, 17.2, 28.9, 23.4, 21.0, 20.8, 24.7, 22.1],
             borderWidth: 3,
-            borderColor: "rgb(179, 129, 244)",
+            borderColor: "rgb(179, 129, 244)", // #B381F4
             tension: 0.4,
-            yAxisID: "precentage-kerugian1",
+            fill: false,
         },
         {
-            label: "Total:",
-            data: [55, 23, 20, 31, 21, 85, 68, 25, 89, 40, 75, 76],
+            label: "Tahun 2023",
+            data: [18.8, 23.0, 17.7, 9.8, 17.6, 17.8, 15.6, 16.1, 16.7, 24.7, 22.2, 20.3],
             borderWidth: 3,
-            borderColor: "rgb(207,245,0)",
+            borderColor: "rgb(207, 245, 0)", // #CFF500
             tension: 0.4,
-            yAxisID: "precentage-kerugian2",
+            fill: false,
         },
-    ],
-};
-const configPerbandinganKeuntunganPertahun = {
-    type: "line",
-    data: dataPerbandinganPenghasilanPertahun,
-    options: {
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function (value) {
-                        // Hanya tampilkan label jika nilainya bukan 0
-                        if (value !== 0) {
-                            return value;
+    ];
+
+    const datasets = window.rekapKeuntunganChartData || defaultDatasets;
+
+    const dataPerbandinganPenghasilanPertahun = {
+        labels: labelsPerbandinganKeuntunganPertahun,
+        datasets: datasets,
+    };
+
+    const configPerbandinganKeuntunganPertahun = {
+        type: "line",
+        data: dataPerbandinganPenghasilanPertahun,
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            layout: {
+                padding: { left: 0, right: 0, top: 0, bottom: 0 },
+            },
+            plugins: {
+                legend: {
+                    display: false, // Tidak dikecilkan, menggunakan header card stat sebagai legend
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += 'Rp ' + Number(context.parsed.y).toLocaleString('id-ID') + ' Jt';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function (value) {
+                            return `${value} M`;
                         }
                     },
-                    callback: function (value) {
-                        return `${value} M`;
+                    border: {
+                        display: false,
+                    },
+                    grid: {
+                        display: false,
                     }
                 },
-                border: {
-                    display: false,
-                },
-                grid: {
-                    display: false, // hilangkan garis vertikal
+                x: {
+                    grid: {
+                        display: true,
+                    },
+                    border: {
+                        display: false,
+                    },
                 }
             },
-            "precentage-kerugian1": {
-                beginAtZero: true,
-                position: 'left',
-                border: {
-                    display: false,
-                },
-                grid: {
-                    display: false,
-                },
-                ticks: {
-                    callback: function (value) {
-                        return `${value} M`;
-                    }
-                }
-            },
-            "precentage-kerugian2": {
-                beginAtZero: true,
-                position: 'right',
-                border: {
-                    display: false,
-                },
-                grid: {
-                    display: false,
-                },
-                ticks: {
-                    callback: function (value) {
-                        return `${value} M`;
-                    }
-                }
-            },
-            precentage: {
-              beginAtZero: true,
-              position: 'right',
-              border: {
-                display: false,
-              },
-              grid: {
-                display: false,
-              },
-              ticks: {
-                  callback: function (value) {
-                      return `${value} M`;
-                  }
-              }
-            },
-            x: {
-                grid: {
-                    display: true,
-                },
-                border: {
-                    display: false,
-                },
-            }
         },
-        plugins: {
-            legend: {
-                display: false,
-            }
-        }
-    },
-};
-const canvasIDPerbandinganKeuntunganPertahun = document.getElementById(
-    "pebandingan-keuntungan-pertahun"
-);
-new Chart(canvasIDPerbandinganKeuntunganPertahun, configPerbandinganKeuntunganPertahun);
+    };
+
+    new Chart(canvas, configPerbandinganKeuntunganPertahun);
+}
+
+window.initChartPerbandinganKeuntungan = initChartPerbandinganKeuntungan;
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initChartPerbandinganKeuntungan);
+} else {
+    initChartPerbandinganKeuntungan();
+}

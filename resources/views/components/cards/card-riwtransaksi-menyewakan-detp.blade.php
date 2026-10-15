@@ -65,14 +65,18 @@
                     class="_card-design flex justify-between items-center p-6 w-full shadow-box-shadow-8 rounded-[10px]">
                     <div class="_header flex items-center gap-2">
                         <div class="_image-produk"><img class="object-cover w-[70px] h-[70px] rounded-[10px]"
-                                src="{{ asset('assets/image/customers/produk/gerber.png') }}" alt="">
+                                src="{{ asset('assets/image/customers/produk/gerber.png') }}" 
+                                onerror="this.src='{{ \App\Helpers\PhotoHelper::getThumbnailUrl(null) }}'; this.onerror=null;"
+                                alt="">
                         </div>
                         <div class="_namaproduk-customer-durationsewa flex-col flex gap-1">
                             <div class="_namaproduk text-[18px] font-medium line-clamp-1">Tang Multifungsi
                                 Nipper Camping Terbaik</div>
                             <div class="_customer flex gap-2 items-center">
                                 <div class="img"><img class="w-[30px] h-[30px] rounded-full object-cover"
-                                        src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}" alt="">
+                                        src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}" 
+                                        onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                                        alt="">
                                 </div>
                                 <div class="_name-durationsewa flex gap-2 items-center">
                                     <p class="text-[14px]">Agung Kurniawan</p>

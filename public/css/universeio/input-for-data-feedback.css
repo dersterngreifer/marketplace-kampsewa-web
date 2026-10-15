@@ -32,7 +32,7 @@
     /* box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px; */
   }
   /* label styling */
-  label {
+  .form label {
     width: 100%;
     padding: 0.8em;
     height: 40px;
@@ -50,7 +50,7 @@
     left: var(--inline-padding-of-input);
   }
   /* svg -- size */
-  svg {
+  .form svg {
     width: 17px;
     display: block;
   }

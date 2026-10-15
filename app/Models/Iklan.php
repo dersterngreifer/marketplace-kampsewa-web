@@ -55,4 +55,14 @@ class Iklan extends Model
     {
         return $this->belongsTo(Produk::class, 'id_produk');
     }
+
+    public function suspendLogs()
+    {
+        return $this->hasMany(IklanSuspend::class, 'id_iklan');
+    }
+
+    public function latestSuspend()
+    {
+        return $this->hasOne(IklanSuspend::class, 'id_iklan')->latestOfMany();
+    }
 }

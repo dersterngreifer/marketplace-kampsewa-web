@@ -22,6 +22,109 @@
             </div>
         </div>
 
+        @if (isset($iklan_suspended) && $iklan_suspended->count() > 0)
+        <!-- Alert Penangguhan Iklan (Suspend Notice) -->
+        <div class="rounded-[24px] border-2 border-red-200 bg-gradient-to-r from-red-50 via-white to-amber-50/50 p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-red-100">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-red-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-red-500/20">
+                        <i class="bi bi-exclamation-octagon text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-black uppercase text-red-700 tracking-wider mb-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping"></span>
+                            Tindakan Diperlukan
+                        </div>
+                        <h3 class="text-lg font-black text-gray-900">Perhatian: {{ $iklan_suspended->count() }} Iklan Anda Ditangguhkan oleh Admin</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Iklan Anda sementara waktu ditarik dari carousel penayangan dan membutuhkan perbaikan agar dapat diaktifkan kembali.</p>
+                    </div>
+                </div>
+                <a href="{{ route('kelola-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 hover:text-blue-600 transition shadow-sm shrink-0">
+                    <i class="bi bi-sliders"></i> Buka Kelola Iklan
+                </a>
+            </div>
+
+            <div class="mt-4 divide-y divide-red-100">
+                @foreach ($iklan_suspended as $itemSusp)
+                @php
+                    $posterSusp = $itemSusp->poster ? (\Illuminate\Support\Str::startsWith($itemSusp->poster, ['http', '/']) ? $itemSusp->poster : asset('assets/image/customers/advert/' . $itemSusp->poster)) : asset('assets/image/customers/advert/iklan_default.png');
+                    $bagianRevisi = is_string($itemSusp->bagian_revisi) ? json_decode($itemSusp->bagian_revisi, true) : ($itemSusp->bagian_revisi ?? []);
+                    $isRevised = (($itemSusp->status_revisi ?? '') === 'sudah_diperbaiki');
+                @endphp
+                <div class="pt-4 first:pt-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4 min-w-0">
+                        {{-- Poster Thumbnail --}}
+                        <div class="relative w-24 sm:w-28 aspect-video rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                            <img src="{{ $posterSusp }}" class="w-full h-full object-cover" alt="{{ $itemSusp->judul }}" onerror="this.src='{{ asset('assets/image/customers/advert/iklan_default.png') }}';">
+                            <span class="absolute top-1 left-1 bg-red-600 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow">
+                                Suspended
+                            </span>
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-sm font-bold text-gray-900 truncate">{{ $itemSusp->judul }}</h4>
+                            @if (!empty($itemSusp->sub_judul))
+                            <p class="text-xs text-gray-500 truncate">{{ $itemSusp->sub_judul }}</p>
+                            @endif
+
+                            {{-- Alasan Penangguhan --}}
+                            <div class="mt-2 text-xs">
+                                <span class="font-bold text-red-700">Alasan:</span>
+                                <span class="text-gray-700 font-medium">{{ $itemSusp->alasan ?? 'Pelanggaran ketentuan konten iklan' }}</span>
+                            </div>
+
+                            {{-- Bagian Wajib Diperbaiki --}}
+                            @if (!empty($bagianRevisi) && is_array($bagianRevisi))
+                            <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                <span class="text-[11px] font-semibold text-gray-400">Wajib diperbaiki:</span>
+                                @foreach ($bagianRevisi as $bg)
+                                <span class="rounded-md bg-red-100 text-red-800 border border-red-200 px-2 py-0.5 text-[10px] font-bold uppercase">
+                                    {{ $bg == 'poster' ? 'Gambar / Poster' : ($bg == 'judul' ? 'Judul Iklan' : ($bg == 'sub_judul' ? 'Sub Judul' : 'Deskripsi')) }}
+                                </span>
+                                @endforeach
+                            </div>
+                            @endif
+
+                            {{-- Catatan Admin --}}
+                            @if (!empty($itemSusp->catatan))
+                            <div class="mt-2 rounded-xl bg-white/90 border border-red-200/60 p-2.5 text-xs text-gray-600">
+                                <span class="font-bold text-red-800 text-[11px] block">Instruksi Admin KampSewa:</span>
+                                <p class="mt-0.5 text-gray-700 italic">{{ $itemSusp->catatan }}</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Status Revisi & Tombol Perbaiki --}}
+                    <div class="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0">
+                        @if ($isRevised)
+                        <div class="text-left lg:text-right">
+                            <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-3 py-1 text-xs font-bold">
+                                <i class="bi bi-clock-history"></i> Sudah Anda Perbaiki
+                            </span>
+                            <p class="text-[11px] text-gray-400 mt-1">Menunggu peninjauan & pemulihan admin</p>
+                        </div>
+                        <a href="{{ route('kelola-iklan.update-iklan-view', ['id_iklan' => Crypt::encrypt($itemSusp->id_iklan)]) }}" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition">
+                            <i class="bi bi-pencil-square"></i> Edit Lagi
+                        </a>
+                        @else
+                        <div class="text-left lg:text-right hidden sm:block">
+                            <span class="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-800 px-2.5 py-0.5 text-[11px] font-bold">
+                                <i class="bi bi-exclamation-circle"></i> Menunggu Perbaikan
+                            </span>
+                            <p class="text-[11px] text-gray-400 mt-0.5">Segera perbaiki agar tayang kembali</p>
+                        </div>
+                        <a href="{{ route('kelola-iklan.update-iklan-view', ['id_iklan' => Crypt::encrypt($itemSusp->id_iklan)]) }}" class="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-red-500/25 active:scale-95">
+                            <i class="bi bi-pencil-square"></i> Perbaiki Iklan Sekarang
+                        </a>
+                        @endif
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <!-- Perbandingan Pemasukan (Charts) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
             <!-- Pemasukan Pertahun -->

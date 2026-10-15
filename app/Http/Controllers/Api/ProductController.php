@@ -251,20 +251,31 @@ class ProductController extends Controller
                         ->orWhere('produk.id', $parameter);
                 })
                 ->whereNotNull('produk.id_user')
-                ->get()
-                ->map(function ($item) {
-                    $produkDetail = \App\Models\Produk::with(['foto', 'likes'])->find($item->id_produk);
-                    $item->foto_depan = PhotoHelper::getThumbnailUrl($produkDetail);
-                    $userId = auth('sanctum')->id();
-                    $item->total_likes = $produkDetail->likes ? $produkDetail->likes->count() : 0;
-                    $item->is_liked = $userId && $produkDetail->likes ? $produkDetail->likes->contains('id_user', $userId) : false;
-                    
-                    $item->foto_toko = $item->foto_toko !== 'Belum Di isi' && $item->foto_toko != null
-                        ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
-                        : asset('images/placeholder-image.png');
+                ->get();
+            if ($all_variants->isEmpty()) {
+                return response()->json([
+                    'message' => 'Data tidak ditemukan!',
+                ], 404);
+            }
 
-                    return $item;
-                });
+            $firstItem = $all_variants->first();
+            $produkDetail = \App\Models\Produk::with(['foto', 'likes'])->find($firstItem->id_produk);
+            $thumbnailUrl = $produkDetail ? PhotoHelper::getThumbnailUrl($produkDetail) : null;
+            $userId = auth('sanctum')->id();
+            $totalLikes = ($produkDetail && $produkDetail->likes) ? $produkDetail->likes->count() : 0;
+            $isLiked = ($userId && $produkDetail && $produkDetail->likes) ? $produkDetail->likes->contains('id_user', $userId) : false;
+
+            $all_variants = $all_variants->map(function ($item) use ($thumbnailUrl, $totalLikes, $isLiked) {
+                $item->foto_depan = $thumbnailUrl;
+                $item->total_likes = $totalLikes;
+                $item->is_liked = $isLiked;
+                
+                $item->foto_toko = isset($item->foto_toko) && $item->foto_toko !== 'Belum Di isi' && $item->foto_toko != null
+                    ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
+                    : asset('images/placeholder-image.png');
+
+                return $item;
+            });
 
             // Query untuk mendapatkan produk dan variannya dengan filter
             $filtered_query = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
@@ -297,14 +308,12 @@ class ProductController extends Controller
             }
 
             $filtered_results = $filtered_query->get()
-                ->map(function ($item) {
-                    $produkDetail = \App\Models\Produk::with(['foto', 'likes'])->find($item->id_produk);
-                    $item->foto_depan = PhotoHelper::getThumbnailUrl($produkDetail);
-                    $userId = auth('sanctum')->id();
-                    $item->total_likes = $produkDetail->likes ? $produkDetail->likes->count() : 0;
-                    $item->is_liked = $userId && $produkDetail->likes ? $produkDetail->likes->contains('id_user', $userId) : false;
+                ->map(function ($item) use ($thumbnailUrl, $totalLikes, $isLiked) {
+                    $item->foto_depan = $thumbnailUrl;
+                    $item->total_likes = $totalLikes;
+                    $item->is_liked = $isLiked;
                     
-                    $item->foto_toko = $item->foto_toko !== 'Belum Di isi' && $item->foto_toko != null
+                    $item->foto_toko = isset($item->foto_toko) && $item->foto_toko !== 'Belum Di isi' && $item->foto_toko != null
                         ? asset('assets/image/customers/logo_toko/' . $item->foto_toko)
                         : asset('images/placeholder-image.png');
 
@@ -313,12 +322,6 @@ class ProductController extends Controller
 
             PromoService::applyDiscountsToCollection($all_variants);
             PromoService::applyDiscountsToCollection($filtered_results);
-
-            if ($all_variants->isEmpty()) {
-                return response()->json([
-                    'message' => 'Data tidak ditemukan!',
-                ], 404);
-            }
 
             return response()->json([
                 'message' => 'success',

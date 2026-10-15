@@ -13,6 +13,9 @@ use App\Http\Controllers\Api\RiwayatPencarianController;
 use App\Http\Controllers\Api\TransaksiController;
 use App\Http\Controllers\Api\StoreController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\WisataController;
+use App\Http\Controllers\Api\BeritaController;
+use App\Http\Controllers\Api\Admin\ArticleAdminController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -89,6 +92,32 @@ Route::prefix('iklan')
     ->group(function () {
         Route::get('/', 'getAllIklan');
         Route::get('/{identifier}', 'getDetailIklan');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Public Rekomendasi Wisata Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('wisata')
+    ->controller(WisataController::class)
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{id}', 'show');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Public Berita Terkini Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('berita')
+    ->controller(BeritaController::class)
+    ->group(function () {
+        Route::get('/', 'index');
+        Route::get('/{id}', 'show');
     });
 
 
@@ -276,4 +305,35 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::post('/send', 'sendMessage');
             Route::get('/unread-summary', 'getUnreadSummary');
         });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin CMS (Wisata & Berita) Protected Routes (auth:sanctum)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('admin')->controller(ArticleAdminController::class)->group(function () {
+        Route::post('/wisata', 'storeWisata');
+        Route::match(['post', 'put'], '/wisata/{id}', 'updateWisata');
+        Route::delete('/wisata/{id}', 'destroyWisata');
+
+        Route::post('/berita', 'storeBerita');
+        Route::match(['post', 'put'], '/berita/{id}', 'updateBerita');
+        Route::delete('/berita/{id}', 'destroyBerita');
+    });
 });
+
+/*
+|--------------------------------------------------------------------------
+| Admin CMS Fallback Routes (Direct Access / Web Admin)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('admin')->controller(ArticleAdminController::class)->group(function () {
+    Route::post('/wisata', 'storeWisata');
+    Route::match(['post', 'put'], '/wisata/{id}', 'updateWisata');
+    Route::delete('/wisata/{id}', 'destroyWisata');
+
+    Route::post('/berita', 'storeBerita');
+    Route::match(['post', 'put'], '/berita/{id}', 'updateBerita');
+    Route::delete('/berita/{id}', 'destroyBerita');
+});
+

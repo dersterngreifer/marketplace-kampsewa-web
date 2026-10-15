@@ -84,7 +84,8 @@
                     @foreach ($mitra_baru_hari_ini as $mitra)
                     <div class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50 transition">
                         <div class="flex items-center gap-3">
-                            <img src="@userPhoto($mitra->foto)" class="h-10 w-10 rounded-2xl object-cover" alt="">
+                            <img src="@userPhoto($mitra->foto)" class="h-10 w-10 rounded-2xl object-cover" alt=""
+                                onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                             <div>
                                 <p class="text-sm font-bold text-slate-900">{{ $mitra->name }}</p>
                                 <p class="text-xs text-slate-400">{{ $mitra->email }}</p>
@@ -130,7 +131,8 @@
                     @foreach ($iklan_hampir_expired as $item)
                     <div class="flex items-center justify-between gap-4 px-5 py-4 hover:bg-red-50/30 transition">
                         <div class="flex items-center gap-3">
-                            <img src="@userPhoto($item->foto)" class="h-10 w-10 rounded-2xl object-cover" alt="">
+                            <img src="@userPhoto($item->foto)" class="h-10 w-10 rounded-2xl object-cover" alt=""
+                                onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                             <div>
                                 <p class="text-sm font-bold text-slate-900">{{ $item->name }}</p>
                                 <p class="text-xs text-slate-400 line-clamp-1">{{ $item->judul }}</p>
@@ -165,7 +167,8 @@
                     @foreach ($rating_buruk_baru as $rating)
                     <div class="px-5 py-4 hover:bg-amber-50/30 transition">
                         <div class="flex items-start gap-3">
-                            <img src="@userPhoto($rating->user?->foto)" class="h-9 w-9 shrink-0 rounded-xl object-cover mt-0.5" alt="">
+                            <img src="@userPhoto($rating->user?->foto)" class="h-9 w-9 shrink-0 rounded-xl object-cover mt-0.5" alt=""
+                                onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';">
                             <div class="flex-1 min-w-0">
                                 <div class="flex items-center justify-between gap-2">
                                     <p class="text-sm font-bold text-slate-900">{{ $rating->user?->name ?? 'Pelanggan' }}</p>
@@ -670,11 +673,22 @@ const customerReplyPagination = document.getElementById('customerReplyPagination
             function messageBubbleHtml(message) {
                 const isAdmin = message.sender_type === 'admin';
                 const id = escapeHtml(message.id);
-                const defaultAvatar = `ui-avatars.com/api/?name=${escapeHtml(message.sender_name)}&background=random`;
-                const avatarUrl = message.sender_foto ? escapeHtml(message.sender_foto) : `https://${defaultAvatar}`;
+                const defaultAvatar = 'data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22128%22%20height%3D%22128%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Ccircle%20cx%3D%2264%22%20cy%3D%2264%22%20r%3D%2264%22%20fill%3D%22%23e2e8f0%22%2F%3E%3Cpath%20d%3D%22M64%2064a24%2024%200%20100-48%2024%2024%200%20000%2048zm0%2012c-26.7%200-48%2016-48%2036v8h96v-8c0-20-21.3-36-48-36z%22%20fill%3D%22%2394a3b8%22%2F%3E%3C%2Fsvg%3E';
+                let avatarUrl = defaultAvatar;
+                if (message.sender_foto) {
+                    const sf = message.sender_foto.trim();
+                    if (sf.startsWith('http://') || sf.startsWith('https://') || sf.startsWith('//')) {
+                        avatarUrl = escapeHtml(sf);
+                    } else if (sf.startsWith('assets/') || sf.startsWith('images/')) {
+                        avatarUrl = `{{ asset('') }}/` + escapeHtml(sf).replace(/^\/+/, '');
+                    } else if (!['belum di isi', 'belum di isi.', 'null', '-'].includes(sf.toLowerCase())) {
+                        avatarUrl = `{{ asset('assets/image/customers/profile') }}/` + escapeHtml(sf);
+                    }
+                }
 
                 const avatarHtml = `
                     <img src="${avatarUrl}" alt="${escapeHtml(message.sender_name)}" 
+                         onerror="this.onerror=null; this.src='${defaultAvatar}';"
                          class="h-8 w-8 rounded-full object-cover shrink-0 ${isAdmin ? 'ml-2' : 'mr-2'}" />
                 `;
 

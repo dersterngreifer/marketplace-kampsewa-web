@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\DetailIklan;
 use App\Models\Iklan;
-use App\Models\Pemasukan;
+use App\Models\PemasukanPerusahaan;
 use App\Models\PembayaranIklan;
 use App\Models\User;
 use Carbon\Carbon;
@@ -140,9 +140,8 @@ class IklanSeeder extends Seeder
                 'updated_at'                  => $createdAt,
             ]);
 
-            // Catat ke pemasukan
-            Pemasukan::create([
-                'id_user'    => $userId,
+            // Catat ke pemasukan perusahaan
+            PemasukanPerusahaan::create([
                 'sumber'     => 'Layanan Iklan',
                 'deskripsi'  => 'Pembayaran iklan #' . $iklan->id . ' — ' . $createdAt->format('d M Y'),
                 'nominal'    => $harga,
@@ -195,8 +194,7 @@ class IklanSeeder extends Seeder
                 'updated_at'                  => $createdAt,
             ]);
 
-            Pemasukan::create([
-                'id_user'    => $userId,
+            PemasukanPerusahaan::create([
                 'sumber'     => 'Layanan Iklan',
                 'deskripsi'  => 'Pembayaran iklan #' . $iklan->id . ' (pending antrian) — ' . $createdAt->format('d M Y'),
                 'nominal'    => $harga,
@@ -249,8 +247,7 @@ class IklanSeeder extends Seeder
                 'updated_at'                  => $createdAt,
             ]);
 
-            Pemasukan::create([
-                'id_user'    => $userId,
+            PemasukanPerusahaan::create([
                 'sumber'     => 'Layanan Iklan',
                 'deskripsi'  => 'Pembayaran iklan #' . $iklan->id . ' (selesai) — ' . $createdAt->format('d M Y'),
                 'nominal'    => $harga,

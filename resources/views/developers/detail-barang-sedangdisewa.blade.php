@@ -18,11 +18,13 @@
             <div class="_component-image-produk relative w-full">
                 <div class="_image-detail flex flex-col gap-2 sticky top-6 z-50">
                     <img class="rounded-[10px] w-full h-[450px] object-cover"
-                        src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($produk) }}" alt="{{ $produk->nama }}">
+                        src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($produk) }}" alt="{{ $produk->nama }}"
+                        onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3EKampSewa%20Produk%3C%2Ftext%3E%3C%2Fsvg%3E';">
                     <div class="_image-all grid grid-cols-4 gap-2 w-full">
                         @foreach($produk->foto->take(4) as $p)
                             <img class="rounded-[10px] object-cover w-full h-[120px]"
-                                src="{{ \App\Helpers\PhotoHelper::getPhotoUrl($p->url_foto, $p->tipe_sumber) }}" alt="">
+                                src="{{ \App\Helpers\PhotoHelper::getPhotoUrl($p->url_foto, $p->tipe_sumber) }}" alt=""
+                                onerror="this.onerror=null; this.src='data:image/svg+xml;charset=UTF-8,%3Csvg%20width%3D%22400%22%20height%3D%22300%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20400%20300%22%3E%3Crect%20fill%3D%22%23f1f5f9%22%20width%3D%22400%22%20height%3D%22300%22%2F%3E%3Ctext%20fill%3D%22%2394a3b8%22%20font-family%3D%22sans-serif%22%20font-size%3D%2216%22%20font-weight%3D%22bold%22%20x%3D%2250%25%22%20y%3D%2250%25%22%20text-anchor%3D%22middle%22%20dy%3D%22.3em%22%3EKampSewa%20Produk%3C%2Ftext%3E%3C%2Fsvg%3E';">
                         @endforeach
                     </div>
                 </div>
@@ -95,10 +97,15 @@
                 <div class="_user-pemilik">
                     <div class="_title text-[16px] font-bold mb-4">Pemilik Barang Yang Disewa</div>
                     <div class="_user flex gap-2 items-center">
-                        <div class="_img"><img class="rounded-full w-[40px] h-[40px]" src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}" alt=""></div>
+                        <div class="_img">
+                            <img class="rounded-full w-[40px] h-[40px] object-cover" 
+                                src="@userPhoto($user->foto ?? null, 0)" 
+                                onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                                alt="{{ $user->name ?? $name }}">
+                        </div>
                         <div class="_nama-visit">
-                            <p><a href="" class="text-[14px] font-medium">Agung Kurniawan</a></p>
-                            <p><a href="" class="hover:underline text-[14px] text-[#847588]">View Profile</a></p>
+                            <p><a href="{{ isset($user) ? route('detail-pengguna.index', Crypt::encrypt($user->id)) : '#' }}" class="text-[14px] font-medium">{{ $user->name ?? $name }}</a></p>
+                            <p><a href="{{ isset($user) ? route('detail-pengguna.index', Crypt::encrypt($user->id)) : '#' }}" class="hover:underline text-[14px] text-[#847588]">View Profile</a></p>
                         </div>
                     </div>
                 </div>

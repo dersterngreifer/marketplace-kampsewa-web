@@ -180,9 +180,10 @@
                                                 </td>
                                                 <td scope="row"
                                                     class="px-6 py-4 font-medium text-gray-900 flex items-center gap-2 whitespace-nowrap dark:text-white">
-                                                    <img class="rounded-full w-[40px]"
-                                                        src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}"
-                                                        alt="">
+                                                    <img class="rounded-full w-[40px] h-[40px] object-cover"
+                                                        src="@userPhoto(null, 1)"
+                                                        onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                                                        alt="Agung Kurniawan">
                                                     <p>Agung Kurniawan</p>
                                                 </td>
                                                 <td class="px-6 py-4">
@@ -396,9 +397,10 @@
                                                     </td>
                                                     <td scope="row"
                                                         class="px-6 py-4 font-medium text-gray-900 flex items-center gap-2 whitespace-nowrap dark:text-white">
-                                                        <img class="rounded-full w-[40px]"
-                                                            src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}"
-                                                            alt="">
+                                                        <img class="rounded-full w-[40px] h-[40px] object-cover"
+                                                            src="@userPhoto(null, 1)"
+                                                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                                                            alt="Agung Kurniawan">
                                                         <p>Agung Kurniawan</p>
                                                     </td>
                                                     <td class="px-6 py-4">
@@ -615,9 +617,10 @@
                                                     </td>
                                                     <td scope="row"
                                                         class="px-6 py-4 font-medium text-gray-900 flex items-center gap-2 whitespace-nowrap dark:text-white">
-                                                        <img class="rounded-full w-[40px]"
-                                                            src="{{ asset('assets/image/developers/agung-kurniawan.jpg') }}"
-                                                            alt="">
+                                                        <img class="rounded-full w-[40px] h-[40px] object-cover"
+                                                            src="@userPhoto(null, 1)"
+                                                            onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><circle cx=\'50\' cy=\'50\' r=\'50\' fill=\'%235038ed\'/><circle cx=\'50\' cy=\'40\' r=\'20\' fill=\'white\'/><path d=\'M 20 85 C 20 65, 80 65, 80 85 Z\' fill=\'white\'/></svg>'; this.onerror=null;"
+                                                            alt="Agung Kurniawan">
                                                         <p>Agung Kurniawan</p>
                                                     </td>
                                                     <td class="px-6 py-4">
