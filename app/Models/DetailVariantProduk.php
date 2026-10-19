@@ -17,4 +17,9 @@ class DetailVariantProduk extends Model
          'stok',
          'harga_sewa',
      ];
+
+     public function variant()
+     {
+         return $this->belongsTo(VariantProduk::class, 'id_variant_produk');
+     }
 }

@@ -213,13 +213,17 @@ class FeedbackChatController extends Controller
 
         $user = Auth::user();
         $senderType = (int) $user->type === 1 ? 'admin' : 'customer';
+        $resolvedAdminId = $senderType === 'admin'
+            ? $user->id
+            : ($request->filled('admin_id') ? (int) $request->admin_id : null);
 
         $message = FeedbackMessage::create([
             'feedback_id' => $feedback->id,
             'sender_id' => $user->id,
             'sender_type' => $senderType,
+            'admin_id' => $resolvedAdminId,
             'message' => $request->message,
-            'read_at' => $senderType === 'admin' ? now() : null,
+            'read_at' => null,
         ]);
 
         if ($senderType === 'admin') {
@@ -229,6 +233,10 @@ class FeedbackChatController extends Controller
 
             FeedbackMessage::where('feedback_id', $feedback->id)
                 ->where('sender_type', 'customer')
+                ->where(function($q) use ($user) {
+                    $q->where('admin_id', $user->id)
+                      ->orWhereNull('admin_id');
+                })
                 ->whereNull('read_at')
                 ->update([
                     'read_at' => now(),
@@ -267,6 +275,7 @@ class FeedbackChatController extends Controller
             'id' => $message->id,
             'feedback_id' => $message->feedback_id,
             'sender_id' => $message->sender_id,
+            'admin_id' => (int) ($message->admin_id ?: ($message->sender_type === 'admin' ? $message->sender_id : 0)),
             'sender_type' => $message->sender_type,
             'sender_name' => $message->sender?->name ?? ucfirst($message->sender_type),
             'sender_foto' => $this->getUserFotoUrl($message->sender),
@@ -293,18 +302,52 @@ class FeedbackChatController extends Controller
             $query->where('status', $request->status);
         }
 
+        // Auto-heal feedback_messages where sender_type is admin but admin_id is null
+        FeedbackMessage::where('sender_type', 'admin')
+            ->whereNull('admin_id')
+            ->update(['admin_id' => \Illuminate\Support\Facades\DB::raw('sender_id')]);
+
         $feedbacks = $query->get();
 
         $rooms = collect();
 
         foreach ($feedbacks as $feedback) {
-            $adminIds = $feedback->messages->where('sender_type', 'admin')->pluck('admin_id')->filter()->unique();
+            $adminIds = $feedback->messages
+                ->where('sender_type', 'admin')
+                ->map(function ($msg) {
+                    return $msg->admin_id ?: $msg->sender_id;
+                })
+                ->filter()
+                ->unique();
             
+            // Cek juga tabel balas_feedback jika belum ada balasan admin
+            if ($adminIds->isEmpty()) {
+                $legacyBalas = \App\Models\BalasFeedback::where('id_feedback', $feedback->id)->get();
+                if ($legacyBalas->isNotEmpty()) {
+                    $adminIds = $legacyBalas->pluck('id_user')->filter()->unique();
+                    foreach ($legacyBalas as $balas) {
+                        FeedbackMessage::firstOrCreate([
+                            'feedback_id' => $feedback->id,
+                            'sender_id' => $balas->id_user,
+                            'sender_type' => 'admin',
+                            'message' => $balas->balasan,
+                        ], [
+                            'admin_id' => $balas->id_user,
+                            'read_at' => now(),
+                            'created_at' => $balas->created_at,
+                        ]);
+                    }
+                }
+            }
+
             if ($adminIds->isEmpty()) {
                 // Belum ada balasan admin
                 $feedbackData = $feedback->toArray();
                 $feedbackData['room_id'] = $feedback->id . '-0';
                 $feedbackData['admin_id'] = 0;
+                $feedbackData['admin'] = null;
+                $feedbackData['last_admin_name'] = null;
+                $feedbackData['last_admin_foto'] = null;
                 $rooms->push($feedbackData);
             } else {
                 foreach ($adminIds as $adminId) {
@@ -312,12 +355,14 @@ class FeedbackChatController extends Controller
                     $cloned['feedback_id'] = $feedback->id;
                     $cloned['id'] = $feedback->id . '-' . $adminId; // overwrite 'id' as unique room_id for UI list parsing
                     $cloned['room_id'] = $cloned['id'];
-                    $cloned['admin_id'] = $adminId;
+                    $cloned['admin_id'] = (int) $adminId;
                     
                     // Hitung unread untuk spesifik admin ini
                     $unreadAdminCount = $feedback->messages
                         ->where('sender_type', 'admin')
-                        ->where('admin_id', $adminId)
+                        ->filter(function($msg) use ($adminId) {
+                            return ($msg->admin_id == $adminId || $msg->sender_id == $adminId);
+                        })
                         ->whereNull('read_at')
                         ->count();
                         
@@ -335,17 +380,28 @@ class FeedbackChatController extends Controller
                     // Root Admin Info untuk UI fallback
                     $lastAdminMessage = $feedback->messages
                         ->where('sender_type', 'admin')
-                        ->where('admin_id', $adminId)
+                        ->filter(function($msg) use ($adminId) {
+                            return ($msg->admin_id == $adminId || $msg->sender_id == $adminId);
+                        })
                         ->last();
                         
-                    $cloned['last_admin_name'] = $lastAdminMessage ? ($lastAdminMessage->sender?->name ?? 'Admin') : null;
-                    $cloned['last_admin_foto'] = $lastAdminMessage ? $this->getUserFotoUrl($lastAdminMessage->sender) : null;
+                    $adminUser = $lastAdminMessage?->sender ?: \App\Models\User::find($adminId);
+                    $adminName = $adminUser?->name ?? 'Admin KampSewa';
+                    $adminFoto = $this->getUserFotoUrl($adminUser);
+
+                    $cloned['admin'] = [
+                        'id' => (int) $adminId,
+                        'name' => $adminName,
+                        'foto' => $adminFoto,
+                    ];
+                    $cloned['last_admin_name'] = $adminName;
+                    $cloned['last_admin_foto'] = $adminFoto;
                     
                     // Cari pesan terakhir dari admin ini atau customer
                     $latest = $feedback->messages
-                        ->where(function($msg) use ($adminId) {
+                        ->filter(function($msg) use ($adminId) {
                             $isCustomerForThisAdmin = $msg->sender_type === 'customer' && ($msg->admin_id == $adminId || is_null($msg->admin_id));
-                            $isAdmin = $msg->sender_type === 'admin' && $msg->admin_id == $adminId;
+                            $isAdmin = $msg->sender_type === 'admin' && ($msg->admin_id == $adminId || $msg->sender_id == $adminId);
                             return $isCustomerForThisAdmin || $isAdmin;
                         })->last();
                         
@@ -391,12 +447,56 @@ class FeedbackChatController extends Controller
         $this->authorizeFeedbackAccess($feedback);
 
         $user = Auth::user();
-        $feedback->load('user');
+        $feedback->load(['user', 'messages.sender']);
 
-        if ((int) $user->type === 0) {
+        $admin_id = (int) $admin_id;
+
+        // Auto-heal admin_id in feedback_messages if NULL but sender_type == admin
+        FeedbackMessage::where('feedback_id', $feedback->id)
+            ->where('sender_type', 'admin')
+            ->whereNull('admin_id')
+            ->update(['admin_id' => \Illuminate\Support\Facades\DB::raw('sender_id')]);
+
+        // Jika admin_id == 0, coba cari admin yang sudah membalas feedback ini
+        if ($admin_id === 0) {
+            $existingAdminId = $feedback->messages()
+                ->where('sender_type', 'admin')
+                ->latest()
+                ->value('admin_id') ?: $feedback->messages()
+                ->where('sender_type', 'admin')
+                ->latest()
+                ->value('sender_id');
+
+            if (!$existingAdminId) {
+                // Cek juga tabel balas_feedback
+                $legacyBalas = \App\Models\BalasFeedback::where('id_feedback', $feedback->id)->latest()->first();
+                if ($legacyBalas) {
+                    $existingAdminId = $legacyBalas->id_user;
+                    FeedbackMessage::firstOrCreate([
+                        'feedback_id' => $feedback->id,
+                        'sender_id' => $legacyBalas->id_user,
+                        'sender_type' => 'admin',
+                        'message' => $legacyBalas->balasan,
+                    ], [
+                        'admin_id' => $legacyBalas->id_user,
+                        'read_at' => now(),
+                        'created_at' => $legacyBalas->created_at,
+                    ]);
+                }
+            }
+
+            if ($existingAdminId) {
+                $admin_id = (int) $existingAdminId;
+            }
+        }
+
+        if ((int) $user->type === 0 && $admin_id > 0) {
             FeedbackMessage::where('feedback_id', $feedback->id)
                 ->where('sender_type', 'admin')
-                ->where('sender_id', $admin_id)
+                ->where(function($q) use ($admin_id) {
+                    $q->where('admin_id', $admin_id)
+                      ->orWhere('sender_id', $admin_id);
+                })
                 ->whereNull('read_at')
                 ->update(['read_at' => now()]);
         }
@@ -415,9 +515,9 @@ class FeedbackChatController extends Controller
             ],
         ];
 
-        $messagesCollection = $feedback->messages()
-            ->with('sender')
-            ->where(function($query) use ($admin_id) {
+        $messagesQuery = $feedback->messages()->with('sender');
+        if ($admin_id > 0) {
+            $messagesQuery->where(function($query) use ($admin_id) {
                 $query->where(function($q) use ($admin_id) {
                     $q->where('sender_type', 'customer')
                       ->where(function($q2) use ($admin_id) {
@@ -426,22 +526,51 @@ class FeedbackChatController extends Controller
                       });
                 })->orWhere(function($q) use ($admin_id) {
                     $q->where('sender_type', 'admin')
-                      ->where('sender_id', $admin_id);
+                      ->where(function($q2) use ($admin_id) {
+                          $q2->where('admin_id', $admin_id)
+                             ->orWhere('sender_id', $admin_id);
+                      });
                 });
-            })
-            ->oldest()
-            ->get();
+            });
+        } else {
+            // Belum pernah ada balasan admin
+            $messagesQuery->where('sender_type', 'customer');
+        }
+
+        $messagesCollection = $messagesQuery->oldest()->get();
 
         $messages = $messagesCollection->map(function ($message) {
             return $this->formatMessage($message);
         })->values()->toArray();
 
-        $lastAdminMessage = $messagesCollection->reverse()->first(function ($message) {
-            return $message->sender_type === 'admin';
-        });
+        $lastAdminMessage = $feedback->messages()
+            ->with('sender')
+            ->where('sender_type', 'admin')
+            ->when($admin_id > 0, function($q) use ($admin_id) {
+                $q->where(function($q2) use ($admin_id) {
+                    $q2->where('admin_id', $admin_id)
+                       ->orWhere('sender_id', $admin_id);
+                });
+            })
+            ->latest()
+            ->first();
 
-        $lastAdminName = $lastAdminMessage ? ($lastAdminMessage->sender?->name ?? 'Admin') : null;
-        $lastAdminFoto = $lastAdminMessage ? $this->getUserFotoUrl($lastAdminMessage->sender) : null;
+        $adminUser = $lastAdminMessage?->sender;
+        if (!$adminUser && $admin_id > 0) {
+            $adminUser = \App\Models\User::find($admin_id);
+        }
+
+        $lastAdminName = $adminUser?->name;
+        $lastAdminFoto = $this->getUserFotoUrl($adminUser);
+
+        $adminData = null;
+        if ($admin_id > 0 && $adminUser) {
+            $adminData = [
+                'id' => $admin_id,
+                'name' => $adminUser->name,
+                'foto' => $lastAdminFoto,
+            ];
+        }
 
         return response()->json([
             'success' => true,
@@ -456,6 +585,7 @@ class FeedbackChatController extends Controller
                     'kriteria' => $feedback->kriteria,
                     'status' => $feedback->status,
                     'created_at' => $feedback->created_at?->format('Y-m-d H:i:s'),
+                    'admin' => $adminData,
                     'last_admin_name' => $lastAdminName,
                     'last_admin_foto' => $lastAdminFoto,
                 ],
@@ -483,14 +613,46 @@ class FeedbackChatController extends Controller
         $user = Auth::user();
         $senderType = (int) $user->type === 1 ? 'admin' : 'customer';
 
+        $resolvedAdminId = (int) $admin_id > 0 ? (int) $admin_id : ($senderType === 'admin' ? $user->id : null);
+
+        if ($senderType === 'customer' && is_null($resolvedAdminId)) {
+            $existingAdminId = $feedback->messages()
+                ->where('sender_type', 'admin')
+                ->latest()
+                ->value('admin_id') ?: $feedback->messages()
+                ->where('sender_type', 'admin')
+                ->latest()
+                ->value('sender_id');
+            if ($existingAdminId) {
+                $resolvedAdminId = (int) $existingAdminId;
+            }
+        }
+
         $message = FeedbackMessage::create([
             'feedback_id' => $feedback->id,
             'sender_id' => $user->id,
             'sender_type' => $senderType,
-            'admin_id' => $admin_id, // we use the new admin_id column in DB
+            'admin_id' => $resolvedAdminId,
             'message' => $request->message,
-            'read_at' => null,
+            'read_at' => $senderType === 'admin' ? now() : null,
         ]);
+
+        if ($senderType === 'admin') {
+            $feedback->update([
+                'status' => 'Dibalas',
+            ]);
+
+            FeedbackMessage::where('feedback_id', $feedback->id)
+                ->where('sender_type', 'customer')
+                ->where(function($q) use ($user) {
+                    $q->where('admin_id', $user->id)
+                      ->orWhereNull('admin_id');
+                })
+                ->whereNull('read_at')
+                ->update([
+                    'read_at' => now(),
+                ]);
+        }
 
         broadcast(new FeedbackMessageSent($message))->toOthers();
 
@@ -505,6 +667,9 @@ class FeedbackChatController extends Controller
     {
         if (!$user || empty($user->foto) || $user->foto === 'Belum Di isi') {
             return null;
+        }
+        if ((int) $user->type === 1) {
+            return asset('assets/image/developers/profiles/' . $user->foto);
         }
         return asset('assets/image/customers/profile/' . $user->foto);
     }

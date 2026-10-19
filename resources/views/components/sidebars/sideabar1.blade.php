@@ -12,6 +12,31 @@
 <body>
     @php
         $currentTitle = $title ?? '';
+        $devAdminId = auth()->id() ?? session('id_user');
+        $devUnreadChatCount = $devAdminId
+            ? \App\Models\ChatMessage::where('receiver_id', $devAdminId)
+                ->where('is_read', false)
+                ->whereHas('sender', function ($q) {
+                    $q->where('type', 0);
+                })
+                ->count()
+            : 0;
+
+        $devUnreadFeedbackCount = \App\Models\Feedback::where('status', 'Belum Dibalas')->count()
+            + \App\Models\FeedbackMessage::where('sender_type', 'customer')
+                ->whereNull('read_at')
+                ->whereHas('feedback', function($q) {
+                    $q->where('status', 'Dibalas');
+                })
+                ->count();
+
+        $devNewUsersCount = \App\Models\User::join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+            ->where('users.type', 0)
+            ->whereDate('users.created_at', \Carbon\Carbon::today())
+            ->where('status_notifikasi_user.status', 'unread')
+            ->count();
+
+        $devTotalNotifCount = $devUnreadFeedbackCount + $devNewUsersCount;
 
         $menuGroups = [
             [
@@ -28,6 +53,16 @@
                         'icon' => 'fi fi-rr-bell',
                         'href' => route('notification.index'),
                         'active_titles' => ['Dashboard | Notification'],
+                        'badge_id' => 'sidebar-dev-notif-badge',
+                        'badge_count' => $devTotalNotifCount,
+                    ],
+                    [
+                        'label' => 'Live Chat Mitra',
+                        'icon' => 'bi bi-chat-dots',
+                        'href' => route('developer.chat.index'),
+                        'active_titles' => ['Live Chat Mitra | Developer Kamp Sewa'],
+                        'badge_id' => 'sidebar-dev-chat-badge',
+                        'badge_count' => $devUnreadChatCount,
                     ],
                 ],
             ],
@@ -208,7 +243,12 @@
                                         {{ $item['label'] }}
                                     </span>
 
-                                    @if ($isActive)
+                                    @if (!empty($item['badge_id']))
+                                        <span id="{{ $item['badge_id'] }}"
+                                            class="{{ ($item['badge_count'] ?? 0) > 0 ? 'inline-flex' : 'hidden' }} ml-auto h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white shadow-xs">
+                                            {{ ($item['badge_count'] ?? 0) > 99 ? '99+' : ($item['badge_count'] ?? 0) }}
+                                        </span>
+                                    @elseif ($isActive)
                                         <span class="ml-auto h-2 w-2 rounded-full bg-white"></span>
                                     @endif
                                 </a>

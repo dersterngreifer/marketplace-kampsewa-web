@@ -87,7 +87,17 @@
                                     <div class="flex items-center gap-3">
                                         <img class="w-10 h-10 rounded-full object-cover border border-gray-200"
                                             src="@userPhoto($item->foto_users)" alt="{{ $item->nama_penyewa }}">
-                                        <div class="font-bold text-gray-900 text-sm">{{ $item->nama_penyewa }}</div>
+                                        <div>
+                                            <div class="flex items-center gap-2">
+                                                <span class="font-bold text-gray-900 text-sm">{{ $item->nama_penyewa }}</span>
+                                                @if(($item->tipe_pesanan ?? '') === 'offline')
+                                                    <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">POS Offline</span>
+                                                @endif
+                                            </div>
+                                            @if(!empty($item->no_hp_offline))
+                                                <div class="text-[11px] text-gray-400 font-medium">{{ $item->no_hp_offline }}</div>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap">

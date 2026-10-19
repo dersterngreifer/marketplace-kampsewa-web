@@ -198,7 +198,7 @@ class NotificationController extends Controller
                         'admin_id' => $idUserBalas,
                         'sender_type' => 'admin',
                         'message' => $request->balasan,
-                        'read_at' => now(),
+                        'read_at' => null,
                     ]);
 
                     $createdMessages[] = $message;
@@ -303,7 +303,10 @@ class NotificationController extends Controller
                       });
                 })->orWhere(function($q) {
                     $q->where('sender_type', 'admin')
-                      ->where('sender_id', Auth::id());
+                      ->where(function($q2) {
+                          $q2->where('admin_id', Auth::id())
+                             ->orWhere('sender_id', Auth::id());
+                      });
                 });
             })
             ->oldest()
@@ -335,7 +338,7 @@ class NotificationController extends Controller
             'admin_id' => Auth::id(),
             'sender_type' => 'admin',
             'message' => $request->message,
-            'read_at' => now(),
+            'read_at' => null,
         ]);
 
         $feedback->update([
@@ -540,9 +543,10 @@ class NotificationController extends Controller
                     $message = FeedbackMessage::create([
                         'feedback_id' => $item->id,
                         'sender_id' => $idUserBalas,
+                        'admin_id' => $idUserBalas,
                         'sender_type' => 'admin',
                         'message' => $request->balasan,
-                        'read_at' => now(),
+                        'read_at' => null,
                     ]);
 
                     $createdMessages[] = $message;

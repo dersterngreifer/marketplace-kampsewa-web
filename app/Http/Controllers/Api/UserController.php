@@ -54,6 +54,7 @@ class UserController extends Controller
             $current_user_id = auth('sanctum')->id();
             $get_data_user->total_followers = \Illuminate\Support\Facades\DB::table('followers')->where('followed_id', $id_user)->count();
             $get_data_user->total_following = \Illuminate\Support\Facades\DB::table('followers')->where('follower_id', $id_user)->count();
+            $get_data_user->total_new_followers = \Illuminate\Support\Facades\DB::table('followers')->where('followed_id', $id_user)->where('created_at', '>=', now()->subHours(24))->count();
             $get_data_user->is_followed_by_me = $current_user_id ? \Illuminate\Support\Facades\DB::table('followers')->where('follower_id', $current_user_id)->where('followed_id', $id_user)->exists() : false;
 
             // Kalkulasi Rating Toko dan Jumlah Ulasan (berdasarkan produk milik toko ini)

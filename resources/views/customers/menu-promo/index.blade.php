@@ -31,6 +31,30 @@
         </div>
     </div>
 
+    @if(!empty($forceCompletedAdsCount) && $forceCompletedAdsCount > 0)
+        <!-- Banner Pemberitahuan Iklan Diselesaikan Paksa -->
+        <div class="p-5 rounded-2xl bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 border border-orange-200 text-orange-950 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+            <div class="flex items-start gap-3.5">
+                <div class="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center flex-shrink-0 text-lg shadow-sm">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-xs font-black uppercase tracking-wider text-orange-900">Pemberitahuan Iklan Banner Diselesaikan Paksa</span>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-orange-200/90 text-orange-900">{{ $forceCompletedAdsCount }} Iklan</span>
+                    </div>
+                    <p class="text-xs text-orange-800 mt-1 leading-relaxed">
+                        Terdapat <strong>{{ $forceCompletedAdsCount }} iklan banner</strong> Anda yang dihentikan/diselesaikan oleh Admin sebelum masa berlaku selesai, namun masa tayangnya <strong>masih berada dalam rentang aktif</strong>. Anda dapat mengajukan permohonan ke Admin untuk mengaktifkan kembali (reaktivasi) iklan ini selama tanggal akhir belum terlampaui.
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('buat-iklan.index', ['id_user' => $id_user]) }}"
+               class="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-orange-300 hover:bg-orange-50 text-orange-800 text-xs font-bold rounded-xl transition-all shadow-xs self-start sm:self-auto flex-shrink-0">
+                <i class="bi bi-megaphone"></i> Buka Menu Iklan Banner
+            </a>
+        </div>
+    @endif
+
     @if($activeStoreWide)
         <!-- Banner Info Diskon Keseluruhan Aktif -->
         <div class="p-5 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50/40 to-blue-50/30 border border-blue-200 text-blue-900 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">

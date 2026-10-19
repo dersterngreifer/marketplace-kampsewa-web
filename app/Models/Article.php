@@ -67,6 +67,50 @@ class Article extends Model
     }
 
     /**
+     * Accessor: Ensure sumber_url is sanitized and always starts with http:// or https://
+     */
+    public function getSumberUrlAttribute($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        $trimmed = trim((string) $value);
+        if (in_array(strtolower($trimmed), ['null', '-', 'undefined', ''], true)) {
+            return null;
+        }
+
+        if (!Str::startsWith($trimmed, ['http://', 'https://'])) {
+            return 'https://' . $trimmed;
+        }
+
+        return $trimmed;
+    }
+
+    /**
+     * Mutator: Sanitize and ensure proper scheme before saving sumber_url
+     */
+    public function setSumberUrlAttribute($value): void
+    {
+        if (empty($value)) {
+            $this->attributes['sumber_url'] = null;
+            return;
+        }
+
+        $trimmed = trim((string) $value);
+        if (in_array(strtolower($trimmed), ['null', '-', 'undefined', ''], true)) {
+            $this->attributes['sumber_url'] = null;
+            return;
+        }
+
+        if (!Str::startsWith($trimmed, ['http://', 'https://'])) {
+            $trimmed = 'https://' . $trimmed;
+        }
+
+        $this->attributes['sumber_url'] = $trimmed;
+    }
+
+    /**
      * Get full image URL
      */
     public function getGambarUrlAttribute(): string

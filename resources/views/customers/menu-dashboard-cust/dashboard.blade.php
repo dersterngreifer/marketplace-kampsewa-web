@@ -125,6 +125,89 @@
         </div>
         @endif
 
+        @if (isset($iklan_force_completed) && $iklan_force_completed->count() > 0)
+        <!-- Alert Iklan Diselesaikan Lebih Awal (Force Complete Notice) -->
+        <div class="rounded-[24px] border-2 border-orange-200 bg-gradient-to-r from-orange-50 via-white to-amber-50/50 p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-orange-100">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-orange-500 text-white flex items-center justify-center shrink-0 shadow-md shadow-orange-500/20">
+                        <i class="bi bi-exclamation-triangle text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 rounded-full bg-orange-100 px-2.5 py-0.5 text-[11px] font-black uppercase text-orange-800 tracking-wider mb-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-orange-600 animate-ping"></span>
+                            Iklan Berhenti Lebih Awal
+                        </div>
+                        <h3 class="text-lg font-black text-gray-900">Pemberitahuan: {{ $iklan_force_completed->count() }} Iklan Anda Diselesaikan Paksa oleh Admin</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Iklan dihentikan sebelum masa tayang berakhir. Jika masih dalam rentang jadwal aktif, iklan dapat direaktifkan kembali oleh admin jika diperlukan.</p>
+                    </div>
+                </div>
+                <a href="{{ route('buat-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 text-xs font-bold rounded-xl hover:bg-gray-50 hover:text-blue-600 transition shadow-sm shrink-0">
+                    <i class="bi bi-megaphone"></i> Buka Menu Iklan
+                </a>
+            </div>
+
+            <div class="mt-4 divide-y divide-orange-100">
+                @foreach ($iklan_force_completed as $itemForce)
+                @php
+                    $posterForce = $itemForce->poster ? (\Illuminate\Support\Str::startsWith($itemForce->poster, ['http', '/']) ? $itemForce->poster : asset('assets/image/customers/advert/' . $itemForce->poster)) : asset('assets/image/customers/advert/iklan_default.png');
+                    $isStillActive = \Carbon\Carbon::today()->lte(\Carbon\Carbon::parse($itemForce->tanggal_akhir));
+                @endphp
+                <div class="pt-4 first:pt-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4 min-w-0">
+                        {{-- Poster Thumbnail --}}
+                        <div class="relative w-24 sm:w-28 aspect-video rounded-xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                            <img src="{{ $posterForce }}" class="w-full h-full object-cover" alt="{{ $itemForce->judul }}" onerror="this.src='{{ asset('assets/image/customers/advert/iklan_default.png') }}';">
+                            <span class="absolute top-1 left-1 bg-orange-600 text-white text-[9px] font-black uppercase px-1.5 py-0.5 rounded shadow">
+                                Dihentikan
+                            </span>
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-sm font-bold text-gray-900 truncate">{{ $itemForce->judul }}</h4>
+                            @if (!empty($itemForce->sub_judul))
+                            <p class="text-xs text-gray-500 truncate">{{ $itemForce->sub_judul }}</p>
+                            @endif
+
+                            {{-- Alasan Penghentian --}}
+                            <div class="mt-2 text-xs">
+                                <span class="font-bold text-orange-800">Alasan:</span>
+                                <span class="text-gray-700 font-medium">{{ $itemForce->force_complete_alasan ?? 'Diselesaikan paksa oleh admin' }}</span>
+                            </div>
+
+                            @if (!empty($itemForce->force_complete_catatan))
+                            <div class="mt-1.5 rounded-xl bg-white/90 border border-orange-200/60 p-2 text-xs text-gray-600">
+                                <span class="font-bold text-orange-800 text-[11px] block">Catatan Admin:</span>
+                                <p class="mt-0.5 text-gray-700 italic">{{ $itemForce->force_complete_catatan }}</p>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    {{-- Status Rentang Jadwal & Tombol Menu Iklan --}}
+                    <div class="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0">
+                        <div class="text-left lg:text-right">
+                            @if ($isStillActive)
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-[11px] font-bold">
+                                    <i class="bi bi-calendar-check"></i> Rentang Masih Aktif
+                                </span>
+                                <p class="text-[10px] text-gray-400 mt-0.5">Dapat direaktifkan admin hingga {{ \Carbon\Carbon::parse($itemForce->tanggal_akhir)->format('d M Y') }}</p>
+                            @else
+                                <span class="inline-flex items-center gap-1 rounded-full bg-gray-100 text-gray-600 px-2.5 py-0.5 text-[11px] font-bold">
+                                    Tenggat Berakhir
+                                </span>
+                            @endif
+                        </div>
+                        <a href="{{ route('buat-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-orange-500/25 active:scale-95">
+                            <i class="bi bi-megaphone"></i> Buka Iklan
+                        </a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         <!-- Perbandingan Pemasukan (Charts) -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
             <!-- Pemasukan Pertahun -->
@@ -253,7 +336,7 @@
             
             <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
                 @forelse ($peralatan_terlaris as $item)
-                    <div class="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col">
+                    <a href="{{ route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($item->id)]) }}" class="bg-white rounded-[20px] shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group flex flex-col">
                         <div class="relative w-full pt-[75%] overflow-hidden bg-gray-50">
                             <img src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}" 
                                 onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'" 
@@ -272,10 +355,19 @@
                                 <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md self-start">
                                     {{ $item->total_sewa }}x disewa
                                 </span>
-                                <span class="text-[14px] font-black text-emerald-600">Rp {{ number_format($item->harga ?? 0, 0, ',', '.') }}<span class="text-[10px] text-gray-400 font-medium">/hari</span></span>
+                                <div class="flex items-baseline gap-1">
+                                    <span class="text-[14px] font-black text-emerald-600">
+                                        @if ($item->harga_sewa_min && $item->harga_sewa_max && $item->harga_sewa_min != $item->harga_sewa_max)
+                                            Rp {{ number_format($item->harga_sewa_min, 0, ',', '.') }} - {{ number_format($item->harga_sewa_max, 0, ',', '.') }}
+                                        @else
+                                            Rp {{ number_format($item->harga_sewa_min ?? $item->harga ?? 0, 0, ',', '.') }}
+                                        @endif
+                                    </span>
+                                    <span class="text-[10px] text-gray-400 font-medium">/hari</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </a>
                 @empty
                     <div class="col-span-2 md:col-span-3 lg:col-span-5 p-12 bg-white rounded-[24px] border border-dashed border-gray-300 flex flex-col items-center justify-center text-center">
                         <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">

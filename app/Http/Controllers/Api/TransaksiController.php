@@ -13,7 +13,9 @@ use App\Models\Penyewaan;
 use App\Models\Produk;
 use App\Models\User;
 use App\Models\VariantProduk;
+use App\Models\CustomerNotification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -200,6 +202,54 @@ class TransaksiController extends Controller
 
             $detail_penyewaan = DetailPenyewaan::where('id_penyewaan', $table_penyewaan->id)->get();
 
+            // Kirim notifikasi customer untuk pesanan sewa baru
+            try {
+                $renterName = $user->name ?? 'Pelanggan';
+                $productIds = collect($resolved_variants)->pluck('input.id_produk')->unique()->filter();
+                $products = Produk::whereIn('id', $productIds)->get();
+                $productsByMitra = $products->groupBy('id_user');
+
+                foreach ($productsByMitra as $mitraId => $mitraProducts) {
+                    if (!$mitraId) continue;
+
+                    $productNames = $mitraProducts->pluck('nama')->take(2)->implode(', ');
+                    if ($mitraProducts->count() > 2) {
+                        $productNames .= ' dan ' . ($mitraProducts->count() - 2) . ' produk lainnya';
+                    }
+
+                    $judulNotif = 'Pesanan Sewa Baru';
+                    $pesanNotif = "Pelanggan {$renterName} telah melakukan checkout pemesanan sewa untuk {$productNames}. Total: Rp " . number_format($total_semua, 0, ',', '.') . ". Segera periksa dan konfirmasi di menu Order Masuk.";
+                    $urlNotif = route('menu-transaksi.terima-order-masuk', ['id_penyewaan' => Crypt::encrypt($table_penyewaan->id)], false);
+
+                    CustomerNotification::notifyCustomer(
+                        $mitraId,
+                        'pesanan_masuk',
+                        $judulNotif,
+                        $pesanNotif,
+                        null,
+                        $urlNotif,
+                        $table_penyewaan->id
+                    );
+                }
+
+                // Notifikasi ke penyewa
+                $semuaProduk = $products->pluck('nama')->take(2)->implode(', ');
+                if ($products->count() > 2) {
+                    $semuaProduk .= ' dan ' . ($products->count() - 2) . ' produk lainnya';
+                }
+                CustomerNotification::notifyCustomer(
+                    $id_user,
+                    'pesanan_masuk',
+                    'Pesanan Sewa Berhasil Dibuat',
+                    "Pesanan sewa Anda (#{$table_penyewaan->id}) untuk {$semuaProduk} berhasil dibuat. Silakan selesaikan pembayaran dan tunggu konfirmasi mitra.",
+                    null,
+                    route('menu-transaksi.index', ['id_user' => Crypt::encrypt($id_user)], false),
+                    $table_penyewaan->id
+                );
+            } catch (\Exception $notifEx) {
+                Log::error('Gagal mengirim CustomerNotification saat checkout: ' . $notifEx->getMessage());
+            }
+
             return response()->json([
                 'message' => 'success',
                 'penyewaan' => $table_penyewaan,
@@ -271,6 +321,35 @@ class TransaksiController extends Controller
             }
 
             $pembayaran->save();
+
+            // Notifikasi ke mitra pemilik produk bahwa bukti pembayaran telah diunggah
+            try {
+                $penyewaan = Penyewaan::find($request->id_penyewaan);
+                if ($penyewaan) {
+                    $renter = User::find($penyewaan->id_user);
+                    $renterName = $renter->name ?? 'Pelanggan';
+
+                    $detailPenyewaan = DetailPenyewaan::where('id_penyewaan', $penyewaan->id)->get();
+                    $productIds = $detailPenyewaan->pluck('id_produk')->unique()->filter();
+                    $products = Produk::whereIn('id', $productIds)->get();
+                    $mitraIds = $products->pluck('id_user')->unique()->filter();
+
+                    foreach ($mitraIds as $mitraId) {
+                        if (!$mitraId) continue;
+                        CustomerNotification::notifyCustomer(
+                            $mitraId,
+                            'pembayaran_masuk',
+                            'Bukti Pembayaran Diunggah',
+                            "Pelanggan {$renterName} telah mengunggah bukti pembayaran untuk pesanan sewa #{$penyewaan->id}. Silakan periksa mutasi dan verifikasi pembayaran di menu Order Masuk.",
+                            null,
+                            route('menu-transaksi.terima-order-masuk', ['id_penyewaan' => Crypt::encrypt($penyewaan->id)], false),
+                            $penyewaan->id
+                        );
+                    }
+                }
+            } catch (\Exception $notifEx) {
+                Log::error('Gagal mengirim CustomerNotification saat pembayaran: ' . $notifEx->getMessage());
+            }
 
             return response()->json(['message' => 'Pembayaran berhasil disimpan', 'data' => $pembayaran], 201);
         } catch (\Exception $error) {
@@ -471,6 +550,7 @@ class TransaksiController extends Controller
                     ),
                     'penyewaan.status_penyewaan',
                     'pembayaran_penyewaan.status_pembayaran',
+                    'pembayaran_penyewaan.bukti_pembayaran',
                     'pembayaran_penyewaan.metode',
                     DB::raw('AVG(rating_produk.rating) as rating'),
                     'detail_penyewaan.subtotal as harga',
@@ -511,6 +591,7 @@ class TransaksiController extends Controller
                 'penyewaan.tanggal_mulai',
                 'penyewaan.status_penyewaan',
                 'pembayaran_penyewaan.status_pembayaran',
+                'pembayaran_penyewaan.bukti_pembayaran',
                 'pembayaran_penyewaan.metode',
                 'pembayaran_penyewaan.total_pembayaran',
                 'pembayaran_penyewaan.biaya_antar',
@@ -544,10 +625,18 @@ class TransaksiController extends Controller
 
                 // Menentukan status transaksi format frontend
                 $status_transaksi = 'Belum Bayar';
-                if ($first_item->status_penyewaan == 'Pending' && $first_item->status_pembayaran == 'Belum lunas') {
-                    $status_transaksi = 'Belum Bayar';
-                } elseif ($first_item->status_penyewaan == 'Pending' && $first_item->status_pembayaran == 'Lunas') {
-                    $status_transaksi = 'Pending';
+                $is_cod = strtoupper($first_item->metode ?? '') === 'COD' || stripos($first_item->metode ?? '', 'ditempat') !== false;
+
+                if ($first_item->status_penyewaan == 'Pending') {
+                    if ($first_item->status_pembayaran == 'Menunggu Verifikasi' || (!empty($first_item->bukti_pembayaran) && $first_item->bukti_pembayaran !== 'Belum di isi')) {
+                        $status_transaksi = 'Menunggu Verifikasi';
+                    } elseif ($first_item->status_pembayaran == 'Lunas') {
+                        $status_transaksi = 'Pending';
+                    } elseif ($is_cod) {
+                        $status_transaksi = 'COD (Bayar Ditempat)';
+                    } else {
+                        $status_transaksi = 'Belum Bayar';
+                    }
                 } elseif ($first_item->status_penyewaan == 'Pengambilan') {
                     $status_transaksi = 'Pengambilan';
                 } elseif ($first_item->status_penyewaan == 'Aktif') {
@@ -628,6 +717,7 @@ class TransaksiController extends Controller
 
                   $history_data[] = [
                       'id_transaksi' => $first_item->id_penyewaan,
+                      'id_produk' => $first_item->id_produk,
                       'nama_toko' => $first_item->name_store,
                       'foto_produk' => $foto_produk,
                       'nama_produk' => $first_item->nama_produk,
@@ -640,6 +730,8 @@ class TransaksiController extends Controller
                       'rating' => $first_item->rating ?? 0,
                       'hari' => (int) filter_var($first_item->durasi, FILTER_SANITIZE_NUMBER_INT),
                       'status_transaksi' => $status_transaksi,
+                      'status_pembayaran' => $first_item->status_pembayaran,
+                      'bukti_pembayaran' => $first_item->bukti_pembayaran,
                       'metode' => $first_item->metode,
                       'tanggal_mulai' => $first_item->tanggal_mulai,
                       'tanggal_selesai' => $first_item->tanggal_selesai,
@@ -756,6 +848,32 @@ class TransaksiController extends Controller
             $penyewaan->save();
 
             $this->restoreStok($id_penyewaan);
+
+            // Notifikasi ke mitra pemilik produk bahwa pesanan telah dibatalkan oleh pelanggan
+            try {
+                $renter = User::find($penyewaan->id_user);
+                $renterName = $renter->name ?? 'Pelanggan';
+
+                $detailPenyewaan = DetailPenyewaan::where('id_penyewaan', $penyewaan->id)->get();
+                $productIds = $detailPenyewaan->pluck('id_produk')->unique()->filter();
+                $products = Produk::whereIn('id', $productIds)->get();
+                $mitraIds = $products->pluck('id_user')->unique()->filter();
+
+                foreach ($mitraIds as $mitraId) {
+                    if (!$mitraId) continue;
+                    CustomerNotification::notifyCustomer(
+                        $mitraId,
+                        'pesanan_dibatalkan',
+                        'Pesanan Dibatalkan Pelanggan',
+                        "Pelanggan {$renterName} telah membatalkan pesanan sewa #{$penyewaan->id}. Stok produk telah otomatis dikembalikan.",
+                        null,
+                        route('menu-transaksi.index', ['id_user' => Crypt::encrypt($mitraId)], false),
+                        $penyewaan->id
+                    );
+                }
+            } catch (\Exception $notifEx) {
+                Log::error('Gagal mengirim CustomerNotification saat pembatalan pesanan: ' . $notifEx->getMessage());
+            }
 
             return response()->json(['message' => 'Pesanan berhasil dibatalkan dan stok dikembalikan'], 200);
         } catch (\Exception $error) {

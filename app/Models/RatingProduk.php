@@ -28,4 +28,22 @@ class RatingProduk extends Model
     {
         return $this->belongsTo(Produk::class, 'id_produk');
     }
+
+    public function getFotosUlasanAttribute()
+    {
+        $fotoList = [];
+        if (!empty($this->foto_ulasan)) {
+            $decoded = json_decode($this->foto_ulasan, true);
+            if (is_array($decoded)) {
+                foreach ($decoded as $fn) {
+                    if (!empty($fn)) {
+                        $fotoList[] = asset('assets/image/reviews/' . trim($fn));
+                    }
+                }
+            } elseif (is_string($this->foto_ulasan) && trim($this->foto_ulasan) !== '') {
+                $fotoList[] = asset('assets/image/reviews/' . trim($this->foto_ulasan));
+            }
+        }
+        return $fotoList;
+    }
 }

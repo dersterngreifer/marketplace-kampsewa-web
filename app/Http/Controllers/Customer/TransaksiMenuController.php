@@ -140,21 +140,27 @@ class TransaksiMenuController extends Controller
             ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
             ->select(
                 'users.id as id_user',
-                'users.name',
+                DB::raw('COALESCE(users.name, penyewaan.nama_pelanggan_offline, "Pelanggan Offline") as name'),
                 'users.foto',
-                'users.nomor_telephone',
-                'users.jenis_kelamin',
+                DB::raw('COALESCE(users.nomor_telephone, penyewaan.no_hp_offline, "-") as nomor_telephone'),
+                DB::raw('COALESCE(users.jenis_kelamin, "-") as jenis_kelamin'),
                 'penyewaan.id as id_penyewaan',
+                'penyewaan.tipe_pesanan',
+                'penyewaan.nama_pelanggan_offline',
+                'penyewaan.no_hp_offline',
                 'penyewaan.tanggal_mulai',
                 'penyewaan.tanggal_selesai',
                 'penyewaan.status_penyewaan',
                 'penyewaan.pesan',
                 'penyewaan.opsi_pengiriman',
                 'penyewaan.alamat_pengiriman',
+                'penyewaan.created_at',
                 'pembayaran_penyewaan.id as id_pembayaran',
                 'pembayaran_penyewaan.bukti_pembayaran',
                 'pembayaran_penyewaan.jaminan_sewa',
                 'pembayaran_penyewaan.jumlah_pembayaran',
+                'pembayaran_penyewaan.kembalian_pembayaran',
+                'pembayaran_penyewaan.kurang_pembayaran',
                 'pembayaran_penyewaan.total_pembayaran',
                 'pembayaran_penyewaan.status_pembayaran',
                 'pembayaran_penyewaan.metode',
@@ -164,17 +170,19 @@ class TransaksiMenuController extends Controller
             )->where('penyewaan.id', $id_penyewaan_decrypt)->first();
 
         // Query untuk data dari tabel 'bank'
-        $banks = Bank::where('id_user', $singleData->id_user)->get();
+        $banks = $singleData->id_user ? Bank::where('id_user', $singleData->id_user)->get() : collect();
 
         // Query untuk data dari tabel 'alamat'
-        $address = Alamat::where('id_user', $singleData->id_user)->where('type', 0)->first();
+        $address = $singleData->id_user ? Alamat::where('id_user', $singleData->id_user)->where('type', 0)->first() : null;
 
         if ($address) {
             $latitude = $address->latitude;
             $longitude = $address->longitude;
             $addressString = $this->getAddressFromCoordinates($latitude, $longitude);
+        } elseif (($singleData->tipe_pesanan ?? '') === 'offline') {
+            $addressString = 'Transaksi Langsung di Toko (Kasir Offline / Walk-in)';
         } else {
-            $addressString = 'Address not found'; // Atau sesuaikan dengan penanganan kasus jika alamat tidak ditemukan
+            $addressString = 'Alamat belum diatur oleh penyewa';
         }
 
         // Query untuk data dari tabel 'detail_penyewaan' dan mengelompokkan berdasarkan id_produk
@@ -191,6 +199,7 @@ class TransaksiMenuController extends Controller
                 'detail_penyewaan.warna_produk',
                 'detail_penyewaan.ukuran',
                 'detail_penyewaan.qty',
+                'detail_penyewaan.harga_sewa_satuan',
                 'detail_penyewaan.subtotal'
             )
             ->where('detail_penyewaan.id_penyewaan', $id_penyewaan_decrypt)
@@ -640,8 +649,8 @@ class TransaksiMenuController extends Controller
         $filter_tanggal_akhir = $request->query('tanggal_akhir');
         $search = $request->query('search');
 
-        // Query untuk mengambil data transaksi
-        $query = User::leftJoin('penyewaan', 'users.id', '=', 'penyewaan.id_user')
+        // Query untuk mengambil data transaksi (termasuk Kasir Offline)
+        $query = Penyewaan::leftJoin('users', 'users.id', '=', 'penyewaan.id_user')
             ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
             ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
             ->leftJoin('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
@@ -654,7 +663,9 @@ class TransaksiMenuController extends Controller
             ->select(
                 'users.id as id_user_penyewa',
                 'users.foto as foto_users',
-                'users.name as nama_penyewa',
+                DB::raw('COALESCE(penyewaan.nama_pelanggan_offline, users.name, "Pelanggan Offline") as nama_penyewa'),
+                'penyewaan.tipe_pesanan',
+                'penyewaan.no_hp_offline',
                 'penyewaan.id as id_penyewaan',
                 'penyewaan.tanggal_mulai',
                 'penyewaan.tanggal_selesai',
@@ -666,7 +677,8 @@ class TransaksiMenuController extends Controller
                 'produk.nama'
             )
             ->where('penyewa.id', $id_user_decrypt)
-            ->where('penyewaan.status_penyewaan', 'Aktif');
+            ->where('penyewaan.status_penyewaan', 'Aktif')
+            ->orderBy('penyewaan.created_at', 'desc');
 
         // Filter berdasarkan rentang tanggal jika ada
         if ($filter_tanggal_awal && $filter_tanggal_akhir) {
@@ -678,7 +690,11 @@ class TransaksiMenuController extends Controller
         }
 
         if ($search) {
-            $query->where('users.name', 'like', '%' . $search . '%');
+            $query->where(function ($q) use ($search) {
+                $q->where('users.name', 'like', '%' . $search . '%')
+                  ->orWhere('penyewaan.nama_pelanggan_offline', 'like', '%' . $search . '%')
+                  ->orWhere('penyewaan.no_hp_offline', 'like', '%' . $search . '%');
+            });
         }
 
         $data = $query->get();
@@ -741,8 +757,8 @@ class TransaksiMenuController extends Controller
             $filter = $request->query('filter-order-selesai');
             $search = $request->query('search');
 
-            // Query untuk mengambil data transaksi
-            $query = User::leftJoin('penyewaan', 'users.id', '=', 'penyewaan.id_user')
+            // Query untuk mengambil data transaksi (termasuk Kasir Offline)
+            $query = Penyewaan::leftJoin('users', 'users.id', '=', 'penyewaan.id_user')
                 ->leftJoin('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
                 ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
                 ->leftJoin('pengembalian', 'penyewaan.id', '=', 'pengembalian.id_penyewaan')
@@ -756,7 +772,9 @@ class TransaksiMenuController extends Controller
                 ->select(
                     'users.id as id_user_penyewa',
                     'users.foto as foto_users',
-                    'users.name as nama_penyewa',
+                    DB::raw('COALESCE(penyewaan.nama_pelanggan_offline, users.name, "Pelanggan Offline") as nama_penyewa'),
+                    'penyewaan.tipe_pesanan',
+                    'penyewaan.no_hp_offline',
                     'penyewaan.id as id_penyewaan',
                     'penyewaan.tanggal_mulai',
                     'penyewaan.tanggal_selesai',
@@ -768,7 +786,8 @@ class TransaksiMenuController extends Controller
                     'foto_produk.url_foto as foto',
                     'produk.nama'
                 )
-                ->where('penyewa.id', $id_user_decrypt);
+                ->where('penyewa.id', $id_user_decrypt)
+                ->orderBy('penyewaan.created_at', 'desc');
 
             if ($filter && $filter != 'Semua') {
                 if ($filter == 'Selesai Belum Lunas') {
@@ -787,7 +806,11 @@ class TransaksiMenuController extends Controller
             }
 
             if ($search) {
-                $query->where('users.name', 'like', '%' . $search . '%');
+                $query->where(function ($q) use ($search) {
+                    $q->where('users.name', 'like', '%' . $search . '%')
+                      ->orWhere('penyewaan.nama_pelanggan_offline', 'like', '%' . $search . '%')
+                      ->orWhere('penyewaan.no_hp_offline', 'like', '%' . $search . '%');
+                });
             }
 
             $data = $query->get();

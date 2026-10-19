@@ -118,8 +118,38 @@
                                 <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col group-hover:-translate-y-1">
                                     <!-- Image Container -->
                                     <div class="relative w-full aspect-square overflow-hidden bg-gray-50">
+                                        @php
+                                            $fotoFirst = ($item->foto && $item->foto->count() > 0) ? $item->foto->first() : null;
+                                            $rawFoto = $fotoFirst->url_foto ?? ($item->foto_product ?? ($item->url_foto ?? null));
+                                            if (empty($rawFoto) && !empty($item->id_produk)) {
+                                                $dbFoto = \App\Models\FotoProduk::where('id_produk', $item->id_produk)->orderBy('urutan', 'asc')->first();
+                                                $rawFoto = $dbFoto ? $dbFoto->url_foto : null;
+                                            }
+
+                                            if (!empty($rawFoto)) {
+                                                if (preg_match('/^(https?:\/\/|\/\/)/i', $rawFoto)) {
+                                                    // Jika dari database berbentuk URL eksternal
+                                                    $fotoSrc = $rawFoto;
+                                                } else {
+                                                    // Jika berupa path/nama file di local server public/assets/image/customers/produk
+                                                    $cleanPath = ltrim(str_replace('\\', '/', $rawFoto), '/');
+                                                    if (str_starts_with($cleanPath, 'public/')) {
+                                                        $cleanPath = substr($cleanPath, 7);
+                                                    }
+                                                    if (str_starts_with($cleanPath, 'assets/image/customers/produk/')) {
+                                                        $fotoSrc = asset($cleanPath);
+                                                    } elseif (str_starts_with($cleanPath, 'assets/') || str_starts_with($cleanPath, 'images/')) {
+                                                        $fotoSrc = asset($cleanPath);
+                                                    } else {
+                                                        $fotoSrc = asset('assets/image/customers/produk/' . $cleanPath);
+                                                    }
+                                                }
+                                            } else {
+                                                $fotoSrc = \App\Helpers\PhotoHelper::getThumbnailUrl($item);
+                                            }
+                                        @endphp
                                         <img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                            src="{{ \App\Helpers\PhotoHelper::getThumbnailUrl($item) }}"
+                                            src="{{ $fotoSrc }}"
                                             alt="{{ $item->nama_produk }}"
                                             onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                                         

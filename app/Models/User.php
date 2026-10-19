@@ -85,4 +85,14 @@ class User extends Authenticatable
     {
         return $this->hasOne(PengaturanPengirimanToko::class, 'id_user');
     }
+
+    public function produk()
+    {
+        return $this->hasMany(Produk::class, 'id_user');
+    }
+
+    public function penyewaan()
+    {
+        return $this->hasMany(Penyewaan::class, 'id_user');
+    }
 }

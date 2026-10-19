@@ -76,6 +76,11 @@ class Produk extends Model
         return $this->hasMany(VariantProduk::class, 'id_produk');
     }
 
+    public function variants()
+    {
+        return $this->hasMany(VariantProduk::class, 'id_produk');
+    }
+
     public function detailVariant()
     {
         return $this->hasManyThrough(DetailVariantProduk::class, VariantProduk::class, 'id_produk', 'id_variant_produk');

@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerNotification;
 use App\Models\DetailIklan;
 use App\Models\Iklan;
+use App\Models\IklanForceComplete;
 use App\Models\PemasukanPerusahaan;
 use App\Models\PembayaranIklan;
 use App\Models\PembayaranPenyewaan;
@@ -12,6 +14,7 @@ use App\Models\User;
 use App\Services\IklanService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use RealRashid\SweetAlert\Facades\Alert;
 
@@ -185,8 +188,19 @@ class IklanController extends Controller
 
         $data_iklan_suspend = $data_iklan_suspend->paginate(10, ['*'], 'suspend_page');
 
+        // Filter khusus arsip iklan selesai: semua, paksa, otomatis (waktu)
+        $filter_selesai = $request->query('filter_selesai', 'semua');
+
+        $count_selesai_semua = DetailIklan::where('status_iklan', 'like', '%selesai%')->count();
+        $count_selesai_paksa = DetailIklan::where('status_iklan', 'like', '%selesai%')
+            ->where('is_force_completed', true)->count();
+        $count_selesai_otomatis = DetailIklan::where('status_iklan', 'like', '%selesai%')
+            ->where(function ($q) {
+                $q->where('is_force_completed', false)->orWhereNull('is_force_completed');
+            })->count();
+
         // 10. Data iklan selesai (arsip tayang)
-        $data_iklan_selesai = User::join('iklan', 'users.id', '=', 'iklan.id_user')
+        $selesai_query = User::join('iklan', 'users.id', '=', 'iklan.id_user')
             ->join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
             ->leftJoin('produk', 'iklan.id_produk', '=', 'produk.id')
             ->leftJoin('pembayaran_iklan', 'iklan.id', '=', 'pembayaran_iklan.id_iklan')
@@ -210,11 +224,42 @@ class IklanController extends Controller
                 'detail_iklan.tanggal_akhir',
                 'detail_iklan.harga_iklan',
                 'detail_iklan.status_iklan',
+                'detail_iklan.is_force_completed',
+                'detail_iklan.force_complete_alasan',
+                'detail_iklan.force_complete_catatan',
+                'detail_iklan.force_completed_at',
                 DB::raw('DATEDIFF(detail_iklan.tanggal_akhir, detail_iklan.tanggal_mulai) as durasi_hari'),
                 'pembayaran_iklan.total_bayar as nominal_bayar'
-            )
+            );
+
+        if ($filter_selesai === 'paksa') {
+            $selesai_query->where('detail_iklan.is_force_completed', true);
+        } elseif ($filter_selesai === 'otomatis' || $filter_selesai === 'waktu') {
+            $selesai_query->where(function ($q) {
+                $q->where('detail_iklan.is_force_completed', false)->orWhereNull('detail_iklan.is_force_completed');
+            });
+        }
+
+        if (!empty($cari)) {
+            $selesai_query->where(function ($query) use ($cari) {
+                $query->where('users.name', 'like', '%' . $cari . '%')
+                    ->orWhere('users.name_store', 'like', '%' . $cari . '%')
+                    ->orWhere('users.email', 'like', '%' . $cari . '%')
+                    ->orWhere('iklan.judul', 'like', '%' . $cari . '%')
+                    ->orWhere('iklan.sub_judul', 'like', '%' . $cari . '%')
+                    ->orWhere('detail_iklan.force_complete_alasan', 'like', '%' . $cari . '%');
+            });
+        }
+
+        // Iklan diselesaikan paksa selalu diurutkan paling atas, lalu tanggal_akhir
+        $data_iklan_selesai = $selesai_query
+            ->orderByDesc('detail_iklan.is_force_completed')
+            ->orderByDesc('detail_iklan.force_completed_at')
             ->orderByDesc('detail_iklan.tanggal_akhir')
-            ->distinct()->paginate(10);
+            ->distinct()
+            ->paginate(10, ['*'], 'selesai_page')
+            ->appends(['filter_selesai' => $filter_selesai, 'cari' => $cari]);
+
         $get_count_iklan_selesai = $data_iklan_selesai->total();
 
         // 11. Data iklan aktif (maksimal 15 iklan tayang)
@@ -305,6 +350,10 @@ class IklanController extends Controller
             'user_pending'                  => $user_pending,
             'data_iklan_suspend'            => $data_iklan_suspend,
             'cari'                          => $cari,
+            'filter_selesai'                => $filter_selesai,
+            'count_selesai_semua'           => $count_selesai_semua,
+            'count_selesai_paksa'           => $count_selesai_paksa,
+            'count_selesai_otomatis'        => $count_selesai_otomatis,
             'data_iklan_selesai'            => $data_iklan_selesai,
             'data_iklan_aktif'              => $data_iklan_aktif,
             'get_count_iklan_selesai'       => $get_count_iklan_selesai,
@@ -367,6 +416,20 @@ class IklanController extends Controller
             }
         }
 
+        // Kirim notifikasi ke user customer
+        $iklan = Iklan::find($detail->id_iklan);
+        if ($iklan && $iklan->id_user) {
+            CustomerNotification::notifyCustomer(
+                $iklan->id_user,
+                'iklan_reaktif',
+                'Iklan Anda Telah Dipulihkan / Diaktifkan',
+                'Iklan promosi "' . $iklan->judul . '" telah dipulihkan dan diaktifkan kembali oleh admin.',
+                null,
+                route('buat-iklan.index', ['id_user' => Crypt::encrypt($iklan->id_user)], false),
+                $iklan->id
+            );
+        }
+
         Alert::toast('Iklan berhasil diaktifkan / dipulihkan.', 'success');
         return back();
     }
@@ -402,6 +465,17 @@ class IklanController extends Controller
             'status_revisi'   => 'menunggu_perbaikan',
         ]);
 
+        // Kirim notifikasi ke customer
+        CustomerNotification::notifyCustomer(
+            $iklan->id_user,
+            'iklan_suspend',
+            'Iklan Ditangguhkan (Suspend)',
+            'Iklan promosi "' . $iklan->judul . '" telah ditangguhkan oleh admin. Alasan: ' . $request->input('alasan') . '. Silakan periksa rincian perbaikan di dashboard.',
+            $request->input('alasan'),
+            route('buat-iklan.index', ['id_user' => Crypt::encrypt($iklan->id_user)], false),
+            $iklan->id
+        );
+
         // Jalankan sinkronisasi untuk mengisi slot dari antrian pending jika ada yang eligible
         IklanService::autoSyncStatusIklan();
 
@@ -410,21 +484,130 @@ class IklanController extends Controller
     }
 
     /**
-     * Admin menyelesaikan iklan (mark as selesai).
+     * Admin menyelesaikan iklan secara paksa (force complete) dengan mencatat alasan dan catatan.
      * Otomatis membuka slot untuk antrian pending berikutnya.
      */
-    public function selesaikanIklan($id_detail_iklan)
+    public function selesaikanIklan(Request $request, $id_detail_iklan)
     {
+        $request->validate([
+            'alasan'  => 'required|string|max:255',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
         $detail = DetailIklan::findOrFail($id_detail_iklan);
-        $detail->update(['status_iklan' => 'Selesai']);
+        $iklan = Iklan::findOrFail($detail->id_iklan);
+
+        $detail->update([
+            'status_iklan'           => 'Selesai',
+            'is_force_completed'     => true,
+            'force_complete_alasan'  => $request->input('alasan'),
+            'force_complete_catatan' => $request->input('catatan'),
+            'force_completed_at'     => now(),
+        ]);
 
         // Sinkronkan status tabel iklan
-        Iklan::where('id', $detail->id_iklan)->update(['status' => 'expired']);
+        $iklan->update(['status' => 'expired']);
+
+        // Catat alasan penyelesaian paksa ke tabel riwayat iklan_force_completes
+        IklanForceComplete::create([
+            'id_iklan'        => $iklan->id,
+            'id_detail_iklan' => $detail->id,
+            'id_user'         => $iklan->id_user,
+            'alasan'          => $request->input('alasan'),
+            'catatan'         => $request->input('catatan'),
+            'status'          => 'selesai_paksa',
+        ]);
+
+        // Kirim notifikasi ke customer
+        CustomerNotification::notifyCustomer(
+            $iklan->id_user,
+            'iklan_force_complete',
+            'Iklan Diselesaikan Lebih Awal (Paksa)',
+            'Iklan promosi "' . $iklan->judul . '" telah diselesaikan lebih awal oleh admin. Alasan: ' . $request->input('alasan') . '.',
+            $request->input('alasan'),
+            route('buat-iklan.index', ['id_user' => Crypt::encrypt($iklan->id_user)], false),
+            $iklan->id
+        );
 
         // Jalankan sinkronisasi untuk mengisi slot dari antrian pending jika ada yang eligible
         IklanService::autoSyncStatusIklan();
 
-        Alert::toast('Iklan telah diselesaikan.', 'success');
+        Alert::success('Iklan Diselesaikan Paksa', 'Iklan promosi berhasil diselesaikan lebih awal dan dicatat ke arsip selesai. Slot baru kini terbuka untuk antrian pending.')->persistent(true);
+        return back();
+    }
+
+    /**
+     * Admin mengaktifkan kembali (Reaktifkan) iklan yang diselesaikan paksa
+     * selama masa tayang (rentang tanggal mulai - tanggal akhir) masih berlaku.
+     */
+    public function reaktifkanIklan($id_detail_iklan)
+    {
+        // Jalankan auto-sync terlebih dahulu
+        IklanService::autoSyncStatusIklan();
+
+        $detail = DetailIklan::findOrFail($id_detail_iklan);
+        $iklan = Iklan::findOrFail($detail->id_iklan);
+
+        $today = Carbon::today();
+
+        // 1. Validasi rentang tanggal aktif: tanggal_akhir wajib >= today
+        if (Carbon::parse($detail->tanggal_akhir)->lt($today)) {
+            Alert::error(
+                'Tidak Dapat Direaktifkan',
+                'Masa tayang iklan ini telah kadaluarsa (telah melewati ' . Carbon::parse($detail->tanggal_akhir)->format('d M Y') . ') sehingga tidak dapat diaktifkan kembali.'
+            )->persistent(true);
+            return back();
+        }
+
+        // 2. Tentukan status target (Aktif jika sudah masuk jadwal, Pending jika belum tiba tanggal_mulai)
+        $statusTarget = ($today >= Carbon::parse($detail->tanggal_mulai)) ? 'Aktif' : 'Pending';
+
+        // 3. Jika target Aktif, periksa kuota slot aktif platform (maksimal 15)
+        if ($statusTarget === 'Aktif' && !IklanService::isSlotAvailable()) {
+            Alert::warning(
+                'Slot Iklan Penuh (15/15)',
+                'Saat ini kapasitas iklan aktif sudah mencapai batas maksimal ' . IklanService::MAX_IKLAN_AKTIF . ' iklan. Silakan selesaikan atau nonaktifkan salah satu iklan aktif terlebih dahulu untuk membuka slot reaktivasi.'
+            )->persistent(true);
+            return back();
+        }
+
+        // 4. Perbarui status detail iklan dan bersihkan flag force completed
+        $detail->update([
+            'status_iklan'           => $statusTarget,
+            'is_force_completed'     => false,
+            'force_complete_alasan'  => null,
+            'force_complete_catatan' => null,
+            'force_completed_at'     => null,
+        ]);
+
+        $iklan->update([
+            'status' => ($statusTarget === 'Aktif') ? 'active' : 'inactive',
+        ]);
+
+        // Perbarui status log jika ada
+        IklanForceComplete::where('id_detail_iklan', $detail->id)
+            ->where('status', 'selesai_paksa')
+            ->update(['status' => 'direaktifkan']);
+
+        // Kirim notifikasi ke customer
+        CustomerNotification::notifyCustomer(
+            $iklan->id_user,
+            'iklan_reaktif',
+            'Iklan Berhasil Direaktifkan Kembali!',
+            'Iklan promosi "' . $iklan->judul . '" telah direaktifkan kembali oleh admin dan kini berstatus ' . $statusTarget . '.',
+            null,
+            route('buat-iklan.index', ['id_user' => Crypt::encrypt($iklan->id_user)], false),
+            $iklan->id
+        );
+
+        // Jalankan sinkronisasi status platform
+        IklanService::autoSyncStatusIklan();
+
+        $pesan = ($statusTarget === 'Aktif')
+            ? 'Iklan berhasil direaktifkan dan sedang tayang di aplikasi mobile.'
+            : 'Iklan berhasil direaktifkan dan ditempatkan ke antrian pending (menunggu tanggal mulai).';
+
+        Alert::success('Iklan Berhasil Direaktifkan', $pesan)->persistent(true);
         return back();
     }
 

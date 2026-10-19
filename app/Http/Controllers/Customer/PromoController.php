@@ -63,16 +63,24 @@ class PromoController extends Controller
 
         $activeStoreWide = PromoService::getActiveStoreWidePromo($userId);
 
+        $forceCompletedAdsCount = DB::table('detail_iklan')
+            ->join('iklan', 'detail_iklan.id_iklan', '=', 'iklan.id_iklan')
+            ->where('iklan.id_user', $userId)
+            ->where('detail_iklan.is_force_completed', true)
+            ->where('detail_iklan.tanggal_akhir', '>=', Carbon::today()->toDateString())
+            ->count();
+
         return view('customers.menu-promo.index', [
-            'title'           => 'Diskon Produk Toko | KampSewa',
-            'id_user'         => $id_user,
-            'id_user_dec'     => $userId,
-            'promos'          => $promos,
-            'activeStoreWide' => $activeStoreWide,
-            'totalActive'     => $totalActive,
-            'totalDraft'      => $totalDraft,
-            'totalExpired'    => $totalExpired,
-            'now'             => $now,
+            'title'                  => 'Diskon Produk Toko | KampSewa',
+            'id_user'                => $id_user,
+            'id_user_dec'            => $userId,
+            'promos'                 => $promos,
+            'activeStoreWide'        => $activeStoreWide,
+            'totalActive'            => $totalActive,
+            'totalDraft'             => $totalDraft,
+            'totalExpired'           => $totalExpired,
+            'forceCompletedAdsCount' => $forceCompletedAdsCount,
+            'now'                    => $now,
         ]);
     }
 

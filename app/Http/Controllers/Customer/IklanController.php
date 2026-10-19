@@ -141,6 +141,31 @@ class IklanController extends Controller
                 'durasi_hari'
             )->get();
 
+        // Iklan yang diselesaikan paksa oleh admin
+        $iklan_force_completed = Iklan::join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
+            ->leftJoin('pembayaran_iklan', 'iklan.id', '=', 'pembayaran_iklan.id_iklan')
+            ->select(
+                'iklan.id as id_iklan',
+                'iklan.poster',
+                'iklan.judul',
+                'iklan.sub_judul',
+                'detail_iklan.id as id_detail_iklan',
+                'detail_iklan.tanggal_mulai',
+                'detail_iklan.tanggal_akhir',
+                'detail_iklan.harga_iklan',
+                'detail_iklan.status_iklan',
+                'detail_iklan.is_force_completed',
+                'detail_iklan.force_complete_alasan',
+                'detail_iklan.force_complete_catatan',
+                'detail_iklan.force_completed_at',
+                DB::raw('COALESCE(DATEDIFF(detail_iklan.tanggal_akhir, detail_iklan.tanggal_mulai), 0) as durasi_hari')
+            )
+            ->where('iklan.id_user', $user_id)
+            ->where('detail_iklan.status_iklan', 'Selesai')
+            ->where('detail_iklan.is_force_completed', true)
+            ->orderBy('detail_iklan.force_completed_at', 'desc')
+            ->get();
+
         // Riwayat iklan selesai
         $iklan_selesai = Iklan::join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
             ->join('users', 'users.id', '=', 'iklan.id_user')
@@ -152,6 +177,10 @@ class IklanController extends Controller
                 'detail_iklan.tanggal_mulai',
                 'detail_iklan.tanggal_akhir',
                 'detail_iklan.harga_iklan',
+                'detail_iklan.is_force_completed',
+                'detail_iklan.force_complete_alasan',
+                'detail_iklan.force_complete_catatan',
+                'detail_iklan.force_completed_at',
                 DB::raw('DATEDIFF(detail_iklan.tanggal_akhir, detail_iklan.tanggal_mulai) as durasi_hari')
             )->where('iklan.id_user', $user_id)
             ->where('detail_iklan.status_iklan', 'Selesai')
@@ -163,8 +192,16 @@ class IklanController extends Controller
                 'detail_iklan.tanggal_mulai',
                 'detail_iklan.tanggal_akhir',
                 'detail_iklan.harga_iklan',
+                'detail_iklan.is_force_completed',
+                'detail_iklan.force_complete_alasan',
+                'detail_iklan.force_complete_catatan',
+                'detail_iklan.force_completed_at',
                 'durasi_hari'
-            )->limit(5)->get();
+            )
+            ->orderByDesc('detail_iklan.is_force_completed')
+            ->orderByDesc('detail_iklan.force_completed_at')
+            ->orderByDesc('detail_iklan.tanggal_akhir')
+            ->limit(10)->get();
 
         // Iklan yang sedang ditangguhkan (suspend) oleh admin
         $iklan_suspend = Iklan::join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
@@ -218,6 +255,7 @@ class IklanController extends Controller
             'total_data_iklan' => $get_total_user_menggunakan_iklan,
             'iklan_belum_bayar' => $iklan_belum_bayar,
             'iklan_suspend' => $iklan_suspend,
+            'iklan_force_completed' => $iklan_force_completed,
             'iklan_berlangsung' => $iklan_berlangsung,
             'iklan_pending' => $iklan_pending,
             'iklan_selesai' => $iklan_selesai,
@@ -922,6 +960,9 @@ class IklanController extends Controller
             // Bersihkan otomatis transaksi iklan yang belum dibayar lebih dari 1 hari (24 jam)
             IklanService::autoCleanupUnpaidAds(24);
 
+            // Sinkronisasi status iklan (kadaluarsa -> Selesai)
+            IklanService::autoSyncStatusIklan();
+
             // Get the selected filter
             $filter = $request->input('filter_kelola_iklan', 'semua');
 
@@ -945,6 +986,10 @@ class IklanController extends Controller
                     'detail_iklan.tanggal_akhir',
                     'detail_iklan.harga_iklan',
                     'detail_iklan.status_iklan',
+                    'detail_iklan.is_force_completed',
+                    'detail_iklan.force_complete_alasan',
+                    'detail_iklan.force_complete_catatan',
+                    'detail_iklan.force_completed_at',
                     'pembayaran_iklan.status_bayar',
                     'pembayaran_iklan.midtrans_order_id',
                     DB::raw('COALESCE(DATEDIFF(detail_iklan.tanggal_akhir, detail_iklan.tanggal_mulai), 0) as durasi_hari'),
@@ -960,12 +1005,14 @@ class IklanController extends Controller
 
             // Tambahkan computed property status_tampilan
             $get_all_data->transform(function ($item) {
+                $isExpiredByDate = !empty($item->tanggal_akhir) && Carbon::today()->gt(Carbon::parse($item->tanggal_akhir));
+
                 if (empty($item->status_bayar) || strtolower($item->status_bayar) !== 'lunas') {
                     $item->status_tampilan = 'Menunggu Pembayaran';
+                } elseif (strcasecmp($item->status_iklan, 'Selesai') === 0 || $isExpiredByDate || !empty($item->is_force_completed)) {
+                    $item->status_tampilan = $item->is_force_completed ? 'Diselesaikan Paksa' : 'Selesai';
                 } elseif (strcasecmp($item->status_iklan, 'Nonaktif') === 0) {
                     $item->status_tampilan = 'Nonaktif';
-                } elseif (strcasecmp($item->status_iklan, 'Selesai') === 0) {
-                    $item->status_tampilan = 'Selesai';
                 } elseif (strcasecmp($item->status_iklan, 'Aktif') === 0) {
                     $item->status_tampilan = 'Aktif';
                 } else {
@@ -979,6 +1026,10 @@ class IklanController extends Controller
                 $filtered_data = $get_all_data->filter(function ($item) use ($filter) {
                     if ($filter === 'menunggu_pembayaran') {
                         return $item->status_tampilan === 'Menunggu Pembayaran';
+                    } elseif ($filter === 'selesai_paksa') {
+                        return (bool) $item->is_force_completed;
+                    } elseif ($filter === 'selesai') {
+                        return strcasecmp($item->status_iklan, 'Selesai') === 0;
                     }
                     return strcasecmp($item->status_tampilan, $filter) === 0;
                 });
@@ -990,8 +1041,9 @@ class IklanController extends Controller
             $iklan_belum_bayar = $get_all_data->filter(fn($item) => $item->status_tampilan === 'Menunggu Pembayaran');
             $iklan_berlangsung = $get_all_data->filter(fn($item) => $item->status_tampilan === 'Aktif');
             $iklan_pending = $get_all_data->filter(fn($item) => $item->status_tampilan === 'Pending');
-            $iklan_selesai = $get_all_data->filter(fn($item) => $item->status_tampilan === 'Selesai');
+            $iklan_selesai = $get_all_data->filter(fn($item) => strcasecmp($item->status_iklan, 'Selesai') === 0);
             $iklan_nonaktif = $get_all_data->filter(fn($item) => $item->status_tampilan === 'Nonaktif');
+            $iklan_force_completed = $get_all_data->filter(fn($item) => (bool) $item->is_force_completed);
 
             return view('customers.menu-iklan.kelola-iklan')->with([
                 'title' => 'Kelola Iklan',
@@ -1001,6 +1053,7 @@ class IklanController extends Controller
                 'iklan_pending' => $iklan_pending,
                 'iklan_selesai' => $iklan_selesai,
                 'iklan_nonaktif' => $iklan_nonaktif,
+                'iklan_force_completed' => $iklan_force_completed,
                 'all_iklan' => $filtered_data,
                 'selected_filter' => $filter,
             ]);
@@ -1042,6 +1095,16 @@ class IklanController extends Controller
         }
         $get_data = Iklan::where('id', $id_decrypt)->first();
         $detail_iklan = DetailIklan::where('id_iklan', $id_decrypt)->first();
+
+        // Validasi: Cegah edit jika iklan berstatus Selesai, Diselesaikan Paksa, atau tanggal akhir sudah lewat
+        if ($detail_iklan) {
+            $isExpired = !empty($detail_iklan->tanggal_akhir) && Carbon::today()->gt(Carbon::parse($detail_iklan->tanggal_akhir));
+            if (strcasecmp($detail_iklan->status_iklan, 'Selesai') === 0 || !empty($detail_iklan->is_force_completed) || $isExpired) {
+                Alert::warning('Iklan Tidak Dapat Diubah', 'Iklan ini telah berstatus selesai atau kadaluarsa sehingga tidak dapat diedit kembali.');
+                return back();
+            }
+        }
+
         $suspend_info = \App\Models\IklanSuspend::where('id_iklan', $id_decrypt)->latest()->first();
 
         return view('customers.menu-iklan.update-iklan')->with([
@@ -1089,6 +1152,16 @@ class IklanController extends Controller
             ]);
 
             $get_data = Iklan::findOrFail($id_iklan);
+            $detail_iklan = DetailIklan::where('id_iklan', $id_iklan)->first();
+
+            // Validasi: Cegah update jika iklan berstatus Selesai, Diselesaikan Paksa, atau tanggal akhir sudah lewat
+            if ($detail_iklan) {
+                $isExpired = !empty($detail_iklan->tanggal_akhir) && Carbon::today()->gt(Carbon::parse($detail_iklan->tanggal_akhir));
+                if (strcasecmp($detail_iklan->status_iklan, 'Selesai') === 0 || !empty($detail_iklan->is_force_completed) || $isExpired) {
+                    Alert::warning('Iklan Tidak Dapat Diubah', 'Iklan ini telah berstatus selesai atau kadaluarsa sehingga tidak dapat diedit kembali.');
+                    return back();
+                }
+            }
 
             $list_update = [
                 'judul' => request()->input('judul'),

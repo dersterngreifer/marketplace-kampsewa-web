@@ -107,11 +107,21 @@ class FollowController extends Controller
                     $avatarUrl = asset('assets/image/customers/profile/' . $item->foto);
                 }
 
+                $createdAt = null;
+                if (isset($item->pivot) && $item->pivot->created_at) {
+                    $createdAt = is_string($item->pivot->created_at)
+                        ? $item->pivot->created_at
+                        : $item->pivot->created_at->toIso8601String();
+                }
+
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
+                    'name_store' => $item->name_store,
+                    'is_toko' => $is_toko,
                     'avatar' => $avatarUrl,
-                    'is_followed_by_me' => $item->is_followed_by_me
+                    'is_followed_by_me' => $item->is_followed_by_me,
+                    'created_at' => $createdAt,
                 ];
             });
 
@@ -155,11 +165,21 @@ class FollowController extends Controller
                     $avatarUrl = asset('assets/image/customers/profile/' . $item->foto);
                 }
 
+                $createdAt = null;
+                if (isset($item->pivot) && $item->pivot->created_at) {
+                    $createdAt = is_string($item->pivot->created_at)
+                        ? $item->pivot->created_at
+                        : $item->pivot->created_at->toIso8601String();
+                }
+
                 return [
                     'id' => $item->id,
                     'name' => $item->name,
+                    'name_store' => $item->name_store,
+                    'is_toko' => $is_toko,
                     'avatar' => $avatarUrl,
-                    'is_followed_by_me' => $item->is_followed_by_me
+                    'is_followed_by_me' => $item->is_followed_by_me,
+                    'created_at' => $createdAt,
                 ];
             });
 

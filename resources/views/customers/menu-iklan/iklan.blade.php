@@ -4,6 +4,7 @@
         <!-- Header Page -->
         @php
             $hasSuspended = isset($iklan_suspend) && $iklan_suspend->count() > 0;
+            $hasForceCompleted = isset($iklan_force_completed) && $iklan_force_completed->count() > 0;
         @endphp
         <div class="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
@@ -11,12 +12,16 @@
                 <p class="text-sm text-gray-500 mt-1">Kelola dan tingkatkan visibilitas produk Anda di beranda.</p>
             </div>
             <a href="{{ route('kelola-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}"
-                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm {{ $hasSuspended ? 'border-2 border-red-500 bg-red-50 text-red-700 hover:bg-red-100 ring-4 ring-red-100' : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:text-blue-600' }}">
-                <i class="typcn typcn-cog-outline text-lg {{ $hasSuspended ? 'text-red-600' : '' }}"></i>
+                class="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl transition-all shadow-sm {{ $hasSuspended ? 'border-2 border-red-500 bg-red-50 text-red-700 hover:bg-red-100 ring-4 ring-red-100' : ($hasForceCompleted ? 'border-2 border-orange-400 bg-orange-50 text-orange-800 hover:bg-orange-100 ring-4 ring-orange-100' : 'text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 hover:text-blue-600') }}">
+                <i class="typcn typcn-cog-outline text-lg {{ $hasSuspended ? 'text-red-600' : ($hasForceCompleted ? 'text-orange-600' : '') }}"></i>
                 <span>Kelola Iklan</span>
                 @if ($hasSuspended)
                 <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-black rounded-full bg-red-600 text-white animate-pulse">
                     {{ $iklan_suspend->count() }} Ditangguhkan
+                </span>
+                @elseif ($hasForceCompleted)
+                <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-black rounded-full bg-orange-600 text-white">
+                    {{ $iklan_force_completed->count() }} Dihentikan
                 </span>
                 @endif
             </a>
@@ -51,6 +56,41 @@
                     <a href="{{ route('kelola-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}"
                         class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition shadow-md shadow-red-600/25 active:scale-95">
                         <i class="typcn typcn-cog-outline text-lg"></i> Buka Kelola Iklan & Perbaiki
+                    </a>
+                </div>
+            </div>
+        </div>
+        @endif
+
+        @if ($hasForceCompleted)
+        <!-- Kotak Box Warning Oranye/Rose Pemberitahuan Iklan Diselesaikan Paksa -->
+        <div class="mb-8 overflow-hidden rounded-3xl border-2 border-orange-300 bg-gradient-to-r from-orange-50 via-amber-50/70 to-white p-5 sm:p-6 shadow-md">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+                <div class="flex items-start gap-4">
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-lg shadow-orange-500/30">
+                        <i class="bi bi-exclamation-triangle-fill text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="inline-flex items-center gap-1 rounded-full bg-orange-100 border border-orange-200 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-orange-800">
+                                <i class="bi bi-info-circle-fill text-xs"></i> Pemberitahuan Iklan Diselesaikan Lebih Awal
+                            </span>
+                            <span class="rounded-full bg-orange-600 text-white px-2.5 py-0.5 text-[11px] font-extrabold shadow-sm">
+                                {{ $iklan_force_completed->count() }} Iklan Dihentikan
+                            </span>
+                        </div>
+                        <h3 class="text-base sm:text-lg font-black text-orange-950">
+                            Ada Iklan Anda yang Diselesaikan Lebih Awal (Paksa) oleh Admin!
+                        </h3>
+                        <p class="text-xs sm:text-sm text-orange-800 mt-1 max-w-3xl leading-relaxed">
+                            Iklan Anda telah dihentikan/diselesaikan oleh admin sebelum tenggat masa tayang normal berakhir (misal atas permintaan Anda atau kendala operasional). <b>Selama rentang jadwal tanggal tayang masih aktif, iklan ini dapat direaktifkan kembali oleh admin jika Anda mengajukan permohonan.</b>
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                    <a href="{{ route('kelola-iklan.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}"
+                        class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 text-xs sm:text-sm font-bold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition shadow-md shadow-orange-600/25 active:scale-95">
+                        <i class="typcn typcn-cog-outline text-lg"></i> Buka Kelola Iklan & Rincian
                     </a>
                 </div>
             </div>
@@ -318,17 +358,37 @@
                     </div>
                     <div class="p-4 flex flex-col gap-3">
                         @forelse ($iklan_selesai as $item)
-                            <div class="flex items-center gap-3 p-3 rounded-2xl border border-gray-100 hover:bg-gray-50 transition-colors bg-white">
-                                <img class="w-14 h-14 rounded-xl object-cover opacity-40 grayscale"
+                            @php
+                                $isForce = (bool) ($item->is_force_completed ?? false);
+                                $isStillActive = \Carbon\Carbon::today()->lte(\Carbon\Carbon::parse($item->tanggal_akhir));
+                            @endphp
+                            <div class="flex items-center gap-3 p-3 rounded-2xl border {{ $isForce ? 'border-orange-200 bg-orange-50/40 hover:bg-orange-50/70' : 'border-gray-100 hover:bg-gray-50' }} transition-colors bg-white">
+                                <img class="w-14 h-14 rounded-xl object-cover {{ $isForce ? 'opacity-90' : 'opacity-40 grayscale' }}"
                                     src="{{ asset('assets/image/customers/advert/' . $item->poster) }}" alt="{{ $item->judul }}" onerror="this.src='https://via.placeholder.com/150'">
                                 <div class="flex-1 min-w-0">
-                                    <p class="text-[13px] font-bold text-gray-500 truncate line-through">{{ $item->judul }}</p>
-                                    <p class="text-[11px] font-medium text-gray-400 mt-0.5 flex items-center gap-1">
-                                        <i class="bi bi-check-circle-fill text-gray-300"></i> Selesai ({{ $item->durasi_hari }} Hari)
-                                    </p>
+                                    <p class="text-[13px] font-bold {{ $isForce ? 'text-gray-900' : 'text-gray-500 line-through' }} truncate">{{ $item->judul }}</p>
+                                    @if ($isForce)
+                                        <div class="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                            <span class="text-[10px] font-bold text-orange-800 bg-orange-100 px-1.5 py-0.5 rounded border border-orange-200">
+                                                Diselesaikan Paksa
+                                            </span>
+                                            @if ($isStillActive)
+                                                <span class="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200" title="Hubungi admin jika ingin mengaktifkan kembali">
+                                                    Rentang Masih Aktif
+                                                </span>
+                                            @endif
+                                        </div>
+                                        @if (!empty($item->force_complete_alasan))
+                                            <p class="text-[11px] text-orange-700 truncate mt-0.5 font-medium">Alasan: {{ $item->force_complete_alasan }}</p>
+                                        @endif
+                                    @else
+                                        <p class="text-[11px] font-medium text-gray-400 mt-0.5 flex items-center gap-1">
+                                            <i class="bi bi-check-circle-fill text-gray-300"></i> Selesai ({{ $item->durasi_hari }} Hari)
+                                        </p>
+                                    @endif
                                 </div>
                                 <div class="text-right flex-shrink-0">
-                                    <span class="block text-[12px] font-bold text-gray-400">Rp {{ number_format($item->harga_iklan, 0, ',', '.') }}</span>
+                                    <span class="block text-[12px] font-bold {{ $isForce ? 'text-gray-700' : 'text-gray-400' }}">Rp {{ number_format($item->harga_iklan, 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         @empty

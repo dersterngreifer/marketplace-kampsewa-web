@@ -63,12 +63,34 @@ class DashboardCustController extends Controller
 
             // Peralatan terlaris
             $peralatan_terlaris = Produk::where('id_user', $id_user_dec)
-                ->leftJoin('detail_penyewaan', 'produk.id', '=', 'detail_penyewaan.id_produk')
-                ->select('produk.*', DB::raw('COALESCE(SUM(detail_penyewaan.qty), 0) as total_sewa'))
-                ->groupBy('produk.id', 'produk.id_user', 'produk.id_kategori', 'produk.nama', 'produk.deskripsi', 'produk.kode_produk', 'produk.jaminan', 'produk.gender', 'produk.video_produk', 'produk.created_at', 'produk.updated_at')
+                ->select('produk.*')
+                ->selectSub(function ($q) {
+                    $q->from('detail_penyewaan')
+                        ->whereColumn('detail_penyewaan.id_produk', 'produk.id')
+                        ->selectRaw('COALESCE(SUM(qty), 0)');
+                }, 'total_sewa')
+                ->selectSub(function ($q) {
+                    $q->from('variant_produk')
+                        ->join('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
+                        ->whereColumn('variant_produk.id_produk', 'produk.id')
+                        ->selectRaw('MIN(detail_variant_produk.harga_sewa)');
+                }, 'harga_sewa_min')
+                ->selectSub(function ($q) {
+                    $q->from('variant_produk')
+                        ->join('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
+                        ->whereColumn('variant_produk.id_produk', 'produk.id')
+                        ->selectRaw('MAX(detail_variant_produk.harga_sewa)');
+                }, 'harga_sewa_max')
+                ->with('foto')
                 ->orderByDesc('total_sewa')
                 ->take(5)
                 ->get();
+
+            // Set harga alias untuk view
+            $peralatan_terlaris->each(function ($item) {
+                $item->harga = $item->harga_sewa_min ?? 0;
+                $item->harga_sewa = $item->harga_sewa_min ?? 0;
+            });
 
             // Penyewa Berlangsung
             $penyewa_berlangsung = Penyewaan::join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
@@ -128,6 +150,26 @@ class DashboardCustController extends Controller
                 )
                 ->get();
 
+            // Iklan Mitra yang diselesaikan paksa oleh Admin
+            $iklan_force_completed = \App\Models\Iklan::join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
+                ->where('iklan.id_user', $id_user_dec)
+                ->where('detail_iklan.status_iklan', 'Selesai')
+                ->where('detail_iklan.is_force_completed', true)
+                ->select(
+                    'iklan.id as id_iklan',
+                    'iklan.judul',
+                    'iklan.sub_judul',
+                    'iklan.poster',
+                    'detail_iklan.id as id_detail_iklan',
+                    'detail_iklan.tanggal_mulai',
+                    'detail_iklan.tanggal_akhir',
+                    'detail_iklan.force_complete_alasan',
+                    'detail_iklan.force_complete_catatan',
+                    'detail_iklan.force_completed_at'
+                )
+                ->orderBy('detail_iklan.force_completed_at', 'desc')
+                ->get();
+
             return view('customers.menu-dashboard-cust.dashboard')->with([
                 'title' => 'Dashboard | Customer',
                 'user_name' => $user_name,
@@ -149,6 +191,7 @@ class DashboardCustController extends Controller
                 'riwayat_penyewa' => $riwayat_penyewa,
                 'denda_penyewa' => $denda_penyewa,
                 'iklan_suspended' => $iklan_suspended,
+                'iklan_force_completed' => $iklan_force_completed,
             ]);
         } catch (\Exception $e) {
             Log::error('Error DashboardCustController: ' . $e->getMessage());

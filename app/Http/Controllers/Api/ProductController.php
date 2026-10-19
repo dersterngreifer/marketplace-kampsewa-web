@@ -657,7 +657,9 @@ class ProductController extends Controller
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
             'ulasan' => 'nullable|string',
-            'foto' => 'nullable|image|mimes:jpeg,png,jpg|max:2048'
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
+            'fotos' => 'nullable|array|max:10',
+            'fotos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120'
         ]);
 
         $userId = auth('sanctum')->id();
@@ -668,21 +670,66 @@ class ProductController extends Controller
             return response()->json(['message' => 'Produk tidak ditemukan.'], 404);
         }
 
-        $fotoName = null;
-        if ($request->hasFile('foto')) {
+        $fotoNames = [];
+        if ($request->hasFile('fotos')) {
+            $files = $request->file('fotos');
+            if (is_array($files)) {
+                $files = array_slice($files, 0, 10);
+                foreach ($files as $index => $file) {
+                    if ($file && $file->isValid()) {
+                        $fotoName = time() . '_' . $index . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        $file->move(public_path('assets/image/reviews'), $fotoName);
+                        $fotoNames[] = $fotoName;
+                    }
+                }
+            }
+        } elseif ($request->hasFile('foto')) {
             $file = $request->file('foto');
-            $fotoName = time() . '_' . $file->getClientOriginalName();
-            // Simpan di public/assets/image/reviews
-            $file->move(public_path('assets/image/reviews'), $fotoName);
+            if ($file && $file->isValid()) {
+                $fotoName = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/image/reviews'), $fotoName);
+                $fotoNames[] = $fotoName;
+            }
         }
+
+        $fotoUlasan = !empty($fotoNames) ? json_encode($fotoNames) : null;
 
         \App\Models\RatingProduk::create([
             'id_user' => $userId,
             'id_produk' => $id_produk,
             'rating' => $request->rating,
             'ulasan' => $request->ulasan ?? '',
-            'foto_ulasan' => $fotoName
+            'foto_ulasan' => $fotoUlasan
         ]);
+
+        // Kirim notifikasi ke mitra pemilik produk
+        try {
+            $mitraId = $produk->id_user;
+            if ($mitraId) {
+                $reviewer = \App\Models\User::find($userId);
+                $reviewerName = $reviewer ? $reviewer->name : 'Pelanggan';
+                $ulasanText = trim($request->ulasan ?? '');
+                $snippet = !empty($ulasanText)
+                    ? \Illuminate\Support\Str::limit($ulasanText, 80)
+                    : 'Memberikan penilaian produk.';
+
+                $detailProdukUrl = route('menu-produk.detail-produk', [
+                    'id_produk' => \Illuminate\Support\Facades\Crypt::encrypt($produk->id)
+                ]);
+
+                \App\Models\CustomerNotification::notifyCustomer(
+                    $mitraId,
+                    'ulasan_baru',
+                    'Ulasan Baru Pada Produk!',
+                    "{$reviewerName} memberikan rating {$request->rating}★ pada produk \"{$produk->nama}\": \"{$snippet}\"",
+                    $ulasanText,
+                    $detailProdukUrl,
+                    $produk->id
+                );
+            }
+        } catch (\Exception $notifEx) {
+            \Illuminate\Support\Facades\Log::error('Gagal mengirim CustomerNotification ulasan: ' . $notifEx->getMessage());
+        }
 
         return response()->json([
             'message' => 'Ulasan berhasil dikirim.'
@@ -705,9 +752,18 @@ class ProductController extends Controller
                     : asset('images/placeholder-image.png');
             }
             
-            $fotoUlasanUrl = null;
+            $fotosUlasanUrls = [];
             if ($review->foto_ulasan) {
-                $fotoUlasanUrl = asset('assets/image/reviews/' . $review->foto_ulasan);
+                $decoded = json_decode($review->foto_ulasan, true);
+                if (is_array($decoded)) {
+                    foreach ($decoded as $fn) {
+                        if ($fn) {
+                            $fotosUlasanUrls[] = asset('assets/image/reviews/' . $fn);
+                        }
+                    }
+                } elseif (is_string($review->foto_ulasan) && trim($review->foto_ulasan) !== '') {
+                    $fotosUlasanUrls[] = asset('assets/image/reviews/' . $review->foto_ulasan);
+                }
             }
             
             return [
@@ -717,7 +773,8 @@ class ProductController extends Controller
                 'foto_user' => $fotoUser,
                 'rating' => $review->rating,
                 'ulasan' => $review->ulasan,
-                'foto_ulasan' => $fotoUlasanUrl,
+                'foto_ulasan' => count($fotosUlasanUrls) > 0 ? $fotosUlasanUrls[0] : null,
+                'fotos_ulasan' => $fotosUlasanUrls,
                 'tanggal_ulasan' => $review->created_at ? $review->created_at->format('Y-m-d H:i:s') : null,
             ];
         });

@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Customer\DashboardCustController;
 use App\Http\Controllers\Customer\IklanController as CustomerIklanController;
 use App\Http\Controllers\Customer\KeuanganController;
+use App\Http\Controllers\Customer\NotificationController as CustomerNotificationController;
 use App\Http\Controllers\Customer\PengirimanController;
 use App\Http\Controllers\Customer\ProdukController;
 use App\Http\Controllers\Customer\PromoController;
@@ -136,6 +137,23 @@ Route::middleware('auth')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
+        | Live Chat Mitra & Customer
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('chat')
+            ->name('developer.chat.')
+            ->controller(\App\Http\Controllers\Developer\ChatController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('/rooms', 'getRooms')->name('rooms');
+                Route::get('/mitras', 'searchMitras')->name('mitras');
+                Route::get('/messages/{partner_id}', 'getMessages')->name('messages');
+                Route::post('/send', 'sendMessage')->name('send');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
         | Kelola Pengguna
         |--------------------------------------------------------------------------
         */
@@ -193,7 +211,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/nonaktifkan/{id_detail_iklan}', function () {
                 return redirect()->route('iklan.index');
             });
-            Route::put('/selesaikan/{id_detail_iklan}', 'selesaikanIklan')->name('selesaikan');
+            Route::match(['put', 'post'], '/selesaikan/{id_detail_iklan}', 'selesaikanIklan')->name('selesaikan');
+            Route::match(['put', 'post'], '/reaktifkan/{id_detail_iklan}', 'reaktifkanIklan')->name('reaktifkan');
         });
 
         /*
@@ -282,6 +301,11 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
 
     Route::get('/home/{id_user?}', [DashboardCustController::class, 'index'])
         ->name('dashboard-cust');
+
+    Route::controller(CustomerNotificationController::class)->group(function () {
+        Route::get('/notifikasi/baca/{id}', 'baca')->name('customer.notifikasi.baca');
+        Route::post('/notifikasi/mark-all-read', 'markAllRead')->name('customer.notifikasi.mark-all-read');
+    });
 
     /*
     |--------------------------------------------------------------------------
@@ -410,6 +434,22 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
         Route::post('/transaksi/proses-pengembalian/{id_penyewaan}/{id_user}', 'prosesPengembalian')->name('proses-pengembalian');
         Route::post('/transaksi/lunasi-denda/{id_penyewaan}/{id_user}', 'lunasiDenda')->name('lunasi-denda');
     });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Chat Admin (Bantuan & Konsultasi Mitra)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::prefix('chat-admin')
+        ->name('customer.chat-admin.')
+        ->controller(\App\Http\Controllers\Customer\ChatAdminController::class)
+        ->group(function () {
+            Route::get('/{id_user}', 'index')->name('index');
+            Route::get('/{id_user}/rooms', 'getRooms')->name('rooms');
+            Route::get('/{id_user}/messages/{admin_id}', 'getMessages')->name('messages');
+            Route::post('/{id_user}/send', 'sendMessage')->name('send');
+        });
 });
 
 

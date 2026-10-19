@@ -1,7 +1,60 @@
 @php
     $developerName = session('nama_lengkap') ?? 'Developer';
     $developerPhoto = session('foto');
-    $notificationCount = $user_baru_terdaftar ? $user_baru_terdaftar->count() : 0;
+
+    // Ambil user baru terdaftar hari ini jika belum tersedia
+    if (!isset($user_baru_terdaftar) || !($user_baru_terdaftar instanceof \Illuminate\Support\Collection) || $user_baru_terdaftar->isEmpty()) {
+        try {
+            $user_baru_terdaftar = \App\Models\User::join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+                ->where('users.type', 0)
+                ->whereDate('users.created_at', \Carbon\Carbon::today())
+                ->where('status_notifikasi_user.status', 'unread')
+                ->select('users.*')
+                ->orderByDesc('users.created_at')
+                ->limit(5)
+                ->get();
+        } catch (\Exception $e) {
+            $user_baru_terdaftar = collect();
+        }
+    }
+
+    // Ambil feedback chat baru yang belum dibalas
+    $devUnreadFeedbacks = \App\Models\Feedback::with('user')
+        ->where('status', 'Belum Dibalas')
+        ->orderByDesc('created_at')
+        ->take(5)
+        ->get();
+
+    // Ambil pesan chat feedback baru dari customer
+    $devUnreadCustomerMessages = \App\Models\FeedbackMessage::with(['feedback.user', 'sender'])
+        ->where('sender_type', 'customer')
+        ->whereNull('read_at')
+        ->whereHas('feedback', function($q) {
+            $q->where('status', 'Dibalas');
+        })
+        ->orderByDesc('created_at')
+        ->take(5)
+        ->get();
+
+    $devUnreadFeedbackCount = \App\Models\Feedback::where('status', 'Belum Dibalas')->count()
+        + \App\Models\FeedbackMessage::where('sender_type', 'customer')
+            ->whereNull('read_at')
+            ->whereHas('feedback', function($q) {
+                $q->where('status', 'Dibalas');
+            })
+            ->count();
+
+    $notificationCount = ($user_baru_terdaftar ? $user_baru_terdaftar->count() : 0) + $devUnreadFeedbackCount;
+
+    $devNavAdminId = auth()->id() ?? session('id_user');
+    $devUnreadChatCount = $devNavAdminId
+        ? \App\Models\ChatMessage::where('receiver_id', $devNavAdminId)
+            ->where('is_read', false)
+            ->whereHas('sender', function ($q) {
+                $q->where('type', 0);
+            })
+            ->count()
+        : 0;
 @endphp
 
 <nav id="main-navbar"
@@ -39,6 +92,16 @@
 
             {{-- Right Section --}}
             <div class="relative flex shrink-0 items-center gap-3 sm:gap-4">
+
+                {{-- Live Chat Mitra Button --}}
+                <a href="{{ route('developer.chat.index') }}" aria-label="Live Chat Mitra" title="Live Chat Mitra & Customer"
+                    class="group relative flex h-12 w-12 items-center justify-center rounded-2xl border border-violet-200/80 bg-violet-50/70 text-violet-600 outline-none transition-all duration-300 hover:-translate-y-0.5 hover:bg-violet-600 hover:text-white hover:shadow-[0_12px_24px_-8px_rgba(124,58,237,0.45)]">
+                    <i class="bi bi-chat-dots-fill text-[19px] transition-transform duration-300 group-hover:scale-110"></i>
+                    <span id="navbar-dev-chat-badge"
+                        class="{{ $devUnreadChatCount > 0 ? 'flex' : 'hidden' }} absolute -right-2 -top-2 h-6 min-w-6 items-center justify-center rounded-full border-2 border-white bg-rose-500 px-1.5 text-[11px] font-black text-white shadow-[0_6px_12px_-4px_rgba(244,63,94,0.7)]">
+                        {{ $devUnreadChatCount > 99 ? '99+' : $devUnreadChatCount }}
+                    </span>
+                </a>
 
                 {{-- Notification --}}
                 <div id="form-notification-as-read" class="relative">
@@ -142,6 +205,91 @@
                                 </p>
                             </div>
                         @else
+                            {{-- Notifikasi Feedback Baru --}}
+                            @foreach ($devUnreadFeedbacks as $fb)
+                                <a href="{{ route('notification.index') }}"
+                                    class="group relative flex gap-4 border-b border-slate-100 px-5 py-4 outline-none transition-all duration-300 last:border-b-0 hover:bg-violet-50/60 focus-visible:bg-violet-50/60 motion-reduce:transition-none">
+                                    <span
+                                        class="absolute inset-y-3 left-0 w-1 origin-center scale-y-0 rounded-r-full bg-gradient-to-b from-[#B381F4] to-[#5038ED] transition-transform duration-300 group-hover:scale-y-100 group-focus-visible:scale-y-100 motion-reduce:transition-none"></span>
+
+                                    @include('components.ui.avatar', [
+                                        'nama' => $fb->user->name ?? 'Customer',
+                                        'foto' => $fb->user->foto ?? null,
+                                        'class' => 'h-12 w-12',
+                                        'rounded' => 'rounded-2xl',
+                                        'text' => 'text-[13px]',
+                                        'extra' => 'shadow-sm ring-2 ring-transparent transition-all duration-300 group-hover:ring-violet-200 group-hover:shadow-violet-500/25',
+                                    ])
+
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-2">
+                                                    <p class="truncate text-sm font-black text-slate-900 transition-colors duration-300 group-hover:text-violet-700">
+                                                        {{ $fb->user->name ?? 'Pengguna' }}
+                                                    </p>
+                                                    <span class="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-extrabold text-violet-700">
+                                                        Chat Feedback
+                                                    </span>
+                                                </div>
+
+                                                <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                                    "{{ $fb->deskripsi }}"
+                                                </p>
+                                            </div>
+
+                                            <span class="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold text-slate-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+                                                {{ $fb->created_at ? $fb->created_at->diffForHumans() : 'Baru' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+
+                            {{-- Notifikasi Balasan Chat Feedback dari Customer --}}
+                            @foreach ($devUnreadCustomerMessages as $cMsg)
+                                <a href="{{ route('notification.index') }}"
+                                    class="group relative flex gap-4 border-b border-slate-100 px-5 py-4 outline-none transition-all duration-300 last:border-b-0 hover:bg-violet-50/60 focus-visible:bg-violet-50/60 motion-reduce:transition-none">
+                                    <span
+                                        class="absolute inset-y-3 left-0 w-1 origin-center scale-y-0 rounded-r-full bg-gradient-to-b from-[#B381F4] to-[#5038ED] transition-transform duration-300 group-hover:scale-y-100 group-focus-visible:scale-y-100 motion-reduce:transition-none"></span>
+
+                                    @include('components.ui.avatar', [
+                                        'nama' => $cMsg->sender->name ?? 'Customer',
+                                        'foto' => $cMsg->sender->foto ?? null,
+                                        'class' => 'h-12 w-12',
+                                        'rounded' => 'rounded-2xl',
+                                        'text' => 'text-[13px]',
+                                        'extra' => 'shadow-sm ring-2 ring-transparent transition-all duration-300 group-hover:ring-violet-200 group-hover:shadow-violet-500/25',
+                                    ])
+
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <div class="flex items-center gap-2">
+                                                    <p class="truncate text-sm font-black text-slate-900 transition-colors duration-300 group-hover:text-violet-700">
+                                                        {{ $cMsg->sender->name ?? 'Pengguna' }}
+                                                    </p>
+                                                    <span class="rounded bg-violet-100 px-1.5 py-0.5 text-[10px] font-extrabold text-violet-700">
+                                                        Pesan Feedback
+                                                    </span>
+                                                </div>
+
+                                                <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                                    "{{ $cMsg->message }}"
+                                                </p>
+                                            </div>
+
+                                            <span class="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold text-slate-400">
+                                                <span class="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse"></span>
+                                                {{ $cMsg->created_at ? $cMsg->created_at->diffForHumans() : 'Baru' }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+
+                            {{-- Notifikasi User Baru Terdaftar --}}
                             @foreach ($user_baru_terdaftar as $user)
                                 <a href="{{ route('detail-pengguna.index', ['user' => $user->id]) }}"
                                     class="group relative flex gap-4 border-b border-slate-100 px-5 py-4 outline-none transition-all duration-300 last:border-b-0 hover:bg-violet-50/60 focus-visible:bg-violet-50/60 motion-reduce:transition-none">
@@ -162,10 +310,15 @@
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-start justify-between gap-3">
                                             <div class="min-w-0">
-                                                <p
-                                                    class="truncate text-sm font-black text-slate-900 transition-colors duration-300 group-hover:text-violet-700">
-                                                    {{ $user->name }}
-                                                </p>
+                                                <div class="flex items-center gap-2">
+                                                    <p
+                                                        class="truncate text-sm font-black text-slate-900 transition-colors duration-300 group-hover:text-violet-700">
+                                                        {{ $user->name }}
+                                                    </p>
+                                                    <span class="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-extrabold text-blue-700">
+                                                        Mitra Baru
+                                                    </span>
+                                                </div>
 
                                                 <p class="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
                                                     {{ $user->name }} telah melakukan registrasi aplikasi.
@@ -174,7 +327,7 @@
 
                                             <span
                                                 class="flex shrink-0 items-center gap-1.5 whitespace-nowrap text-[11px] font-semibold text-slate-400">
-                                                <span class="h-1.5 w-1.5 rounded-full bg-violet-500"></span>
+                                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
                                                 {{ $user->created_at->diffForHumans() }}
                                             </span>
                                         </div>

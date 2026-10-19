@@ -37,6 +37,7 @@ class ProdukController extends Controller
             $table_produk = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
                 ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
                 ->select(
+                    'produk.id',
                     'produk.id as id_produk',
                     'produk.id_user as id_user',
                     'produk.nama as nama_produk',
@@ -108,6 +109,7 @@ class ProdukController extends Controller
         $base_query = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->select(
+                'produk.id',
                 'produk.id as id_produk',
                 'produk.id_user as id_user',
                 'produk.nama as nama_produk',
@@ -324,7 +326,11 @@ class ProdukController extends Controller
 
     public function detailProduk($id_product)
     {
-        $id_product_decrypt = Crypt::decrypt($id_product);
+        try {
+            $id_product_decrypt = Crypt::decrypt($id_product);
+        } catch (\Exception $e) {
+            $id_product_decrypt = $id_product;
+        }
 
         // Mengambil detail produk bersama dengan rata-rata rating dan jumlah ulasan
         $product_detail = Produk::join('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
@@ -408,15 +414,30 @@ class ProdukController extends Controller
         // Mendapatkan data rating produk
         $ratings = RatingProduk::where('id_produk', $id_product_decrypt)->get();
 
-        $userRatings = RatingProduk::join('users', 'rating_produk.id_user', '=', 'users.id')
-        ->select('rating_produk.*', 'users.name as user_name', 'users.foto')
-        ->where('rating_produk.id_produk', $id_product_decrypt)
-        ->get();
+        $userRatings = RatingProduk::leftJoin('users', 'rating_produk.id_user', '=', 'users.id')
+            ->select('rating_produk.*', 'users.name as user_name', 'users.foto')
+            ->where('rating_produk.id_produk', $id_product_decrypt)
+            ->orderBy('rating_produk.created_at', 'desc')
+            ->get()
+            ->map(function ($rating) {
+                $fotoList = [];
+                if (!empty($rating->foto_ulasan)) {
+                    $decoded = json_decode($rating->foto_ulasan, true);
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $fn) {
+                            if (!empty($fn)) {
+                                $fotoList[] = asset('assets/image/reviews/' . trim($fn));
+                            }
+                        }
+                    } elseif (is_string($rating->foto_ulasan) && trim($rating->foto_ulasan) !== '') {
+                        $fotoList[] = asset('assets/image/reviews/' . trim($rating->foto_ulasan));
+                    }
+                }
+                $rating->fotos_ulasan = $fotoList;
+                return $rating;
+            });
 
-        $total_ulasan = RatingProduk::join('users', 'rating_produk.id_user', '=', 'users.id')
-        ->select('rating_produk.*', 'users.name as user_name')
-        ->where('rating_produk.id_produk', $id_product_decrypt)
-        ->count();
+        $total_ulasan = RatingProduk::where('id_produk', $id_product_decrypt)->count();
 
         return view('customers.menu-produk.detail-produk')->with([
             'title' => 'Detail Produk',

@@ -14,7 +14,8 @@
                                 <option value="aktif">Aktif</option>
                                 <option value="pending">Pending (Menunggu Giliran)</option>
                                 <option value="nonaktif">Ditangguhkan (Suspended)</option>
-                                <option value="selesai">Selesai</option>
+                                <option value="selesai_paksa">Diselesaikan Paksa</option>
+                                <option value="selesai">Selesai Normal</option>
                             </select>
                             <i class="absolute right-2 top-1/2 transform -translate-y-1/2 bi bi-caret-down-fill"></i>
                         </div>
@@ -56,6 +57,25 @@
                 <button type="button" onclick="document.getElementById('filter-kelola-iklan').value='nonaktif'; document.getElementById('form-filter-kelola-iklan').submit();"
                     class="rounded-xl bg-red-600 text-white px-4 py-2 text-xs font-bold hover:bg-red-700 transition shadow-sm shrink-0">
                     Lihat Iklan Ditangguhkan
+                </button>
+            </div>
+            @endif
+
+            @if (isset($iklan_force_completed) && $iklan_force_completed->count() > 0)
+            {{-- Alert Iklan Diselesaikan Paksa di Halaman Kelola Iklan --}}
+            <div class="w-full rounded-2xl border-2 border-orange-300 bg-orange-50/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="bi bi-exclamation-triangle text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-orange-950">Ada {{ $iklan_force_completed->count() }} Iklan Diselesaikan Lebih Awal (Paksa) oleh Admin</h4>
+                        <p class="text-xs text-orange-800 mt-0.5">Iklan telah dihentikan sebelum jadwal berakhir. Selama rentang waktu tayang belum terlewati, iklan ini dapat direaktifkan kembali jika Anda mengajukan permohonan ke admin.</p>
+                    </div>
+                </div>
+                <button type="button" onclick="document.getElementById('filter-kelola-iklan').value='selesai_paksa'; document.getElementById('form-filter-kelola-iklan').submit();"
+                    class="rounded-xl bg-orange-600 text-white px-4 py-2 text-xs font-bold hover:bg-orange-700 transition shadow-sm shrink-0">
+                    Lihat Iklan Dihentikan
                 </button>
             </div>
             @endif
@@ -130,6 +150,24 @@
                                                     <div class="relative grid items-center font-sans font-bold uppercase whitespace-nowrap select-none bg-amber-500 text-white py-1 px-2.5 text-xs rounded-md shadow-sm">
                                                         <span>Menunggu Pembayaran</span>
                                                     </div>
+                                                @elseif ($statusTampilan == 'Diselesaikan Paksa')
+                                                    <div class="flex flex-col gap-1">
+                                                        <div class="relative grid items-center font-sans font-bold uppercase whitespace-nowrap select-none bg-orange-600 text-white py-1 px-2.5 text-xs rounded-md shadow-sm">
+                                                            <span>Diselesaikan Paksa</span>
+                                                        </div>
+                                                        @php
+                                                            $isStillActivePeriod = !empty($item->tanggal_akhir) && \Carbon\Carbon::today()->lte(\Carbon\Carbon::parse($item->tanggal_akhir));
+                                                        @endphp
+                                                        @if ($isStillActivePeriod)
+                                                            <span class="text-[10px] text-amber-700 font-semibold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 flex items-center gap-1" title="Rentang masa tayang iklan masih aktif">
+                                                                <i class="bi bi-clock-history"></i> Rentang Masih Aktif
+                                                            </span>
+                                                        @else
+                                                            <span class="text-[10px] text-slate-500 font-semibold bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 flex items-center gap-1" title="Rentang masa tayang iklan telah kadaluarsa">
+                                                                <i class="bi bi-x-circle"></i> Waktu Berakhir
+                                                            </span>
+                                                        @endif
+                                                    </div>
                                                 @elseif ($statusTampilan == 'Selesai')
                                                     <div class="relative grid items-center font-sans font-bold uppercase whitespace-nowrap select-none bg-slate-100 text-slate-700 py-1 px-2.5 text-xs rounded-md">
                                                         <span>Selesai</span>
@@ -148,7 +186,7 @@
                                                             <span>Ditangguhkan</span>
                                                         </div>
                                                         @if (($item->suspend_status_revisi ?? '') === 'sudah_diperbaiki')
-                                                            <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
+                                                             <span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 flex items-center gap-1">
                                                                 <i class="bi bi-check-circle"></i> Sudah Direvisi
                                                             </span>
                                                         @else
@@ -180,8 +218,15 @@
                                                 @endif
                                                 @endif
 
-                                                {{-- Tombol Perbaiki / Edit Iklan (Bisa untuk Aktif dan Nonaktif) --}}
-                                                @if (in_array(strtolower($item->status_iklan ?? ''), ['aktif', 'nonaktif']))
+                                                {{-- Tombol Perbaiki / Edit Iklan: Hanya untuk status Aktif dan Nonaktif yang belum selesai/kadaluarsa --}}
+                                                @php
+                                                    $isSelesaiOrKadaluarsa = in_array(strtolower($item->status_iklan ?? ''), ['selesai'])
+                                                        || in_array(strtolower($statusTampilan ?? ''), ['selesai', 'diselesaikan paksa', 'menunggu pembayaran'])
+                                                        || !empty($item->is_force_completed)
+                                                        || (!empty($item->tanggal_akhir) && \Carbon\Carbon::today()->gt(\Carbon\Carbon::parse($item->tanggal_akhir)));
+                                                    $canEditIklan = in_array(strtolower($item->status_iklan ?? ''), ['aktif', 'nonaktif']) && !$isSelesaiOrKadaluarsa;
+                                                @endphp
+                                                @if ($canEditIklan)
                                                 <button onclick="window.location.href='{{ route('kelola-iklan.update-iklan-view', ['id_iklan' => Crypt::encrypt($item->id_iklan)]) }}'"
                                                     class="relative align-middle select-none font-sans font-semibold text-center transition-all px-2.5 py-1.5 rounded-lg text-xs {{ strtolower($item->status_iklan) == 'nonaktif' ? 'bg-red-600 text-white hover:bg-red-700 shadow-sm' : 'text-gray-700 hover:bg-gray-100 border border-gray-200' }}"
                                                     type="button" title="{{ strtolower($item->status_iklan) == 'nonaktif' ? 'Perbaiki Iklan Ini' : 'Update Iklan' }}">
@@ -200,6 +245,15 @@
                                                     class="p-1.5 rounded-lg text-xs bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 font-bold"
                                                     title="Baca Alasan Penangguhan & Instruksi Admin">
                                                     <i class="bi bi-info-circle text-sm"></i>
+                                                </button>
+                                                @endif
+
+                                                {{-- Tombol Info Alasan Selesai Paksa --}}
+                                                @if (!empty($item->is_force_completed))
+                                                <button type="button" onclick='showForceCompleteDetailModal(@json($item))'
+                                                    class="p-1.5 rounded-lg text-xs bg-orange-50 text-orange-700 hover:bg-orange-100 border border-orange-200 font-bold"
+                                                    title="Baca Alasan Penghentian Paksa oleh Admin">
+                                                    <i class="bi bi-exclamation-circle text-sm"></i>
                                                 </button>
                                                 @endif
 
@@ -309,6 +363,82 @@
         function closeCustomerSuspendModal() {
             document.getElementById('modalCustomerSuspendDetail').classList.add('hidden');
         }
+
+        function showForceCompleteDetailModal(item) {
+            document.getElementById('custFcModalJudul').innerText = item.judul || '-';
+            document.getElementById('custFcModalAlasan').innerText = item.force_complete_alasan || 'Permintaan penghentian atau kebijakan operasional platform';
+            document.getElementById('custFcModalCatatan').innerText = item.force_complete_catatan || 'Iklan ini telah dihentikan sebelum masa tayang normal berakhir.';
+
+            var waktuEl = document.getElementById('custFcModalWaktu');
+            if (item.force_completed_at) {
+                waktuEl.innerText = item.force_completed_at;
+            } else {
+                waktuEl.innerText = '-';
+            }
+
+            var rentangEl = document.getElementById('custFcModalRentangStatus');
+            var isMasihAktif = false;
+            var tglAkhirFormatted = '-';
+            if (item.tanggal_akhir) {
+                var today = new Date();
+                today.setHours(0,0,0,0);
+                var endDate = new Date(item.tanggal_akhir);
+                endDate.setHours(0,0,0,0);
+                isMasihAktif = today <= endDate;
+                tglAkhirFormatted = new Date(item.tanggal_akhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            if (isMasihAktif) {
+                rentangEl.innerHTML = `
+                    <div class="p-4 sm:p-5 rounded-2xl bg-emerald-50/90 border-2 border-emerald-300 text-emerald-950 shadow-sm">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-emerald-600/30 mt-0.5">
+                                <i class="bi bi-check-circle-fill text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center gap-2 mb-1.5">
+                                    <span class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-600 text-white shadow-xs">
+                                        Rentang Masih Aktif
+                                    </span>
+                                    <span class="text-xs font-bold text-emerald-800 bg-emerald-100/80 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                                        Masa Tayang s/d: ${tglAkhirFormatted}
+                                    </span>
+                                </div>
+                                <h5 class="text-sm font-black text-emerald-900 mb-1">Dapat Direaktifkan oleh Admin!</h5>
+                                <p class="text-xs text-emerald-800 leading-relaxed font-medium">
+                                    Karena tenggat jadwal tayang iklan ini masih belum berakhir, iklan dapat diaktifkan kembali jika penghentian terjadi karena ketidaksengajaan atau Anda ingin melanjutkan promo. Silakan hubungi tim Admin untuk permohonan reaktivasi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                rentangEl.innerHTML = `
+                    <div class="p-4 sm:p-5 rounded-2xl bg-slate-100 border border-slate-200 text-slate-800">
+                        <div class="flex items-start gap-3.5">
+                            <div class="w-10 h-10 rounded-xl bg-slate-300 text-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="bi bi-slash-circle text-xl"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-slate-200 text-slate-700">
+                                        Masa Tayang Kadaluarsa
+                                    </span>
+                                    <span class="text-xs font-semibold text-slate-500">Berakhir: ${tglAkhirFormatted}</span>
+                                </div>
+                                <p class="text-xs text-slate-600 leading-relaxed font-medium">
+                                    Batas tanggal tayang iklan ini telah terlewati sehingga statusnya kini telah kadaluarsa permanen dan tidak dapat direaktifkan lagi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            document.getElementById('modalCustomerForceCompleteDetail').classList.remove('hidden');
+        }
+
+        function closeCustomerForceCompleteModal() {
+            document.getElementById('modalCustomerForceCompleteDetail').classList.add('hidden');
+        }
     </script>
 
     {{-- Modal Detail Penangguhan Iklan (Sisi Customer) --}}
@@ -361,6 +491,66 @@
                 <a id="custModalPerbaikiBtn" href="#" class="rounded-xl bg-red-600 text-white px-5 py-2 text-xs font-bold hover:bg-red-700 transition flex items-center gap-1.5 shadow-sm">
                     <i class="bi bi-pencil-square"></i> Perbaiki Sekarang
                 </a>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal Detail Diselesaikan Paksa (Sisi Customer) - Spacious & Elegant --}}
+    <div id="modalCustomerForceCompleteDetail" class="fixed inset-0 z-50 hidden overflow-y-auto bg-gray-900/60 backdrop-blur-sm p-4 sm:p-6 flex items-center justify-center">
+        <div class="relative w-full max-w-xl overflow-hidden rounded-[28px] bg-white shadow-2xl border border-gray-100 my-8">
+            <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5 bg-gradient-to-r from-orange-50 via-amber-50/80 to-white">
+                <div class="flex items-center gap-3">
+                    <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-600 text-white shadow-md shadow-orange-600/25">
+                        <i class="bi bi-stop-circle text-xl"></i>
+                    </span>
+                    <div>
+                        <h3 class="text-base sm:text-lg font-black text-gray-900">Detail Penghentian Iklan</h3>
+                        <p class="text-xs text-gray-500">Informasi penyelesaian paksa oleh Admin KampSewa</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeCustomerForceCompleteModal()" class="rounded-xl p-2 text-gray-400 hover:bg-white hover:text-gray-600 transition shadow-xs">
+                    <i class="bi bi-x-lg text-sm"></i>
+                </button>
+            </div>
+
+            <div class="p-6 sm:p-7 space-y-5 max-h-[calc(100vh-210px)] overflow-y-auto">
+                {{-- Judul Iklan Card --}}
+                <div class="p-4 sm:p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        Judul Iklan:
+                    </span>
+                    <h4 id="custFcModalJudul" class="text-sm sm:text-base font-black text-slate-900 leading-snug"></h4>
+                </div>
+
+                {{-- Status Rentang Waktu Aktif Card (Full Width with Rich Padding) --}}
+                <div id="custFcModalRentangStatus" class="w-full"></div>
+
+                {{-- Alasan Penghentian --}}
+                <div class="p-4 sm:p-5 rounded-2xl bg-orange-50/90 border border-orange-200">
+                    <span class="text-xs font-extrabold text-orange-900 block mb-1">
+                        <i class="bi bi-exclamation-triangle-fill text-orange-600 mr-1"></i> Alasan Penghentian:
+                    </span>
+                    <p id="custFcModalAlasan" class="text-xs sm:text-sm font-bold text-orange-800 leading-relaxed"></p>
+                </div>
+
+                {{-- Catatan dari Admin --}}
+                <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <i class="bi bi-chat-left-text text-slate-500"></i> Catatan & Keterangan Admin:
+                        </span>
+                        <span class="text-[11px] font-semibold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 flex items-center gap-1">
+                            <i class="bi bi-clock"></i> <span id="custFcModalWaktu">-</span>
+                        </span>
+                    </div>
+                    <p id="custFcModalCatatan" class="text-xs sm:text-sm text-slate-600 italic whitespace-pre-line leading-relaxed"></p>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-100 px-6 py-4 bg-gray-50 flex items-center justify-end">
+                <button type="button" onclick="closeCustomerForceCompleteModal()" class="rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-xs font-bold text-gray-700 hover:bg-gray-100 transition shadow-sm active:scale-95">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>

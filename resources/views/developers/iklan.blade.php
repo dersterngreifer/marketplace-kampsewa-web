@@ -235,13 +235,12 @@
                                     class="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition active:scale-95">
                                     <i class="fi fi-rr-info text-[11px]"></i> Detail
                                 </button>
-                                <form method="POST" action="{{ route('iklan.selesaikan', $item->id_detail_iklan) }}">
-                                    @csrf @method('PUT')
-                                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 transition active:scale-95 shadow-sm"
-                                        title="Selesaikan sekarang & buka 1 slot untuk antrian">
-                                        <i class="fi fi-rr-check text-[11px]"></i> Selesaikan
-                                    </button>
-                                </form>
+                                <button type="button"
+                                    onclick='openForceCompleteModal(@json($item), @json($posterExp))'
+                                    class="inline-flex items-center gap-1.5 rounded-xl bg-red-500 px-3 py-2 text-xs font-bold text-white hover:bg-red-600 transition active:scale-95 shadow-sm"
+                                    title="Selesaikan paksa iklan sekarang & buka 1 slot untuk antrian">
+                                    <i class="fi fi-rr-cross-circle text-[11px]"></i> Selesaikan
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -601,18 +600,39 @@
             {{-- Riwayat Iklan Selesai --}}
             <div class="w-full overflow-hidden rounded-[28px] border border-slate-200/80 bg-white shadow-sm">
                 <div class="border-b border-slate-100 p-5 sm:p-6">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div>
                             <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-600">
                                 <i class="fi fi-rr-time-past flex text-[10px]"></i>
                                 Arsip Iklan Selesai
                             </div>
                             <h2 class="text-xl font-black text-slate-900">Riwayat Iklan Selesai (Kadaluarsa)</h2>
-                            <p class="mt-1 text-sm text-slate-400">Daftar iklan promosi yang masa tayangnya telah berakhir dan diselesaikan secara otomatis.</p>
+                            <p class="mt-1 text-sm text-slate-400">Daftar iklan promosi yang masa tayangnya telah berakhir otomatis atau diselesaikan paksa oleh admin.</p>
                         </div>
-                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                            Total: {{ $get_count_iklan_selesai }} Selesai
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+                                Total: {{ $get_count_iklan_selesai }} Selesai
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Filter Tabs untuk Riwayat Selesai --}}
+                    <div class="mt-5 flex flex-wrap items-center gap-2 pt-4 border-t border-slate-100">
+                        <span class="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+                            <i class="fi fi-rr-filter text-xs"></i> Filter Arsip:
                         </span>
+                        <a href="{{ route('iklan.index', array_merge(request()->query(), ['filter_selesai' => 'semua'])) }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition {{ ($filter_selesai ?? 'semua') === 'semua' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                            Semua Status <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ ($filter_selesai ?? 'semua') === 'semua' ? 'bg-slate-700 text-slate-200' : 'bg-slate-200 text-slate-600' }}">{{ $count_selesai_semua ?? 0 }}</span>
+                        </a>
+                        <a href="{{ route('iklan.index', array_merge(request()->query(), ['filter_selesai' => 'paksa'])) }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition {{ ($filter_selesai ?? '') === 'paksa' ? 'bg-rose-600 text-white shadow-sm' : 'bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100' }}">
+                            <i class="fi fi-rr-cross-circle text-[11px]"></i> Hanya Diselesaikan Paksa <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ ($filter_selesai ?? '') === 'paksa' ? 'bg-rose-800 text-rose-100' : 'bg-rose-200 text-rose-800' }}">{{ $count_selesai_paksa ?? 0 }}</span>
+                        </a>
+                        <a href="{{ route('iklan.index', array_merge(request()->query(), ['filter_selesai' => 'waktu'])) }}"
+                           class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition {{ ($filter_selesai ?? '') === 'waktu' || ($filter_selesai ?? '') === 'otomatis' ? 'bg-slate-700 text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                            <i class="fi fi-rr-clock text-[11px]"></i> Kadaluarsa Waktu Normal <span class="text-[10px] px-1.5 py-0.2 rounded-full {{ ($filter_selesai ?? '') === 'waktu' || ($filter_selesai ?? '') === 'otomatis' ? 'bg-slate-900 text-slate-200' : 'bg-slate-200 text-slate-600' }}">{{ $count_selesai_otomatis ?? 0 }}</span>
+                        </a>
                     </div>
                 </div>
 
@@ -623,48 +643,102 @@
                         $posterSelesai = $resolvePoster($item->poster);
                         $isProductSelesai = in_array(strtolower((string) $item->target_type), ['product', 'produk'], true) || !empty($item->id_produk);
                         $targetLabelSelesai = $isProductSelesai ? 'Produk: ' . ($item->nama_produk ?? 'Item Terkait') : 'Toko: ' . ($item->name_store ?? $item->name);
+                        $isForce = (bool) ($item->is_force_completed ?? false);
+                        $today = \Carbon\Carbon::today();
+                        $tglAkhir = \Carbon\Carbon::parse($item->tanggal_akhir);
+                        $isDateActive = $today->lte($tglAkhir);
                     @endphp
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50 transition">
-                        <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-5 py-4 transition {{ $isForce ? 'bg-rose-50/30 hover:bg-rose-50/60 border-l-4 border-l-rose-500' : 'hover:bg-slate-50' }}">
+                        <div class="flex items-start sm:items-center gap-3.5 min-w-0">
                             {{-- Poster 16:9 Thumbnail --}}
                             <div class="relative w-24 sm:w-28 aspect-video shrink-0 overflow-hidden rounded-xl bg-slate-100 border border-slate-200 cursor-pointer"
                                 onclick='openDetailModal(@json($item), @json($posterSelesai))'>
-                                <img src="{{ $posterSelesai }}" class="h-full w-full object-cover grayscale opacity-80" alt="{{ $item->judul }}" onerror="this.src='{{ $svgFallback }}'; this.onerror=null;">
+                                <img src="{{ $posterSelesai }}" class="h-full w-full object-cover {{ $isForce ? 'opacity-90' : 'grayscale opacity-80' }}" alt="{{ $item->judul }}" onerror="this.src='{{ $svgFallback }}'; this.onerror=null;">
+                                @if ($isForce)
+                                <div class="absolute top-1 left-1">
+                                    <span class="rounded bg-rose-600 px-1.5 py-0.5 text-[9px] font-black uppercase text-white shadow-xs">
+                                        Paksa
+                                    </span>
+                                </div>
+                                @endif
                             </div>
 
                             <div class="min-w-0">
-                                <div class="flex items-center gap-2 mb-1">
+                                <div class="flex flex-wrap items-center gap-1.5 mb-1">
                                     <span class="rounded bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600">
                                         {{ $targetLabelSelesai }}
                                     </span>
+                                    @if ($isForce)
+                                        <span class="rounded-full bg-rose-100 text-rose-800 border border-rose-200 px-2 py-0.5 text-[10px] font-black uppercase flex items-center gap-1">
+                                            <i class="fi fi-rr-cross-circle text-[9px]"></i> Diselesaikan Paksa
+                                        </span>
+                                        @if ($isDateActive)
+                                            <span class="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold flex items-center gap-1">
+                                                <i class="fi fi-rr-check-circle text-[9px]"></i> Rentang Masih Aktif (s/d {{ $tglAkhir->format('d M') }})
+                                            </span>
+                                        @else
+                                            <span class="rounded-full bg-slate-100 text-slate-500 px-2 py-0.5 text-[10px] font-semibold">
+                                                Tenggat Waktu Lewat
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                                            Otomatis Selesai (Waktu)
+                                        </span>
+                                    @endif
                                 </div>
                                 <h4 class="text-sm font-bold text-slate-900 truncate">{{ $item->judul }}</h4>
                                 <p class="text-xs text-slate-400 mt-0.5 truncate">
                                     Mitra: <span class="font-medium text-slate-600">{{ $item->name }}</span>
                                     @if(!empty($item->name_store)) &bull; {{ $item->name_store }} @endif
                                 </p>
+                                @if ($isForce && !empty($item->force_complete_alasan))
+                                <p class="text-xs text-rose-700 mt-1 font-semibold flex items-center gap-1">
+                                    <span class="text-rose-500 font-bold">Alasan:</span> {{ $item->force_complete_alasan }}
+                                </p>
+                                @endif
                             </div>
                         </div>
 
-                        <div class="flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                            <div class="text-left sm:text-right">
-                                <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-500">Otomatis Selesai</span>
-                                <p class="text-[11px] text-slate-400 mt-1">Berakhir: {{ \Carbon\Carbon::parse($item->tanggal_akhir)->format('d M Y') }}</p>
+                        <div class="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                            <div class="text-left lg:text-right">
+                                <p class="text-[11px] text-slate-500 font-medium">Batas: {{ $tglAkhir->format('d M Y') }}</p>
+                                @if ($isForce && !empty($item->force_completed_at))
+                                <p class="text-[10px] text-rose-500 font-medium">Diselesaikan: {{ \Carbon\Carbon::parse($item->force_completed_at)->format('d M Y H:i') }}</p>
+                                @endif
                             </div>
 
-                            <button type="button"
-                                onclick='openDetailModal(@json($item), @json($posterSelesai))'
-                                class="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100 transition shadow-sm"
-                                title="Lihat detail iklan">
-                                <i class="fi fi-rr-eye flex text-[13px]"></i>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                    onclick='openDetailModal(@json($item), @json($posterSelesai))'
+                                    class="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 hover:bg-slate-100 transition shadow-sm"
+                                    title="Lihat detail iklan">
+                                    <i class="fi fi-rr-eye flex text-[13px]"></i>
+                                </button>
+
+                                @if ($isForce && $isDateActive)
+                                {{-- Tombol Reaktifkan: HANYA jika diselesaikan paksa DAN masa tayang masih berlaku --}}
+                                <form id="form_reaktif_{{ $item->id_detail_iklan }}" method="POST" action="{{ route('iklan.reaktifkan', $item->id_detail_iklan) }}">
+                                    @csrf
+                                    @method('PUT')
+                                    <button type="button"
+                                        onclick="confirmReaktifkanIklan('form_reaktif_{{ $item->id_detail_iklan }}', '{{ addslashes($item->judul) }}', '{{ $tglAkhir->format('d M Y') }}')"
+                                        class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 text-xs font-bold transition active:scale-95 shadow-sm"
+                                        title="Reaktifkan iklan sekarang (Tenggat berlaku hingga {{ $tglAkhir->format('d M Y') }})">
+                                        <i class="fi fi-rr-refresh text-xs"></i> Reaktifkan
+                                    </button>
+                                </form>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     @endforeach
                 </div>
                 @else
                 <div class="flex min-h-[160px] items-center justify-center p-8 text-center">
-                    <p class="text-sm font-semibold text-slate-400">Belum ada riwayat iklan selesai.</p>
+                    <p class="text-sm font-semibold text-slate-400">
+                        {{ ($filter_selesai ?? '') === 'paksa' ? 'Belum ada iklan yang diselesaikan paksa oleh admin.' : 'Belum ada riwayat iklan selesai.' }}
+                    </p>
                 </div>
                 @endif
 
@@ -782,13 +856,12 @@
                                     title="Tangguhkan iklan dengan alasan & alihkan ke antrian">
                                     <i class="fi fi-rr-ban text-[11px]"></i> Suspend
                                 </button>
-                                <form method="POST" action="{{ route('iklan.selesaikan', $aktif->id_detail_iklan) }}" class="w-full">
-                                    @csrf @method('PUT')
-                                    <button type="submit" class="w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-700 hover:bg-slate-200 transition active:scale-95 text-center"
-                                        title="Selesaikan sekarang & buka slot untuk antrian">
-                                        Selesaikan
-                                    </button>
-                                </form>
+                                <button type="button"
+                                    onclick='openForceCompleteModal(@json($aktif), @json($posterAktif))'
+                                    class="w-full rounded-xl bg-slate-100 py-2 text-xs font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition active:scale-95 text-center"
+                                    title="Selesaikan paksa sekarang dengan alasan & buka slot untuk antrian">
+                                    Selesaikan
+                                </button>
                             </div>
                         </div>
                         @empty
@@ -928,6 +1001,22 @@
                         <p id="modalSuspendCatatan" class="mt-0.5 text-slate-700 whitespace-pre-line"></p>
                     </div>
                 </div>
+
+                {{-- Informasi Penyelesaian Paksa (Tampil jika iklan diselesaikan paksa oleh admin) --}}
+                <div id="modalForceCompleteSection" class="hidden rounded-2xl border border-rose-200 bg-rose-50/70 p-4 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2 text-rose-800 font-bold text-xs">
+                            <i class="fi fi-rr-cross-circle"></i>
+                            <span>Diselesaikan Paksa oleh Admin:</span>
+                        </div>
+                        <span id="modalForceCompleteActiveBadge" class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border"></span>
+                    </div>
+                    <p id="modalForceCompleteAlasan" class="text-xs font-bold text-rose-700"></p>
+                    <div id="modalForceCompleteCatatanBox" class="mt-2 rounded-xl bg-white/90 p-2.5 text-[11px] text-slate-700 border border-rose-100">
+                        <p class="font-bold text-slate-500 text-[10px] uppercase tracking-wide">Alasan & Catatan Admin:</p>
+                        <p id="modalForceCompleteCatatan" class="mt-0.5 text-slate-700 whitespace-pre-line"></p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -1039,6 +1128,84 @@
     </div>
 </div>
 
+{{-- MODAL SELESAIKAN PAKSA IKLAN DENGAN INPUT ALASAN & CATATAN --}}
+<div id="modalForceCompleteIklan" class="fixed inset-0 z-50 hidden overflow-y-auto bg-slate-900/60 backdrop-blur-sm p-4 sm:p-6 transition-all duration-300 flex items-center justify-center">
+    <div class="relative w-full max-w-xl overflow-hidden rounded-[28px] bg-white shadow-2xl border border-slate-100 my-8">
+        {{-- Header Modal --}}
+        <div class="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-rose-50/70">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-100 text-rose-700">
+                    <i class="fi fi-rr-cross-circle text-base"></i>
+                </span>
+                <div>
+                    <h3 class="text-base font-black text-slate-900">Selesaikan Paksa Iklan</h3>
+                    <p class="text-[11px] text-slate-500">Iklan akan dihentikan dari tayangan dan dicatat ke riwayat arsip selesai.</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeForceCompleteModal()" class="rounded-xl p-2 text-slate-400 hover:bg-white hover:text-slate-600 transition">
+                <i class="fi fi-rr-cross text-xs"></i>
+            </button>
+        </div>
+
+        {{-- Form Selesaikan Paksa --}}
+        <form id="formForceCompleteIklan" method="POST" action="">
+            @csrf
+            @method('PUT')
+            <div class="p-6 space-y-4 max-h-[calc(100vh-220px)] overflow-y-auto">
+                {{-- Preview Singkat Iklan --}}
+                <div class="flex items-center gap-3.5 p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
+                    <img id="forceCompletePreviewImg" src="" class="w-20 aspect-video rounded-xl object-cover border border-slate-200 bg-white shrink-0" alt="">
+                    <div class="min-w-0 flex-1">
+                        <p id="forceCompletePreviewJudul" class="text-xs font-bold text-slate-900 truncate">-</p>
+                        <p id="forceCompletePreviewMitra" class="text-[11px] text-slate-500 truncate mt-0.5">-</p>
+                        <p id="forceCompletePreviewJadwal" class="text-[10px] text-slate-400 truncate mt-0.5">-</p>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 leading-relaxed font-medium">
+                    <i class="fi fi-rr-info text-amber-600 mr-1"></i>
+                    <b>Catatan Sistem:</b> Iklan ini dapat direaktifkan kembali sewaktu-waktu oleh admin selama rentang waktu tayang (tenggat tanggal akhir) masih belum terlewati.
+                </div>
+
+                {{-- Pilih Alasan Selesaikan Paksa --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                        Alasan Penyelesaian Paksa <span class="text-red-500">*</span>
+                    </label>
+                    <select name="alasan" id="forceCompleteAlasanSelect" required class="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs font-medium text-slate-700 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 outline-none transition">
+                        <option value="">-- Pilih Alasan Selesaikan Paksa --</option>
+                        <option value="Permintaan Mitra / Pengiklan (Ingin Menghentikan Promo Lebih Awal)">Permintaan Mitra / Pengiklan (Ingin Menghentikan Promo Lebih Awal)</option>
+                        <option value="Ketidaksengajaan / Salah Klik oleh Admin (Dapat Direaktifkan Kembali)">Ketidaksengajaan / Salah Klik oleh Admin (Dapat Direaktifkan Kembali)</option>
+                        <option value="Pelanggaran Ketentuan / Kebijakan Platform KampSewa">Pelanggaran Ketentuan / Kebijakan Platform KampSewa</option>
+                        <option value="Stok Produk / Layanan Habis Sebelum Waktu Berakhir">Stok Produk / Layanan Habis Sebelum Waktu Berakhir</option>
+                        <option value="Lainnya">Lainnya (Jelaskan detail pada catatan)</option>
+                    </select>
+                </div>
+
+                {{-- Catatan / Instruksi Detail --}}
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1.5">
+                        Catatan & Keterangan Tambahan <span class="text-slate-400 font-normal">(Akan tampil di dashboard mitra)</span>
+                    </label>
+                    <textarea name="catatan" rows="3" placeholder="Tuliskan keterangan detail mengenai alasan penutupan paksa ini..."
+                        class="w-full rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-700 placeholder:text-slate-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-200 outline-none transition"></textarea>
+                </div>
+            </div>
+
+            {{-- Footer Modal Selesaikan Paksa --}}
+            <div class="border-t border-slate-100 px-6 py-4 bg-slate-50/70 flex items-center justify-end gap-2.5">
+                <button type="button" onclick="closeForceCompleteModal()" class="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-100 transition active:scale-95">
+                    Batal
+                </button>
+                <button type="submit" class="rounded-xl bg-red-600 px-5 py-2.5 text-xs font-bold text-white hover:bg-red-700 transition active:scale-95 shadow-sm flex items-center gap-2">
+                    <i class="fi fi-rr-cross-circle text-xs"></i>
+                    Selesaikan Paksa Sekarang
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @include('sweetalert::alert')
 
 @push('scripts')
@@ -1063,6 +1230,43 @@
         }).then(function(result) {
             if (result.isConfirmed) {
                 document.getElementById('form_delete_' + id).submit();
+            }
+        });
+    }
+
+    function confirmReaktifkanIklan(formOrId, judul, tglAkhir) {
+        var judulText = judul ? `"${judul}"` : 'iklan ini';
+        var infoText = tglAkhir ? `Masa tayang iklan masih berlaku hingga ${tglAkhir}. Iklan akan kembali aktif dan ditayangkan ke pengguna.` : 'Iklan akan kembali aktif dan ditayangkan ke pengguna.';
+
+        Swal.fire({
+            title: 'Reaktifkan Iklan?',
+            html: `<div class="text-left text-sm text-slate-600 space-y-2 mt-2">
+                    <p>Apakah Anda yakin ingin mereaktifkan kembali iklan <span class="font-bold text-slate-800">${judulText}</span>?</p>
+                    <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800">
+                        <i class="fi fi-rr-info mr-1"></i> ${infoText}
+                    </div>
+                   </div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fi fi-rr-refresh mr-1"></i> Ya, Reaktifkan',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-[28px] p-6 shadow-2xl',
+                title: 'text-[20px] font-black text-slate-900',
+                actions: 'gap-3',
+                confirmButton: 'rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-6 py-3 text-sm font-bold text-white shadow-md transition',
+                cancelButton: 'rounded-2xl bg-slate-100 hover:bg-slate-200 px-6 py-3 text-sm font-bold text-slate-600 transition',
+            },
+            buttonsStyling: false,
+        }).then(function(result) {
+            if (result.isConfirmed) {
+                if (typeof formOrId === 'string') {
+                    var f = document.getElementById(formOrId);
+                    if (f) f.submit();
+                } else if (formOrId && formOrId.submit) {
+                    formOrId.submit();
+                }
             }
         });
     }
@@ -1193,7 +1397,30 @@
             suspendSection.classList.add('hidden');
         }
 
-        // Footer Actions: HANYA tampilkan tombol Suspend jika iklan AKTIF. Jika NONAKTIF, tampilkan tombol Pulihkan.
+        // Section Info Force Complete
+        var forceSection = document.getElementById('modalForceCompleteSection');
+        if (data.is_force_completed) {
+            forceSection.classList.remove('hidden');
+            document.getElementById('modalForceCompleteAlasan').innerText = data.force_complete_alasan ? ('Alasan: ' + data.force_complete_alasan) : 'Alasan: Diselesaikan paksa oleh admin.';
+            document.getElementById('modalForceCompleteCatatan').innerText = data.force_complete_catatan || 'Tidak ada catatan tambahan dari admin.';
+
+            var todayStr = new Date().toISOString().split('T')[0];
+            var tglAkhirRaw = data.tanggal_akhir ? data.tanggal_akhir.split(' ')[0] : '';
+            var isDateActive = tglAkhirRaw >= todayStr;
+
+            var badgeEl = document.getElementById('modalForceCompleteActiveBadge');
+            if (isDateActive) {
+                badgeEl.innerText = 'Periode Masih Aktif (Bisa Direaktifkan)';
+                badgeEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200';
+            } else {
+                badgeEl.innerText = 'Tenggat Waktu Berakhir';
+                badgeEl.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-500 border border-slate-200';
+            }
+        } else {
+            forceSection.classList.add('hidden');
+        }
+
+        // Footer Actions: HANYA tampilkan tombol Suspend/Selesaikan Paksa jika iklan AKTIF. Jika NONAKTIF, tampilkan tombol Pulihkan. Jika SELESAI Paksa dan waktu masih aktif, tampilkan Reaktifkan.
         var footerActions = document.getElementById('modalFooterActions');
         footerActions.innerHTML = '';
         if (statusIklan === 'AKTIF') {
@@ -1206,6 +1433,16 @@
                 openSuspendModal(data, posterUrl);
             };
             footerActions.appendChild(btnSuspend);
+
+            var btnForceComplete = document.createElement('button');
+            btnForceComplete.type = 'button';
+            btnForceComplete.className = 'rounded-xl bg-red-50 px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-600 hover:text-white transition flex items-center gap-1.5 active:scale-95 ml-2';
+            btnForceComplete.innerHTML = '<i class="fi fi-rr-cross-circle text-xs"></i> Selesaikan Paksa';
+            btnForceComplete.onclick = function() {
+                closeDetailModal();
+                openForceCompleteModal(data, posterUrl);
+            };
+            footerActions.appendChild(btnForceComplete);
         } else if (statusIklan === 'NONAKTIF') {
             var formPulihkan = document.createElement('form');
             formPulihkan.method = 'POST';
@@ -1215,6 +1452,24 @@
                     <i class="fi fi-rr-play text-xs"></i> Pulihkan / Aktifkan Iklan
                 </button>`;
             footerActions.appendChild(formPulihkan);
+        } else if (statusIklan === 'SELESAI' && data.is_force_completed) {
+            var todayStr = new Date().toISOString().split('T')[0];
+            var tglAkhirRaw = data.tanggal_akhir ? data.tanggal_akhir.split(' ')[0] : '';
+            var isDateActive = tglAkhirRaw >= todayStr;
+            if (isDateActive) {
+                var formReaktif = document.createElement('form');
+                var modalFormId = 'modal_form_reaktif_' + data.id_detail_iklan;
+                formReaktif.id = modalFormId;
+                formReaktif.method = 'POST';
+                formReaktif.action = '{{ route("iklan.reaktifkan", ":id") }}'.replace(':id', data.id_detail_iklan);
+                var tglFmt = data.tanggal_akhir ? new Date(data.tanggal_akhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+                var safeJudul = (data.judul || '').replace(/'/g, "\\'");
+                formReaktif.innerHTML = `@csrf @method('PUT')
+                    <button type="button" onclick="confirmReaktifkanIklan('${modalFormId}', '${safeJudul}', '${tglFmt}')" class="rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition flex items-center gap-1.5 active:scale-95 shadow-sm">
+                        <i class="fi fi-rr-refresh text-xs"></i> Reaktifkan Iklan Ini
+                    </button>`;
+                footerActions.appendChild(formReaktif);
+            }
         }
 
         var modal = document.getElementById('modalDetailIklan');
@@ -1247,11 +1502,34 @@
         document.getElementById('modalSuspendIklan').classList.add('hidden');
     }
 
+    function openForceCompleteModal(data, posterUrl) {
+        var form = document.getElementById('formForceCompleteIklan');
+        form.action = '{{ route("iklan.selesaikan", ":id") }}'.replace(':id', data.id_detail_iklan);
+
+        var defaultFallback = '{{ asset("assets/image/customers/advert/iklan_default.png") }}';
+        document.getElementById('forceCompletePreviewImg').src = posterUrl || defaultFallback;
+        document.getElementById('forceCompletePreviewJudul').innerText = data.judul || '-';
+        document.getElementById('forceCompletePreviewMitra').innerText = 'Mitra: ' + (data.name_store || data.name || '-');
+
+        var tglAkhir = data.tanggal_akhir ? new Date(data.tanggal_akhir).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-';
+        document.getElementById('forceCompletePreviewJadwal').innerText = 'Batas Akhir Tayang: ' + tglAkhir;
+
+        document.getElementById('forceCompleteAlasanSelect').value = '';
+        form.querySelector('textarea[name="catatan"]').value = '';
+
+        document.getElementById('modalForceCompleteIklan').classList.remove('hidden');
+    }
+
+    function closeForceCompleteModal() {
+        document.getElementById('modalForceCompleteIklan').classList.add('hidden');
+    }
+
     // Close on escape key
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             closeDetailModal();
             closeSuspendModal();
+            closeForceCompleteModal();
         }
     });
 
@@ -1265,6 +1543,12 @@
     document.getElementById('modalSuspendIklan').addEventListener('click', function(e) {
         if (e.target === this) {
             closeSuspendModal();
+        }
+    });
+
+    document.getElementById('modalForceCompleteIklan').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeForceCompleteModal();
         }
     });
 </script>
