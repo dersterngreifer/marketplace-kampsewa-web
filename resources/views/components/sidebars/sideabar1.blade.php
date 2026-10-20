@@ -22,21 +22,35 @@
                 ->count()
             : 0;
 
-        $devUnreadFeedbackCount = \App\Models\Feedback::where('status', 'Belum Dibalas')->count()
+        $devPendingFeedbackCount = \App\Models\Feedback::where('status', 'Belum Dibalas')->count()
             + \App\Models\FeedbackMessage::where('sender_type', 'customer')
                 ->whereNull('read_at')
-                ->whereHas('feedback', function($q) {
-                    $q->where('status', 'Dibalas');
-                })
                 ->count();
 
-        $devNewUsersCount = \App\Models\User::join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
-            ->where('users.type', 0)
-            ->whereDate('users.created_at', \Carbon\Carbon::today())
-            ->where('status_notifikasi_user.status', 'unread')
+        $devUnreadFeedbackCount = \App\Models\Feedback::whereNull('read_at')->count()
+            + \App\Models\FeedbackMessage::where('sender_type', 'customer')
+                ->whereNull('read_at')
+                ->count();
+
+        $devNewUsersCount = \App\Models\StatusNotifikasiUser::where('status', 'unread')->count();
+        $devUnreadAdPaymentsCount = \App\Models\PembayaranIklan::whereNull('read_at')->count();
+
+        $devRevisedIklanCount = \App\Models\IklanSuspend::join('detail_iklan', 'iklan_suspends.id_detail_iklan', '=', 'detail_iklan.id')
+            ->where('detail_iklan.status_iklan', 'Nonaktif')
+            ->where('iklan_suspends.status_revisi', 'sudah_diperbaiki')
             ->count();
 
-        $devTotalNotifCount = $devUnreadFeedbackCount + $devNewUsersCount;
+        $devUnreadRevisedAdsCount = \App\Models\IklanSuspend::join('detail_iklan', 'iklan_suspends.id_detail_iklan', '=', 'detail_iklan.id')
+            ->where('detail_iklan.status_iklan', 'Nonaktif')
+            ->where('iklan_suspends.status_revisi', 'sudah_diperbaiki')
+            ->whereNull('iklan_suspends.read_at')
+            ->count();
+
+        $devUnreadRevisedProductsCount = \App\Models\ProdukSuspend::where('status_revisi', 'sudah_diperbaiki')
+            ->whereNull('read_at')
+            ->count();
+
+        $devTotalActivityNotifCount = $devUnreadFeedbackCount + $devNewUsersCount + $devUnreadAdPaymentsCount + $devUnreadRevisedAdsCount + $devUnreadRevisedProductsCount;
 
         $menuGroups = [
             [
@@ -49,12 +63,20 @@
                         'active_titles' => ['Dashboard | Developer Kamp Sewa'],
                     ],
                     [
-                        'label' => 'Notifications',
+                        'label' => 'Notifikasi Aktivitas',
                         'icon' => 'fi fi-rr-bell',
+                        'href' => route('developer.notifications.index'),
+                        'active_titles' => ['Notifikasi Aktivitas | Developer KampSewa', 'Pusat Notifikasi & Aktivitas Pengguna'],
+                        'badge_id' => 'sidebar-dev-activity-notif-badge',
+                        'badge_count' => $devTotalActivityNotifCount,
+                    ],
+                    [
+                        'label' => 'Feedback Users',
+                        'icon' => 'fi fi-rr-comment-alt-middle',
                         'href' => route('notification.index'),
-                        'active_titles' => ['Dashboard | Notification'],
-                        'badge_id' => 'sidebar-dev-notif-badge',
-                        'badge_count' => $devTotalNotifCount,
+                        'active_titles' => ['Dashboard | Help & Feedback Users', 'Dashboard | Notification'],
+                        'badge_id' => 'sidebar-dev-feedback-badge',
+                        'badge_count' => $devPendingFeedbackCount,
                     ],
                     [
                         'label' => 'Live Chat Mitra',
@@ -97,6 +119,8 @@
                         'icon' => 'fi fi-rr-ad',
                         'href' => route('iklan.index'),
                         'active_titles' => ['Iklan Customer'],
+                        'badge_id' => 'sidebar-dev-iklan-badge',
+                        'badge_count' => $devRevisedIklanCount,
                     ],
                 ],
             ],
@@ -121,9 +145,9 @@
                 'label' => 'Keuangan & Laporan',
                 'items' => [
                     [
-                        'label' => 'Penghasilan & Pengeluaran',
+                        'label' => 'Arus Kas',
                         'icon' => 'fi fi-rr-revenue-alt',
-                        'href' => route('penghasilan.index'),
+                        'href' => route('pengeluaran.index'),
                         'active_titles' => ['Penghasilan', 'Pengeluaran'],
                     ],
                     [
@@ -245,8 +269,12 @@
 
                                     @if (!empty($item['badge_id']))
                                         <span id="{{ $item['badge_id'] }}"
-                                            class="{{ ($item['badge_count'] ?? 0) > 0 ? 'inline-flex' : 'hidden' }} ml-auto h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white shadow-xs">
-                                            {{ ($item['badge_count'] ?? 0) > 99 ? '99+' : ($item['badge_count'] ?? 0) }}
+                                            class="{{ ($item['badge_count'] ?? 0) > 0 ? 'inline-flex' : 'hidden' }} ml-auto items-center gap-1 h-5 min-w-[20px] justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white shadow-[0_2px_8px_-2px_rgba(244,63,94,0.6)]">
+                                            <span class="relative flex h-1.5 w-1.5">
+                                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                                <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-white"></span>
+                                            </span>
+                                            <span>{{ ($item['badge_count'] ?? 0) > 999 ? '999+' : ($item['badge_count'] ?? 0) }}</span>
                                         </span>
                                     @elseif ($isActive)
                                         <span class="ml-auto h-2 w-2 rounded-full bg-white"></span>

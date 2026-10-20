@@ -11,9 +11,15 @@ class PengeluaranPerusahaan extends Model
 
     protected $table = 'pengeluaran_perusahaan';
     protected $fillable = [
+        'id_user',
         'sumber',
         'deskripsi',
         'nominal',
         'kategori_pengeluaran',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
 }

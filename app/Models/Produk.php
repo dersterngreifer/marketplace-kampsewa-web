@@ -85,4 +85,14 @@ class Produk extends Model
     {
         return $this->hasManyThrough(DetailVariantProduk::class, VariantProduk::class, 'id_produk', 'id_variant_produk');
     }
+
+    public function suspends()
+    {
+        return $this->hasMany(ProdukSuspend::class, 'id_produk');
+    }
+
+    public function latestSuspend()
+    {
+        return $this->hasOne(ProdukSuspend::class, 'id_produk')->latestOfMany();
+    }
 }

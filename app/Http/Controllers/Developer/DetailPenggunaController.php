@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerNotification;
 use App\Models\Feedback;
 use App\Models\Produk;
+use App\Models\ProdukSuspend;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\Rule;
+use RealRashid\SweetAlert\Facades\Alert;
 use Throwable;
 
 class DetailPenggunaController extends Controller
@@ -166,15 +170,20 @@ class DetailPenggunaController extends Controller
         ->limit(10)
         ->get();
 
-    $get_kategori = Produk::select('kategori')
+    $get_kategori = Produk::where('id_user', $user->id)
+        ->whereNotNull('kategori')
+        ->where('kategori', '!=', '')
+        ->select('kategori')
         ->distinct()
+        ->orderBy('kategori', 'asc')
         ->pluck('kategori')
         ->toArray();
 
     $filter_category = $request->input('filter_category', 'Semua Barang');
+    $filter_status = $request->input('filter_status', 'semua');
     $cari_barang = $request->input('cari_barang', '');
 
-    $get_data_produk = Produk::with('foto')
+    $get_data_produk = Produk::with(['foto', 'latestSuspend'])
         ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
         ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
         ->select(
@@ -182,17 +191,32 @@ class DetailPenggunaController extends Controller
             'produk.id',
             'produk.nama',
             'produk.deskripsi',
+            'produk.status',
             DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa_terkecil')
         )
         ->where('produk.id_user', $user->id)
         ->when($filter_category != 'Semua Barang', function ($query) use ($filter_category) {
             return $query->where('produk.kategori', $filter_category);
         })
+        ->when($filter_status == 'suspend' || $filter_status == 'Ditangguhkan', function ($query) {
+            return $query->where('produk.status', 'Ditangguhkan');
+        })
+        ->when($filter_status == 'tersedia' || $filter_status == 'Tersedia', function ($query) {
+            return $query->where('produk.status', '!=', 'Ditangguhkan');
+        })
         ->when($cari_barang, function ($query) use ($cari_barang) {
             return $query->where('produk.nama', 'like', "%{$cari_barang}%");
         })
-        ->groupBy('produk.id', 'produk.nama', 'produk.deskripsi')
+        ->groupBy('produk.id', 'produk.nama', 'produk.deskripsi', 'produk.status')
         ->get();
+
+    $total_produk_suspend = Produk::where('id_user', $user->id)
+        ->where('status', 'Ditangguhkan')
+        ->count();
+
+    $total_produk_tersedia = Produk::where('id_user', $user->id)
+        ->where('status', '!=', 'Ditangguhkan')
+        ->count();
 
     return view('developers.detailpengguna-produkdisewakan')->with([
         'name' => $user->name,
@@ -201,7 +225,10 @@ class DetailPenggunaController extends Controller
         'get_kategori' => $get_kategori,
         'get_data_produk' => $get_data_produk,
         'filter_category' => $filter_category,
+        'filter_status' => $filter_status,
         'cari_barang' => $cari_barang,
+        'total_produk_suspend' => $total_produk_suspend,
+        'total_produk_tersedia' => $total_produk_tersedia,
         'user_id' => $user->id
     ]);
 }
@@ -222,10 +249,15 @@ class DetailPenggunaController extends Controller
         ->limit(10)
         ->get();
 
-    $produk = Produk::with(['foto'])
+    $produk = Produk::with(['foto', 'latestSuspend.admin'])
         ->where('id_user', $user->id)
         ->where('nama', $namaproduk)
         ->firstOrFail();
+
+    // Jika suspend berstatus 'sudah_diperbaiki' dan admin membuka halaman ini, tandai notifikasi dibaca
+    if ($produk->latestSuspend && $produk->latestSuspend->status_revisi === 'sudah_diperbaiki' && is_null($produk->latestSuspend->read_at)) {
+        $produk->latestSuspend->update(['read_at' => now()]);
+    }
 
     $stok_produk = DB::table('detail_variant_produk')
         ->join('variant_produk', 'detail_variant_produk.id_variant_produk', '=', 'variant_produk.id')
@@ -248,19 +280,86 @@ class DetailPenggunaController extends Controller
         ->first();
 
     return view('developers.detail-produk-disewakan', [
-        'title'           => 'Detail Produk Disewakan',
-        'name'            => $user->name,
-        'user_id'         => $user->id,
+        'title'               => 'Detail Produk Disewakan',
+        'name'                => $user->name,
+        'user_id'             => $user->id,
         'user_baru_terdaftar' => $user_baru_terdaftar,
-        'nama_produk'     => $namaproduk,
-        'produk'          => $produk,
-        'stok_produk'     => $stok_produk,
+        'nama_produk'         => $namaproduk,
+        'produk'              => $produk,
+        'suspend_info'        => $produk->latestSuspend,
+        'stok_produk'         => $stok_produk,
         'harga_sewa_terkecil' => $harga_sewa_terkecil,
-        'total_disewa'    => $total_disewa,
-        'rata_rata_rating' => round($rating_data->rata_rata ?? 0, 1),
-        'total_rating'    => $rating_data->total_rating ?? 0,
+        'total_disewa'        => $total_disewa,
+        'rata_rata_rating'    => round($rating_data->rata_rata ?? 0, 1),
+        'total_rating'        => $rating_data->total_rating ?? 0,
     ]);
 }
+
+    public function suspendProduk(Request $request, $id_produk)
+    {
+        $request->validate([
+            'alasan'  => 'required|string|max:255',
+            'catatan' => 'nullable|string|max:1000',
+        ]);
+
+        $produk = Produk::findOrFail($id_produk);
+        $produk->update(['status' => 'Ditangguhkan']);
+
+        // Nonaktifkan suspend sebelumnya jika ada
+        ProdukSuspend::where('id_produk', $produk->id)
+            ->where('status_revisi', '!=', 'selesai')
+            ->update(['status_revisi' => 'selesai']);
+
+        // Catat suspend baru
+        $suspend = ProdukSuspend::create([
+            'id_produk'     => $produk->id,
+            'id_user'       => $produk->id_user,
+            'id_admin'      => Auth::id(),
+            'alasan'        => $request->input('alasan'),
+            'catatan'       => $request->input('catatan'),
+            'status_revisi' => 'menunggu_perbaikan',
+        ]);
+
+        // Kirim notifikasi ke customer
+        CustomerNotification::notifyCustomer(
+            $produk->id_user,
+            'produk_suspend',
+            'Produk Ditangguhkan (Suspend)',
+            'Produk "' . $produk->nama . '" telah ditangguhkan oleh admin. Alasan: ' . $request->input('alasan') . '. Silakan periksa rincian perbaikan di halaman produk Anda.',
+            $request->input('alasan'),
+            route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($produk->id)], false),
+            $produk->id
+        );
+
+        Alert::success('Produk Ditangguhkan', 'Produk berhasil di-suspend dan rincian pelanggaran telah dikirimkan ke notifikasi pengguna.')->persistent(true);
+        return back();
+    }
+
+    public function pulihkanProduk(Request $request, $id_produk)
+    {
+        $produk = Produk::findOrFail($id_produk);
+        $produk->update(['status' => 'Tersedia']);
+
+        ProdukSuspend::where('id_produk', $produk->id)
+            ->where('status_revisi', '!=', 'selesai')
+            ->update([
+                'status_revisi' => 'selesai',
+                'read_at'       => now(),
+            ]);
+
+        CustomerNotification::notifyCustomer(
+            $produk->id_user,
+            'produk_pulihkan',
+            'Produk Anda Telah Dipulihkan / Diaktifkan',
+            'Produk "' . $produk->nama . '" telah diverifikasi dan dipulihkan kembali oleh admin KampSewa. Produk kini aktif dan dapat disewa kembali.',
+            null,
+            route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($produk->id)], false),
+            $produk->id
+        );
+
+        Alert::toast('Produk berhasil dipulihkan & diaktifkan kembali.', 'success');
+        return back();
+    }
     public function showDetailProdukSedangDisewa(User $user, $namaproduk)
 {
     if ($user->type != 0) {
@@ -301,8 +400,17 @@ class DetailPenggunaController extends Controller
 
     public function deleteSelectedProducts(Request $request)
     {
-        $ids = $request->input('ids');
-        Produk::whereIn('id', $ids)->delete();
+        $ids = $request->input('ids', []);
+        if (!empty($ids) && is_array($ids)) {
+            Produk::whereIn('id', $ids)->delete();
+        }
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk terpilih telah dihapus.'
+            ]);
+        }
 
         return back()->with('success', 'Produk terpilih telah dihapus.');
     }

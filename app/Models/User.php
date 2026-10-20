@@ -95,4 +95,49 @@ class User extends Authenticatable
     {
         return $this->hasMany(Penyewaan::class, 'id_user');
     }
+
+    public function pemasukanPerusahaan()
+    {
+        return $this->hasMany(PemasukanPerusahaan::class, 'id_user');
+    }
+
+    public function pengeluaranPerusahaan()
+    {
+        return $this->hasMany(PengeluaranPerusahaan::class, 'id_user');
+    }
+
+    /**
+     * Resolve route binding by ID, Encrypted ID, or Name.
+     */
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field) {
+            return $this->where($field, $value)->first();
+        }
+
+        // 1. Cari berdasarkan ID numerik
+        if (is_numeric($value)) {
+            $user = $this->where('id', (int) $value)->first();
+            if ($user) return $user;
+        }
+
+        // 2. Cari berdasarkan ID terenkripsi (Crypt)
+        try {
+            $decrypted = \Illuminate\Support\Facades\Crypt::decrypt($value);
+            if (is_numeric($decrypted)) {
+                $user = $this->where('id', (int) $decrypted)->first();
+                if ($user) return $user;
+            }
+        } catch (\Throwable $e) {
+            // Bukan string terenkripsi, lanjutkan
+        }
+
+        // 3. Cari berdasarkan Nama Lengkap (exact atau URL decoded)
+        $decoded = trim(urldecode($value));
+        $user = $this->where('name', $decoded)->orWhere('name', $value)->first();
+        if ($user) return $user;
+
+        // 4. Cari berdasarkan substring / fuzzy Nama
+        return $this->where('name', 'LIKE', '%' . $decoded . '%')->first();
+    }
 }

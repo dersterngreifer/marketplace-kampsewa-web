@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Developer;
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\CheckUserLogin;
 use App\Models\Feedback;
+use App\Models\FeedbackMessage;
 use App\Models\PemasukanPerusahaan;
+use App\Models\PembayaranIklan;
 use App\Models\PembayaranPenyewaan;
 use App\Models\PengeluaranPerusahaan;
 use App\Models\StatusNotifikasiUser;
@@ -208,10 +210,19 @@ class DashboardController extends Controller
 
     public function markNotificationAsRead()
     {
-        $statusNotifikasi = StatusNotifikasiUser::where('status', 'unread')->get();
-        foreach ($statusNotifikasi as $status) {
-            $status->update(['status' => 'read']);
+        StatusNotifikasiUser::where('status', 'unread')->update(['status' => 'read']);
+        Feedback::whereNull('read_at')->update(['read_at' => now()]);
+        FeedbackMessage::where('sender_type', 'customer')->whereNull('read_at')->update(['read_at' => now()]);
+        PembayaranIklan::whereNull('read_at')->update(['read_at' => now()]);
+
+        if (request()->wantsJson() || request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Semua notifikasi berhasil ditandai sebagai dibaca.',
+            ]);
         }
-        return back();
+
+        return back()->with('success', 'Semua notifikasi berhasil ditandai sebagai dibaca.');
     }
+
 }

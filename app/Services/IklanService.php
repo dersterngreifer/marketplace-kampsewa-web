@@ -49,7 +49,26 @@ class IklanService
 
                 DetailIklan::whereIn('id', $expiredDetailIds)->update(['status_iklan' => 'Selesai']);
                 if (!empty($expiredIklanIds)) {
+                    $iklanList = Iklan::whereIn('id', $expiredIklanIds)->get();
                     Iklan::whereIn('id', $expiredIklanIds)->update(['status' => 'expired']);
+
+                    foreach ($iklanList as $iklanItem) {
+                        try {
+                            if ($iklanItem->id_user) {
+                                \App\Models\CustomerNotification::notifyCustomer(
+                                    $iklanItem->id_user,
+                                    'iklan_selesai_otomatis',
+                                    'Masa Tayang Iklan Telah Selesai',
+                                    'Masa tayang iklan promosi "' . $iklanItem->judul . '" telah berakhir otomatis sesuai jadwal.',
+                                    null,
+                                    route('buat-iklan.index', ['id_user' => \Illuminate\Support\Facades\Crypt::encrypt($iklanItem->id_user)], false),
+                                    $iklanItem->id
+                                );
+                            }
+                        } catch (\Exception $e) {
+                            Log::error('Gagal kirim notif iklan_selesai_otomatis: ' . $e->getMessage());
+                        }
+                    }
                 }
             }
 

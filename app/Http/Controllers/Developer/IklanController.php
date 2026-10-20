@@ -48,6 +48,11 @@ class IklanController extends Controller
         // 4. Count total iklan pending (antrian menunggu giliran) & suspended
         $get_count_total_iklan_pending = DetailIklan::where('status_iklan', 'Pending')->count();
         $get_count_total_iklan_suspend = DetailIklan::where('status_iklan', 'Nonaktif')->count();
+        $get_count_iklan_sudah_direvisi = \App\Models\IklanSuspend::join('detail_iklan', 'iklan_suspends.id_detail_iklan', '=', 'detail_iklan.id')
+            ->where('detail_iklan.status_iklan', 'Nonaktif')
+            ->where('iklan_suspends.status_revisi', 'sudah_diperbaiki')
+            ->count();
+        $get_count_iklan_menunggu_revisi = max(0, $get_count_total_iklan_suspend - $get_count_iklan_sudah_direvisi);
 
         // 5. Count total iklan aktif (maksimal 15 iklan yang sedang tayang di mobile)
         $get_count_total_iklan_aktif = DetailIklan::where('status_iklan', 'Aktif')->count();
@@ -126,6 +131,9 @@ class IklanController extends Controller
 
         $user_pending = $user_pending->paginate(10, ['*'], 'pending_page');
 
+        // Filter khusus daftar iklan ditangguhkan: semua, revisi (sudah direvisi mitra), menunggu (masih suspend)
+        $filter_suspend = $request->query('filter_suspend', 'semua');
+
         // 9b. Data iklan yang ditangguhkan (suspend / nonaktif)
         $data_iklan_suspend = User::join('iklan', 'users.id', '=', 'iklan.id_user')
             ->join('detail_iklan', 'iklan.id', '=', 'detail_iklan.id_iklan')
@@ -166,14 +174,24 @@ class IklanController extends Controller
                 'pembayaran_iklan.metode_bayar',
                 'pembayaran_iklan.total_bayar as nominal_bayar',
                 'pembayaran_iklan.id as id_pembayaran_iklan',
+                'iklan_suspends.id as id_iklan_suspend',
                 'iklan_suspends.alasan as suspend_alasan',
                 'iklan_suspends.catatan as suspend_catatan',
                 'iklan_suspends.bagian_revisi as suspend_bagian_revisi',
                 'iklan_suspends.status_revisi as suspend_status_revisi',
-                'iklan_suspends.created_at as suspend_created_at'
-            )
-            ->orderByDesc('detail_iklan.updated_at')
-            ->distinct();
+                'iklan_suspends.read_at as suspend_read_at',
+                'iklan_suspends.created_at as suspend_created_at',
+                'iklan_suspends.updated_at as suspend_updated_at'
+            );
+
+        if ($filter_suspend === 'revisi') {
+            $data_iklan_suspend->where('iklan_suspends.status_revisi', 'sudah_diperbaiki');
+        } elseif ($filter_suspend === 'menunggu') {
+            $data_iklan_suspend->where(function ($q) {
+                $q->where('iklan_suspends.status_revisi', '!=', 'sudah_diperbaiki')
+                  ->orWhereNull('iklan_suspends.status_revisi');
+            });
+        }
 
         if (!empty($cari)) {
             $data_iklan_suspend->where(function ($query) use ($cari) {
@@ -186,7 +204,13 @@ class IklanController extends Controller
             });
         }
 
-        $data_iklan_suspend = $data_iklan_suspend->paginate(10, ['*'], 'suspend_page');
+        $data_iklan_suspend = $data_iklan_suspend
+            ->orderByRaw("CASE WHEN iklan_suspends.status_revisi = 'sudah_diperbaiki' THEN 0 ELSE 1 END")
+            ->orderByDesc('iklan_suspends.updated_at')
+            ->orderByDesc('detail_iklan.updated_at')
+            ->distinct()
+            ->paginate(10, ['*'], 'suspend_page')
+            ->appends(['filter_suspend' => $filter_suspend, 'cari' => $cari]);
 
         // Filter khusus arsip iklan selesai: semua, paksa, otomatis (waktu)
         $filter_selesai = $request->query('filter_selesai', 'semua');
@@ -335,12 +359,20 @@ class IklanController extends Controller
             ->orderBy('detail_iklan.tanggal_akhir', 'asc')
             ->get();
 
+        // Tandai notifikasi revisi iklan sebagai telah dibaca saat admin membuka halaman ini
+        \App\Models\IklanSuspend::where('status_revisi', 'sudah_diperbaiki')
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
         return view('developers.iklan')->with([
             'title'                          => 'Iklan Customer',
             'user_baru_terdaftar'            => $user_baru_terdaftar,
             'get_count_total_transaksi_iklan' => $get_count_total_transaksi_iklan,
             'get_count_total_iklan_pending'  => $get_count_total_iklan_pending,
             'get_count_total_iklan_suspend'  => $get_count_total_iklan_suspend,
+            'get_count_iklan_sudah_direvisi' => $get_count_iklan_sudah_direvisi,
+            'get_count_iklan_menunggu_revisi' => $get_count_iklan_menunggu_revisi,
+            'filter_suspend'                 => $filter_suspend,
             'get_count_total_iklan_aktif'    => $get_count_total_iklan_aktif,
             'get_count_total_iklan_selesai'  => $get_count_total_iklan_selesai,
             'pendapatan_iklan_bulan_ini'     => $pendapatan_iklan_bulan_ini,
@@ -388,7 +420,10 @@ class IklanController extends Controller
         // Selesaikan status penangguhan (suspend) jika ada
         \App\Models\IklanSuspend::where('id_iklan', $detail->id_iklan)
             ->where('status_revisi', '!=', 'selesai')
-            ->update(['status_revisi' => 'selesai']);
+            ->update([
+                'status_revisi' => 'selesai',
+                'read_at'       => now(),
+            ]);
 
         // Jika ada pembayaran yang belum lunas, tandai lunas
         PembayaranIklan::where('id_iklan', $detail->id_iklan)

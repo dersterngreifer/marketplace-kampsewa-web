@@ -176,45 +176,55 @@
             </div>
 
             {{-- Mitras Directory List --}}
-            <div id="devMitrasContainer" class="hidden flex-1 min-h-0 max-h-full overflow-y-auto overscroll-contain dev-chat-scrollbar divide-y divide-slate-100">
-                @foreach ($mitras as $mitra)
-                    <div data-mitra-search="{{ strtolower($mitra['name'] . ' ' . ($mitra['name_store'] ?? '') . ' ' . $mitra['email'] . ' ' . $mitra['nomor_telephone']) }}"
-                        onclick="selectPartner({{ $mitra['id'] }})"
-                        class="dev-mitra-item flex items-center justify-between gap-3 p-3.5 hover:bg-violet-50/50 transition-colors cursor-pointer">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="relative shrink-0">
-                                @if ($mitra['has_photo'] && $mitra['avatar_url'])
-                                    <img src="{{ $mitra['avatar_url'] }}" alt="{{ $mitra['name'] }}"
-                                        class="h-12 w-12 rounded-2xl object-cover border border-slate-200 shadow-2xs"
-                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div style="display:none;"
-                                        class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm items-center justify-center">
-                                        {{ $mitra['initials'] }}
-                                    </div>
-                                @else
-                                    <div class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm flex items-center justify-center">
-                                        {{ $mitra['initials'] }}
-                                    </div>
-                                @endif
-                                <span class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500"></span>
+            <div id="devMitrasContainer" class="hidden flex-1 min-h-0 max-h-full overflow-y-auto overscroll-contain dev-chat-scrollbar">
+                <div id="devMitrasList" class="divide-y divide-slate-100">
+                    @foreach ($mitras as $mitra)
+                        <div data-mitra-search="{{ strtolower($mitra['name'] . ' ' . ($mitra['name_store'] ?? '') . ' ' . $mitra['email'] . ' ' . $mitra['nomor_telephone']) }}"
+                            onclick="selectPartner({{ $mitra['id'] }})"
+                            class="dev-mitra-item flex items-center justify-between gap-3 p-3.5 hover:bg-violet-50/50 transition-colors cursor-pointer">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="relative shrink-0">
+                                    @if ($mitra['has_photo'] && $mitra['avatar_url'])
+                                        <img src="{{ $mitra['avatar_url'] }}" alt="{{ $mitra['name'] }}"
+                                            class="h-12 w-12 rounded-2xl object-cover border border-slate-200 shadow-2xs"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div style="display:none;"
+                                            class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm items-center justify-center">
+                                            {{ $mitra['initials'] }}
+                                        </div>
+                                    @else
+                                        <div class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm flex items-center justify-center">
+                                            {{ $mitra['initials'] }}
+                                        </div>
+                                    @endif
+                                    <span class="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white bg-emerald-500"></span>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs sm:text-sm font-bold text-slate-900 truncate">{{ $mitra['name'] }}</h4>
+                                    @if (!empty($mitra['name_store']))
+                                        <p class="text-[11px] font-semibold text-violet-600 truncate">
+                                            <i class="bi bi-shop mr-1"></i>{{ $mitra['name_store'] }}
+                                        </p>
+                                    @else
+                                        <p class="text-[11px] text-slate-400 truncate">Customer KampSewa</p>
+                                    @endif
+                                    <p class="text-[10px] text-slate-400 truncate mt-0.5">{{ $mitra['email'] }}</p>
+                                </div>
                             </div>
-                            <div class="min-w-0">
-                                <h4 class="text-xs sm:text-sm font-bold text-slate-900 truncate">{{ $mitra['name'] }}</h4>
-                                @if (!empty($mitra['name_store']))
-                                    <p class="text-[11px] font-semibold text-violet-600 truncate">
-                                        <i class="bi bi-shop mr-1"></i>{{ $mitra['name_store'] }}
-                                    </p>
-                                @else
-                                    <p class="text-[11px] text-slate-400 truncate">Customer KampSewa</p>
-                                @endif
-                                <p class="text-[10px] text-slate-400 truncate mt-0.5">{{ $mitra['email'] }}</p>
-                            </div>
+                            <span class="shrink-0 rounded-xl bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-600 hover:bg-violet-600 hover:text-white transition-colors">
+                                Chat
+                            </span>
                         </div>
-                        <span class="shrink-0 rounded-xl bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-600 hover:bg-violet-600 hover:text-white transition-colors">
-                            Chat
-                        </span>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
+                <div id="devMitrasLoadMoreContainer" class="p-3.5 text-center border-t border-slate-100 bg-slate-50/60">
+                    <button type="button" id="btnDevLoadMoreMitras" onclick="loadMoreDevMitras()"
+                        @if(empty($has_more_mitras)) disabled @endif
+                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 {{ empty($has_more_mitras) ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60' : 'bg-white hover:bg-violet-50 text-violet-700 border border-violet-200/80 shadow-2xs hover:border-violet-300 cursor-pointer' }}">
+                        <span id="btnDevLoadMoreText">{{ empty($has_more_mitras) ? 'Tidak ada lagi data' : 'Lihat Sebagian Lagi' }}</span>
+                        <i id="btnDevLoadMoreSpinner" class="bi bi-arrow-repeat hidden animate-spin"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -361,36 +371,46 @@
             </div>
         </div>
 
-        <div id="modalMitrasGrid" class="max-h-[60vh] sm:max-h-[460px] overflow-y-auto overscroll-contain dev-chat-scrollbar p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            @foreach ($mitras as $mitra)
-                <div data-modal-mitra="{{ strtolower($mitra['name'] . ' ' . ($mitra['name_store'] ?? '') . ' ' . $mitra['email'] . ' ' . $mitra['nomor_telephone']) }}"
-                    onclick="selectPartner({{ $mitra['id'] }}); closeMitraModal();"
-                    class="modal-mitra-card group flex items-start gap-3.5 rounded-2xl border border-slate-200/80 p-3.5 hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer">
-                    <div class="relative shrink-0">
-                        @if ($mitra['has_photo'] && $mitra['avatar_url'])
-                            <img src="{{ $mitra['avatar_url'] }}" alt="{{ $mitra['name'] }}"
-                                class="h-12 w-12 rounded-2xl object-cover border border-slate-200"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div style="display:none;"
-                                class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm items-center justify-center">
-                                {{ $mitra['initials'] }}
-                            </div>
-                        @else
-                            <div class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm flex items-center justify-center">
-                                {{ $mitra['initials'] }}
-                            </div>
-                        @endif
+        <div id="modalMitrasScrollArea" class="max-h-[60vh] sm:max-h-[460px] overflow-y-auto overscroll-contain dev-chat-scrollbar">
+            <div id="modalMitrasGrid" class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @foreach ($mitras as $mitra)
+                    <div data-modal-mitra="{{ strtolower($mitra['name'] . ' ' . ($mitra['name_store'] ?? '') . ' ' . $mitra['email'] . ' ' . $mitra['nomor_telephone']) }}"
+                        onclick="selectPartner({{ $mitra['id'] }}); closeMitraModal();"
+                        class="modal-mitra-card group flex items-start gap-3.5 rounded-2xl border border-slate-200/80 p-3.5 hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer">
+                        <div class="relative shrink-0">
+                            @if ($mitra['has_photo'] && $mitra['avatar_url'])
+                                <img src="{{ $mitra['avatar_url'] }}" alt="{{ $mitra['name'] }}"
+                                    class="h-12 w-12 rounded-2xl object-cover border border-slate-200"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div style="display:none;"
+                                    class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm items-center justify-center">
+                                    {{ $mitra['initials'] }}
+                                </div>
+                            @else
+                                <div class="h-12 w-12 rounded-2xl bg-gradient-to-br {{ $mitra['gradient'] }} text-white font-extrabold text-sm flex items-center justify-center">
+                                    {{ $mitra['initials'] }}
+                                </div>
+                            @endif
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-violet-700 truncate">{{ $mitra['name'] }}</h4>
+                            <span class="mt-0.5 inline-block rounded-md bg-violet-100/80 px-2 py-0.5 text-[10px] font-bold text-violet-700 truncate max-w-full">
+                                {{ $mitra['role_label'] }}
+                            </span>
+                            <p class="mt-1 text-[11px] text-slate-500 truncate">{{ $mitra['email'] }}</p>
+                            <p class="text-[11px] text-slate-400 truncate">{{ $mitra['nomor_telephone'] }}</p>
+                        </div>
                     </div>
-                    <div class="min-w-0 flex-1">
-                        <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-violet-700 truncate">{{ $mitra['name'] }}</h4>
-                        <span class="mt-0.5 inline-block rounded-md bg-violet-100/80 px-2 py-0.5 text-[10px] font-bold text-violet-700 truncate max-w-full">
-                            {{ $mitra['role_label'] }}
-                        </span>
-                        <p class="mt-1 text-[11px] text-slate-500 truncate">{{ $mitra['email'] }}</p>
-                        <p class="text-[11px] text-slate-400 truncate">{{ $mitra['nomor_telephone'] }}</p>
-                    </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
+            <div id="modalMitrasLoadMoreContainer" class="p-4 pt-1 text-center bg-slate-50/50 border-t border-slate-100">
+                <button type="button" id="btnModalLoadMoreMitras" onclick="loadMoreModalMitras()"
+                    @if(empty($has_more_mitras)) disabled @endif
+                    class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 {{ empty($has_more_mitras) ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60' : 'bg-white hover:bg-violet-50 text-violet-700 border border-violet-200/80 shadow-2xs hover:border-violet-300 cursor-pointer' }}">
+                    <span id="btnModalLoadMoreText">{{ empty($has_more_mitras) ? 'Tidak ada lagi data' : 'Lihat Sebagian Lagi' }}</span>
+                    <i id="btnModalLoadMoreSpinner" class="bi bi-arrow-repeat hidden animate-spin"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -406,6 +426,9 @@
         csrfToken: @json(csrf_token()),
         mitras: @json($mitras->values()),
         initialPartnerId: @json($selected_partner_id ? (int) $selected_partner_id : null),
+        totalMitras: {{ (int) ($total_mitras_count ?? count($mitras)) }},
+        initialLimit: {{ (int) ($initial_limit ?? 50) }},
+        hasMoreMitras: @json(!empty($has_more_mitras)),
     };
 
     let devState = {
@@ -418,6 +441,13 @@
         isSending: false,
         pollTimer: null,
         searchTimer: null,
+        mitraOffset: {{ count($mitras) }},
+        mitraHasMore: @json(!empty($has_more_mitras)),
+        mitraLoading: false,
+        modalMitraQuery: '',
+        modalMitraOffset: {{ count($mitras) }},
+        modalMitraHasMore: @json(!empty($has_more_mitras)),
+        modalMitraLoading: false,
     };
 
     function escapeDevHtml(str) {
@@ -457,6 +487,156 @@
         `;
     }
 
+    function renderDevMitraItem(m) {
+        const searchKeywords = escapeDevHtml((m.name + ' ' + (m.name_store || '') + ' ' + m.email + ' ' + m.nomor_telephone).toLowerCase());
+        return `
+            <div data-mitra-search="${searchKeywords}"
+                onclick="selectPartner(${m.id})"
+                class="dev-mitra-item flex items-center justify-between gap-3 p-3.5 hover:bg-violet-50/50 transition-colors cursor-pointer">
+                <div class="flex items-center gap-3 min-w-0">
+                    ${renderDevAvatar(m, 'h-12 w-12', 'rounded-2xl', 'text-sm')}
+                    <div class="min-w-0">
+                        <h4 class="text-xs sm:text-sm font-bold text-slate-900 truncate">${escapeDevHtml(m.name)}</h4>
+                        ${m.name_store
+                            ? `<p class="text-[11px] font-semibold text-violet-600 truncate"><i class="bi bi-shop mr-1"></i>${escapeDevHtml(m.name_store)}</p>`
+                            : `<p class="text-[11px] text-slate-400 truncate">Customer KampSewa</p>`}
+                        <p class="text-[10px] text-slate-400 truncate mt-0.5">${escapeDevHtml(m.email)}</p>
+                    </div>
+                </div>
+                <span class="shrink-0 rounded-xl bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-600 hover:bg-violet-600 hover:text-white transition-colors">
+                    Chat
+                </span>
+            </div>
+        `;
+    }
+
+    function renderModalMitraCard(m) {
+        const searchKeywords = escapeDevHtml((m.name + ' ' + (m.name_store || '') + ' ' + m.email + ' ' + m.nomor_telephone).toLowerCase());
+        return `
+            <div data-modal-mitra="${searchKeywords}"
+                onclick="selectPartner(${m.id}); closeMitraModal();"
+                class="modal-mitra-card group flex items-start gap-3.5 rounded-2xl border border-slate-200/80 p-3.5 hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer">
+                ${renderDevAvatar(m, 'h-12 w-12', 'rounded-2xl', 'text-sm')}
+                <div class="min-w-0 flex-1">
+                    <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-violet-700 truncate">${escapeDevHtml(m.name)}</h4>
+                    <span class="mt-0.5 inline-block rounded-md bg-violet-100/80 px-2 py-0.5 text-[10px] font-bold text-violet-700 truncate max-w-full">
+                        ${escapeDevHtml(m.role_label || 'Mitra Toko')}
+                    </span>
+                    <p class="mt-1 text-[11px] text-slate-500 truncate">${escapeDevHtml(m.email)}</p>
+                    <p class="text-[11px] text-slate-400 truncate">${escapeDevHtml(m.nomor_telephone)}</p>
+                </div>
+            </div>
+        `;
+    }
+
+    function updateDevLoadMoreButtonState(status) {
+        const btn = document.getElementById('btnDevLoadMoreMitras');
+        const textEl = document.getElementById('btnDevLoadMoreText');
+        const spinner = document.getElementById('btnDevLoadMoreSpinner');
+        if (!btn || !textEl) return;
+
+        if (status === 'loading') {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-500 border border-slate-200 cursor-wait';
+            textEl.textContent = 'Memuat mitra...';
+            if (spinner) spinner.classList.remove('hidden');
+        } else if (status === 'empty' || !devState.mitraHasMore) {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60';
+            textEl.textContent = 'Tidak ada lagi data';
+            if (spinner) spinner.classList.add('hidden');
+        } else {
+            btn.disabled = false;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white hover:bg-violet-50 text-violet-700 border border-violet-200/80 shadow-2xs hover:border-violet-300 cursor-pointer';
+            textEl.textContent = 'Lihat Sebagian Lagi';
+            if (spinner) spinner.classList.add('hidden');
+        }
+    }
+
+    async function loadMoreDevMitras() {
+        if (devState.mitraLoading || !devState.mitraHasMore) return;
+        devState.mitraLoading = true;
+        updateDevLoadMoreButtonState('loading');
+
+        try {
+            const query = devState.searchQuery || '';
+            const offset = devState.mitraOffset;
+            const res = await fetch(`${DEV_CHAT_CONFIG.mitrasUrl}?q=${encodeURIComponent(query)}&offset=${offset}&limit=50`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            if (data.success && data.mitras) {
+                const listCont = document.getElementById('devMitrasList');
+                if (listCont) {
+                    const html = data.mitras.map(renderDevMitraItem).join('');
+                    listCont.insertAdjacentHTML('beforeend', html);
+                }
+                devState.mitraOffset = data.offset;
+                devState.mitraHasMore = !!data.has_more;
+            }
+        } catch (e) {
+            console.error('Error loading more mitras:', e);
+        } finally {
+            devState.mitraLoading = false;
+            updateDevLoadMoreButtonState(devState.mitraHasMore ? 'ready' : 'empty');
+        }
+    }
+
+    function updateModalLoadMoreButtonState(status) {
+        const btn = document.getElementById('btnModalLoadMoreMitras');
+        const textEl = document.getElementById('btnModalLoadMoreText');
+        const spinner = document.getElementById('btnModalLoadMoreSpinner');
+        if (!btn || !textEl) return;
+
+        if (status === 'loading') {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-500 border border-slate-200 cursor-wait';
+            textEl.textContent = 'Memuat mitra...';
+            if (spinner) spinner.classList.remove('hidden');
+        } else if (status === 'empty' || !devState.modalMitraHasMore) {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60';
+            textEl.textContent = 'Tidak ada lagi data';
+            if (spinner) spinner.classList.add('hidden');
+        } else {
+            btn.disabled = false;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white hover:bg-violet-50 text-violet-700 border border-violet-200/80 shadow-2xs hover:border-violet-300 cursor-pointer';
+            textEl.textContent = 'Lihat Sebagian Lagi';
+            if (spinner) spinner.classList.add('hidden');
+        }
+    }
+
+    async function loadMoreModalMitras() {
+        if (devState.modalMitraLoading || !devState.modalMitraHasMore) return;
+        devState.modalMitraLoading = true;
+        updateModalLoadMoreButtonState('loading');
+
+        try {
+            const query = devState.modalMitraQuery || '';
+            const offset = devState.modalMitraOffset;
+            const res = await fetch(`${DEV_CHAT_CONFIG.mitrasUrl}?q=${encodeURIComponent(query)}&offset=${offset}&limit=50`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            if (data.success && data.mitras) {
+                const grid = document.getElementById('modalMitrasGrid');
+                if (grid) {
+                    const html = data.mitras.map(renderModalMitraCard).join('');
+                    grid.insertAdjacentHTML('beforeend', html);
+                }
+                devState.modalMitraOffset = data.offset;
+                devState.modalMitraHasMore = !!data.has_more;
+            }
+        } catch (e) {
+            console.error('Error loading more modal mitras:', e);
+        } finally {
+            devState.modalMitraLoading = false;
+            updateModalLoadMoreButtonState(devState.modalMitraHasMore ? 'ready' : 'empty');
+        }
+    }
+
     function switchDevTab(tab) {
         devState.activeTab = tab;
         const tabRooms = document.getElementById('devTabRooms');
@@ -478,7 +658,9 @@
             mitrasCont.classList.remove('hidden');
             roomsCont.classList.add('hidden');
             filterBar.classList.add('hidden');
-            filterDevMitraDirectory(devState.searchQuery);
+            if (devState.searchQuery) {
+                filterDevMitraDirectory(devState.searchQuery);
+            }
         }
     }
 
@@ -510,39 +692,30 @@
         clearTimeout(devState.searchTimer);
         devState.searchTimer = setTimeout(async () => {
             try {
-                const res = await fetch(`${DEV_CHAT_CONFIG.mitrasUrl}?q=${encodeURIComponent(query || '')}`, {
+                updateDevLoadMoreButtonState('loading');
+                const res = await fetch(`${DEV_CHAT_CONFIG.mitrasUrl}?q=${encodeURIComponent(query || '')}&offset=0&limit=50`, {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 if (!res.ok) return;
                 const data = await res.json();
                 if (!data.success) return;
                 const list = data.mitras || [];
-                const cont = document.getElementById('devMitrasContainer');
+                const cont = document.getElementById('devMitrasList');
                 if (!cont) return;
+
+                devState.mitraOffset = data.offset || list.length;
+                devState.mitraHasMore = !!data.has_more;
+
                 if (list.length === 0) {
                     cont.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">Tidak ada mitra ditemukan.</div>`;
+                    updateDevLoadMoreButtonState('empty');
                     return;
                 }
-                cont.innerHTML = list.map(m => `
-                    <div onclick="selectPartner(${m.id})"
-                        class="dev-mitra-item flex items-center justify-between gap-3 p-3.5 hover:bg-violet-50/50 transition-colors cursor-pointer">
-                        <div class="flex items-center gap-3 min-w-0">
-                            ${renderDevAvatar(m, 'h-12 w-12', 'rounded-2xl', 'text-sm')}
-                            <div class="min-w-0">
-                                <h4 class="text-xs sm:text-sm font-bold text-slate-900 truncate">${escapeDevHtml(m.name)}</h4>
-                                ${m.name_store
-                                    ? `<p class="text-[11px] font-semibold text-violet-600 truncate"><i class="bi bi-shop mr-1"></i>${escapeDevHtml(m.name_store)}</p>`
-                                    : `<p class="text-[11px] text-slate-400 truncate">Customer KampSewa</p>`}
-                                <p class="text-[10px] text-slate-400 truncate mt-0.5">${escapeDevHtml(m.email)}</p>
-                            </div>
-                        </div>
-                        <span class="shrink-0 rounded-xl bg-violet-50 px-3 py-1.5 text-xs font-bold text-violet-600 hover:bg-violet-600 hover:text-white transition-colors">
-                            Chat
-                        </span>
-                    </div>
-                `).join('');
+                cont.innerHTML = list.map(renderDevMitraItem).join('');
+                updateDevLoadMoreButtonState(devState.mitraHasMore ? 'ready' : 'empty');
             } catch (e) {
                 console.error(e);
+                updateDevLoadMoreButtonState('empty');
             }
         }, 250);
     }
@@ -560,10 +733,12 @@
     }
 
     function filterModalMitras(query) {
+        devState.modalMitraQuery = (query || '').trim();
         clearTimeout(devState.searchTimer);
         devState.searchTimer = setTimeout(async () => {
             try {
-                const res = await fetch(`${DEV_CHAT_CONFIG.mitrasUrl}?q=${encodeURIComponent(query || '')}`, {
+                updateModalLoadMoreButtonState('loading');
+                const res = await fetch(`${DEV_CHAT_CONFIG.mitrasUrl}?q=${encodeURIComponent(devState.modalMitraQuery)}&offset=0&limit=50`, {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
                 });
                 if (!res.ok) return;
@@ -572,26 +747,20 @@
                 const list = data.mitras || [];
                 const grid = document.getElementById('modalMitrasGrid');
                 if (!grid) return;
+
+                devState.modalMitraOffset = data.offset || list.length;
+                devState.modalMitraHasMore = !!data.has_more;
+
                 if (list.length === 0) {
                     grid.innerHTML = `<div class="col-span-2 p-8 text-center text-xs text-slate-400">Tidak ada pengguna atau mitra ditemukan.</div>`;
+                    updateModalLoadMoreButtonState('empty');
                     return;
                 }
-                grid.innerHTML = list.map(m => `
-                    <div onclick="selectPartner(${m.id}); closeMitraModal();"
-                        class="modal-mitra-card group flex items-start gap-3.5 rounded-2xl border border-slate-200/80 p-3.5 hover:border-violet-400 hover:bg-violet-50/30 transition-all cursor-pointer">
-                        ${renderDevAvatar(m, 'h-12 w-12', 'rounded-2xl', 'text-sm')}
-                        <div class="min-w-0 flex-1">
-                            <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-violet-700 truncate">${escapeDevHtml(m.name)}</h4>
-                            <span class="mt-0.5 inline-block rounded-md bg-violet-100/80 px-2 py-0.5 text-[10px] font-bold text-violet-700 truncate max-w-full">
-                                ${escapeDevHtml(m.role_label)}
-                            </span>
-                            <p class="mt-1 text-[11px] text-slate-500 truncate">${escapeDevHtml(m.email)}</p>
-                            <p class="text-[11px] text-slate-400 truncate">${escapeDevHtml(m.nomor_telephone)}</p>
-                        </div>
-                    </div>
-                `).join('');
+                grid.innerHTML = list.map(renderModalMitraCard).join('');
+                updateModalLoadMoreButtonState(devState.modalMitraHasMore ? 'ready' : 'empty');
             } catch (e) {
                 console.error(e);
+                updateModalLoadMoreButtonState('empty');
             }
         }, 250);
     }

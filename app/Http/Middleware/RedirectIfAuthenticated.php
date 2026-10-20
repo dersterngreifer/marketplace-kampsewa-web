@@ -21,7 +21,16 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                $user = Auth::guard($guard)->user();
+                if ($user->type == 1) {
+                    return redirect()->route('home.index');
+                } elseif ($user->type == 0) {
+                    if (empty($user->nomor_identitas)) {
+                        return redirect()->route('customer.isi-identitas');
+                    }
+                    return redirect()->route('dashboard-cust');
+                }
+                return redirect('/');
             }
         }
 

@@ -15,6 +15,10 @@ class CustMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        if (!auth()->check()) {
+            return redirect()->route('login');
+        }
+
         if (auth()->user()->type == 0) {
             // Syarat menjadi mitra: user harus sudah melengkapi verifikasi identitas (KYC)
             if (empty(auth()->user()->nomor_identitas)) {
@@ -22,6 +26,12 @@ class CustMiddleware
             }
             return $next($request);
         }
-        return back();
+
+        // Jika developer, arahkan ke dashboard developer
+        if (auth()->user()->type == 1) {
+            return redirect()->route('home.index');
+        }
+
+        return redirect()->route('landing-page.halaman-beranda');
     }
 }

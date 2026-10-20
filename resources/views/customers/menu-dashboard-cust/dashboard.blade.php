@@ -22,6 +22,128 @@
             </div>
         </div>
 
+        @if (isset($pesanan_pending) && $pesanan_pending->count() > 0)
+        <!-- Alert Pesanan Sewa Baru Masuk (Pending Order Notice) -->
+        <div class="rounded-[28px] border-2 border-blue-200 bg-gradient-to-r from-blue-50/90 via-white to-indigo-50/50 p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-blue-100">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-blue-600/25">
+                        <i class="bi bi-bag-check-fill text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-[11px] font-black uppercase text-blue-700 tracking-wider mb-1">
+                            <span class="w-2 h-2 rounded-full bg-blue-600 animate-ping"></span>
+                            Pesanan Baru Masuk
+                        </div>
+                        <h3 class="text-lg font-black text-gray-900">Perhatian: Ada {{ $pesanan_pending->count() }} Pesanan Sewa Baru Menunggu Konfirmasi Anda</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">Pelanggan telah melakukan pemesanan sewa via aplikasi. Segera periksa detail pesanan dan ketersediaan stok fisik barang Anda.</p>
+                    </div>
+                </div>
+                <a href="{{ route('menu-transaksi.index', ['id_user' => Crypt::encrypt(session('id_user'))]) }}" class="inline-flex items-center gap-2 px-4 py-2.5 bg-white border border-blue-200 text-blue-700 hover:bg-blue-600 hover:text-white text-xs font-bold rounded-xl transition shadow-sm shrink-0">
+                    <i class="bi bi-inbox-fill"></i> Buka Menu Order Masuk
+                </a>
+            </div>
+
+            <div class="mt-4 divide-y divide-blue-100/70">
+                @foreach ($pesanan_pending as $order)
+                <div class="pt-4 first:pt-0 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    <div class="flex items-start gap-4 min-w-0">
+                        {{-- Produk Thumbnail --}}
+                        <div class="relative w-20 sm:w-24 aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
+                            <img src="{{ $order->first_foto ? asset('assets/image/customers/produk/' . $order->first_foto) : asset('assets/image/customers/produk/foto_default.png') }}"
+                                 class="w-full h-full object-cover"
+                                 onerror="this.src='{{ asset('assets/image/customers/produk/foto_default.png') }}';"
+                                 alt="{{ $order->nama_produk_ringkas }}">
+                            <span class="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                                #{{ $order->id_penyewaan }}
+                            </span>
+                        </div>
+
+                        <div class="min-w-0 flex-1">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h4 class="text-sm font-bold text-gray-900 line-clamp-1">{{ $order->nama_produk_ringkas }}</h4>
+                                <span class="rounded-md bg-blue-100 text-blue-800 px-2 py-0.5 text-[10px] font-bold uppercase">
+                                    {{ $order->tipe_pesanan == 'offline' ? 'Offline' : 'Online / Mobile' }}
+                                </span>
+                            </div>
+
+                            {{-- Info Pelanggan & Waktu --}}
+                            <div class="mt-1.5 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                                <span class="flex items-center gap-1.5 font-semibold text-gray-700">
+                                    <img class="w-5 h-5 rounded-full object-cover border border-white shadow-xs"
+                                         src="{{ asset('assets/image/customers/profile/' . ($order->foto_penyewa ?: 'default.png')) }}"
+                                         onerror="this.src='https://ui-avatars.com/api/?name={{ urlencode($order->nama_penyewa) }}&background=random'"
+                                         alt="{{ $order->nama_penyewa }}">
+                                    {{ $order->nama_penyewa }}
+                                </span>
+                                @if (!empty($order->nomor_telephone) && $order->nomor_telephone !== '-')
+                                <span class="text-gray-300">•</span>
+                                <span class="flex items-center gap-1 text-gray-600">
+                                    <i class="bi bi-telephone text-gray-400"></i>
+                                    {{ $order->nomor_telephone }}
+                                </span>
+                                @endif
+                                <span class="text-gray-300">•</span>
+                                <span class="flex items-center gap-1">
+                                    <i class="bi bi-clock text-gray-400"></i>
+                                    {{ $order->created_at ? \Carbon\Carbon::parse($order->created_at)->diffForHumans() : 'Baru saja' }}
+                                </span>
+                                <span class="text-gray-300">•</span>
+                                <span class="flex items-center gap-1">
+                                    <i class="bi bi-box-seam text-gray-400"></i>
+                                    {{ $order->total_qty }} Unit Barang
+                                </span>
+                            </div>
+
+                            {{-- Tanggal Sewa & Status Pembayaran --}}
+                            <div class="mt-2.5 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="inline-flex items-center gap-1.5 rounded-lg bg-white border border-gray-200 px-2.5 py-1 text-gray-700 font-medium shadow-xs">
+                                    <i class="bi bi-calendar-event text-blue-600"></i>
+                                    {{ \Carbon\Carbon::parse($order->tanggal_mulai)->format('d M') }} - {{ \Carbon\Carbon::parse($order->tanggal_selesai)->format('d M Y') }}
+                                    <span class="text-gray-400 text-[11px]">({{ \Carbon\Carbon::parse($order->tanggal_mulai)->diffInDays(\Carbon\Carbon::parse($order->tanggal_selesai)) ?: 1 }} Hari)</span>
+                                </span>
+
+                                <span class="inline-flex items-center gap-1 rounded-lg bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-emerald-700 font-black">
+                                    Total: Rp {{ number_format($order->total_pembayaran ?? 0, 0, ',', '.') }}
+                                </span>
+
+                                @if ($order->status_pembayaran === 'Lunas')
+                                    <span class="inline-flex items-center gap-1 rounded-lg bg-emerald-100 text-emerald-800 px-2.5 py-1 text-[11px] font-bold">
+                                        <i class="bi bi-check-circle-fill"></i> Sudah Lunas
+                                    </span>
+                                @elseif (!empty($order->bukti_pembayaran))
+                                    <span class="inline-flex items-center gap-1 rounded-lg bg-amber-100 text-amber-800 px-2.5 py-1 text-[11px] font-bold">
+                                        <i class="bi bi-receipt"></i> Bukti Bayar Diunggah
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1 rounded-lg bg-blue-100 text-blue-700 px-2.5 py-1 text-[11px] font-bold">
+                                        <i class="bi bi-hourglass-split"></i> Menunggu Bayar
+                                    </span>
+                                @endif
+
+                                @if ($order->opsi_pengiriman)
+                                    <span class="inline-flex items-center gap-1 rounded-lg bg-gray-100 text-gray-700 px-2.5 py-1 text-[11px] font-medium">
+                                        <i class="bi bi-truck"></i> {{ $order->opsi_pengiriman == 'kirim' ? 'Diantar' : 'Ambil Sendiri' }}
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Tombol Aksi Konfirmasi --}}
+                    <div class="flex items-center justify-between lg:justify-end gap-3 shrink-0 pt-2 lg:pt-0">
+                        <a href="{{ route('menu-transaksi.terima-order-masuk', ['id_penyewaan' => Crypt::encrypt($order->id_penyewaan)]) }}"
+                           class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-md shadow-blue-500/25 active:scale-95">
+                            <span>Tinjau & Konfirmasi Order</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
         @if (isset($iklan_suspended) && $iklan_suspended->count() > 0)
         <!-- Alert Penangguhan Iklan (Suspend Notice) -->
         <div class="rounded-[24px] border-2 border-red-200 bg-gradient-to-r from-red-50 via-white to-amber-50/50 p-6 shadow-sm">

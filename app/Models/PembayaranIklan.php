@@ -20,6 +20,11 @@ class PembayaranIklan extends Model
         'metode_bayar',
         'total_bayar',
         'status_bayar',
+        'read_at',
+    ];
+
+    protected $casts = [
+        'read_at' => 'datetime',
     ];
 
     public function iklan()

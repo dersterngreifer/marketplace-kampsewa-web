@@ -29,12 +29,16 @@ function initPengeluaranPertahunChart() {
         "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
         "Jul", "Ag", "Sep", "Okt", "Nov", "Des",
     ];
+    const valuesPengeluaranPertahun = window.pengeluaranPertahunData && Array.isArray(window.pengeluaranPertahunData)
+        ? window.pengeluaranPertahunData
+        : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
     const dataPengeluaranPertahun = {
         labels: labelsPengeluaranPertahun,
         datasets: [
             {
                 label: "Total Pengeluaran",
-                data: [65, 59, 80, 81, 56, 55, 40, 65, 59, 80, 81, 56],
+                data: valuesPengeluaranPertahun,
                 borderRadius: 10,
                 borderWidth: 0,
                 backgroundColor: createGradientPengeluaranPertahun('chart-pengeluaran-pertahun'),
@@ -79,16 +83,20 @@ function initPengeluaranPerbulanChart() {
     const existing = Chart.getChart(canvasIDPengeluaranPerbulan);
     if (existing) existing.destroy();
 
-    const labelsPengeluaranPerbulan = [
+    const labelsPengeluaranPerbulan = window.pengeluaranPerbulanLabels || [
         "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
         "Jul", "Ag", "Sep", "Okt", "Nov", "Des"
     ];
+    const valuesPengeluaranPerbulan = window.pengeluaranPerbulanData && Array.isArray(window.pengeluaranPerbulanData)
+        ? window.pengeluaranPerbulanData
+        : [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
     const dataPengeluaranPerbuulan = {
         labels: labelsPengeluaranPerbulan,
         datasets: [
             {
                 label: "Total Pengeluaran Perbulan",
-                data: [65, 59, 80, 81, 56, 55, 40, 65, 59, 80, 81, 56],
+                data: valuesPengeluaranPerbulan,
                 borderWidth: 3,
                 borderColor: createGradientPengeluaranPertahun('chart-pengeluaran-perbulan'),
                 tension: 0.4,

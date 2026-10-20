@@ -40,13 +40,15 @@ class ProductController extends Controller
             ->whereNotNull('rating_produk.rating')
             ->whereNotNull('detail_variant_produk.harga_sewa')
             ->whereNotNull('produk.id_user')
+            ->where('produk.status', '!=', 'Ditangguhkan')
+            ->where('produk.status', '!=', 'Ditangguhkan')
             ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto_toko', 'produk.nama', 'produk.kategori')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->orderBy(DB::raw('MIN(detail_variant_produk.harga_sewa)'))
             ->limit(6)
             ->get()
             ->map(function ($item) {
-                $userId = auth('sanctum')->id();
+                $userId = auth('sanctum')->id() ?? auth()->id();
                 $item->total_likes = $item->likes ? $item->likes->count() : 0;
                 $item->is_liked = $userId && $item->likes ? $item->likes->contains('id_user', $userId) : false;
                 unset($item->likes);
@@ -131,7 +133,9 @@ class ProductController extends Controller
             )
             // ->whereNotNull('rating_produk.rating') // Dikomentari agar produk tanpa rating tetap tampil
             ->whereNotNull('detail_variant_produk.harga_sewa')
-            ->whereNotNull('produk.id_user');
+            ->whereNotNull('produk.id_user')
+            ->where('produk.status', '!=', 'Ditangguhkan')
+            ->where('produk.status', '!=', 'Ditangguhkan');
 
         // Filter kategori jika bukan 'semua'
         if ($kategori !== 'semua') {
@@ -180,7 +184,7 @@ class ProductController extends Controller
         // Eksekusi query dan ambil hasil
         $data = $produk->get()
             ->map(function ($item) {
-                $userId = auth('sanctum')->id();
+                $userId = auth('sanctum')->id() ?? auth()->id();
                 $item->total_likes = $item->likes ? $item->likes->count() : 0;
                 $item->is_liked = $userId && $item->likes ? $item->likes->contains('id_user', $userId) : false;
                 unset($item->likes);
@@ -261,7 +265,7 @@ class ProductController extends Controller
             $firstItem = $all_variants->first();
             $produkDetail = \App\Models\Produk::with(['foto', 'likes'])->find($firstItem->id_produk);
             $thumbnailUrl = $produkDetail ? PhotoHelper::getThumbnailUrl($produkDetail) : null;
-            $userId = auth('sanctum')->id();
+            $userId = auth('sanctum')->id() ?? auth()->id();
             $totalLikes = ($produkDetail && $produkDetail->likes) ? $produkDetail->likes->count() : 0;
             $isLiked = ($userId && $produkDetail && $produkDetail->likes) ? $produkDetail->likes->contains('id_user', $userId) : false;
 
@@ -342,18 +346,19 @@ class ProductController extends Controller
             $warna = request()->query('warna');
             $ukuran = request()->query('ukuran');
 
-            $tb_produk = Produk::with(['foto', 'likes'])
+            $tb_produk = Produk::with(['foto', 'likes', 'latestSuspend'])
                 ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
                 ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
                 ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
                 ->leftJoin('users', 'users.id', '=', 'produk.id_user')
                 ->select(
                     'produk.id',
-                'produk.id as id_produk',
+                    'produk.id as id_produk',
                     'produk.nama as nama_produk',
                     'produk.deskripsi as deskripsi_produk',
+                    'produk.status as status_produk',
                     DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
-                DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok'),
+                    DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok'),
                     DB::raw('AVG(rating_produk.rating) as rating'),
                     DB::raw('COUNT(rating_produk.ulasan) as total_ulasan'),
                     'users.id as id_user',
@@ -369,6 +374,7 @@ class ProductController extends Controller
                     'produk.id',
                     'produk.nama',
                     'produk.deskripsi',
+                    'produk.status',
                     'users.id',
                     'users.foto_toko',
                     'users.name',
@@ -385,7 +391,7 @@ class ProductController extends Controller
 
             $all_variants = $tb_produk->get()
                 ->map(function ($item) {
-                    $userId = auth('sanctum')->id();
+                    $userId = auth('sanctum')->id() ?? auth()->id();
                     $item->total_likes = $item->likes ? $item->likes->count() : 0;
                     $item->is_liked = $userId && $item->likes ? $item->likes->contains('id_user', $userId) : false;
                     unset($item->likes);
@@ -420,6 +426,29 @@ class ProductController extends Controller
                         : asset('images/placeholder-image.png');
 
                     $item->image = $item->foto_depan;
+
+                    $item->status_produk = $item->status_produk ?? 'Tersedia';
+                    $isLocked = strtolower($item->status_produk) === 'ditangguhkan';
+                    $item->is_locked = $isLocked;
+                    $item->locked_message = $isLocked
+                        ? 'Produk ini ditangguhkan oleh Admin KampSewa. Silakan lakukan revisi perbaikan produk melalui Dashboard Web KampSewa.'
+                        : null;
+                    $item->revisi_via_web_only = true;
+
+                    if ($isLocked && $item->latestSuspend) {
+                        $item->suspend_info = [
+                            'id_suspend'     => $item->latestSuspend->id,
+                            'alasan'         => $item->latestSuspend->alasan,
+                            'catatan'        => $item->latestSuspend->catatan,
+                            'status_revisi'  => $item->latestSuspend->status_revisi,
+                            'created_at'     => $item->latestSuspend->created_at ? $item->latestSuspend->created_at->toDateTimeString() : null,
+                            'instruksi'      => 'Revisi dan pengajuan pemulihan hanya dapat dilakukan melalui Dashboard Web KampSewa.',
+                        ];
+                    } else {
+                        $item->suspend_info = null;
+                    }
+                    unset($item->latestSuspend);
+
                     return $item;
                 });
 
@@ -430,6 +459,17 @@ class ProductController extends Controller
                 return response()->json([
                     'message' => 'Data tidak ditemukan!',
                 ], 404);
+            }
+
+            // Jika produk ditangguhkan dan yang mengakses BUKAN pemilik produk, sembunyikan dari pengguna lain
+            $firstProduct = $all_variants->first();
+            if ($firstProduct && strtolower($firstProduct->status_produk) === 'ditangguhkan') {
+                $currentViewerId = auth('sanctum')->id() ?? auth()->id();
+                if (!$currentViewerId || $currentViewerId != $firstProduct->id_user) {
+                    return response()->json([
+                        'message' => 'Produk ini sedang tidak tersedia atau ditangguhkan oleh admin.',
+                    ], 404);
+                }
             }
 
             return response()->json([
@@ -465,13 +505,14 @@ class ProductController extends Controller
             )
             ->whereNotNull('detail_variant_produk.harga_sewa')
             ->whereNotNull('produk.id_user')
+            ->where('produk.status', '!=', 'Ditangguhkan')
             ->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto_toko', 'produk.nama', 'produk.kategori')
             ->orderByDesc(DB::raw('AVG(rating_produk.rating)'))
             ->inRandomOrder()
             ->limit(10)
             ->get()
             ->map(function ($item) {
-                $userId = auth('sanctum')->id();
+                $userId = auth('sanctum')->id() ?? auth()->id();
                 $item->total_likes = $item->likes ? $item->likes->count() : 0;
                 $item->is_liked = $userId && $item->likes ? $item->likes->contains('id_user', $userId) : false;
                 unset($item->likes);
@@ -524,7 +565,7 @@ class ProductController extends Controller
     {
         $filterKategori = request()->query('filter');
 
-        $query = Produk::with(['foto', 'likes'])->leftJoin('users', 'users.id', '=', 'produk.id_user')
+        $query = Produk::with(['foto', 'likes', 'latestSuspend'])->leftJoin('users', 'users.id', '=', 'produk.id_user')
             ->leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
             ->leftJoin('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
             ->leftJoin('rating_produk', 'produk.id', '=', 'rating_produk.id_produk')
@@ -538,21 +579,24 @@ class ProductController extends Controller
                 DB::raw('(SELECT IFNULL(ROUND(AVG(rp.rating), 1), 0) FROM rating_produk rp JOIN produk p ON p.id = rp.id_produk WHERE p.id_user = users.id) as rating_toko'),
                 'produk.nama as nama_produk',
                 'produk.kategori',
+                'produk.status as status_produk',
                 DB::raw('AVG(rating_produk.rating) as rata_rating'),
                 DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa'),
                 DB::raw('(SELECT SUM(stok) FROM detail_variant_produk JOIN variant_produk ON variant_produk.id = detail_variant_produk.id_variant_produk WHERE variant_produk.id_produk = produk.id) as stok')
-            )
-            ->where('produk.id_user', '=', auth()->id());
+            );
+
+        $currentAuthId = auth('sanctum')->id() ?? auth()->id();
+        $query->where('produk.id_user', '=', $currentAuthId);
 
         if ($filterKategori && strtolower($filterKategori) !== 'semua') {
             $query->where('produk.kategori', 'like', '%' . $filterKategori . '%');
         }
 
-        $produk = $query->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto_toko', 'produk.nama', 'produk.kategori')
+        $produk = $query->groupBy('produk.id', 'produk.id_user', 'users.id', 'users.name', 'users.name_store', 'users.foto_toko', 'produk.nama', 'produk.kategori', 'produk.status')
             ->orderByDesc('produk.created_at')
             ->get()
             ->map(function ($item) {
-                $userId = auth('sanctum')->id();
+                $userId = auth('sanctum')->id() ?? auth()->id();
                 $item->total_likes = $item->likes ? $item->likes->count() : 0;
                 $item->is_liked = $userId && $item->likes ? $item->likes->contains('id_user', $userId) : false;
                 unset($item->likes);
@@ -584,6 +628,29 @@ class ProductController extends Controller
                     : asset('images/placeholder-image.png');
 
                 $item->image = $item->foto_depan;
+
+                $item->status_produk = $item->status_produk ?? 'Tersedia';
+                $isLocked = strtolower($item->status_produk) === 'ditangguhkan';
+                $item->is_locked = $isLocked;
+                $item->locked_message = $isLocked
+                    ? 'Produk ini ditangguhkan oleh Admin KampSewa. Silakan lakukan revisi perbaikan produk melalui Dashboard Web KampSewa.'
+                    : null;
+                $item->revisi_via_web_only = true;
+
+                if ($isLocked && $item->latestSuspend) {
+                    $item->suspend_info = [
+                        'id_suspend'     => $item->latestSuspend->id,
+                        'alasan'         => $item->latestSuspend->alasan,
+                        'catatan'        => $item->latestSuspend->catatan,
+                        'status_revisi'  => $item->latestSuspend->status_revisi,
+                        'created_at'     => $item->latestSuspend->created_at ? $item->latestSuspend->created_at->toDateTimeString() : null,
+                        'instruksi'      => 'Revisi dan pengajuan pemulihan hanya dapat dilakukan melalui Dashboard Web KampSewa.',
+                    ];
+                } else {
+                    $item->suspend_info = null;
+                }
+                unset($item->latestSuspend);
+
                 return $item;
             });
 
@@ -622,7 +689,7 @@ class ProductController extends Controller
 
     public function toggleLike($id_produk)
     {
-        $userId = auth('sanctum')->id();
+        $userId = auth('sanctum')->id() ?? auth()->id();
         if (!$userId) {
             return response()->json(['message' => 'Unauthorized'], 401);
         }
@@ -662,7 +729,7 @@ class ProductController extends Controller
             'fotos.*' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120'
         ]);
 
-        $userId = auth('sanctum')->id();
+        $userId = auth('sanctum')->id() ?? auth()->id();
 
         // Cek apakah produk ada
         $produk = Produk::find($id_produk);
@@ -706,26 +773,25 @@ class ProductController extends Controller
         try {
             $mitraId = $produk->id_user;
             if ($mitraId) {
-                $reviewer = \App\Models\User::find($userId);
-                $reviewerName = $reviewer ? $reviewer->name : 'Pelanggan';
-                $ulasanText = trim($request->ulasan ?? '');
-                $snippet = !empty($ulasanText)
-                    ? \Illuminate\Support\Str::limit($ulasanText, 80)
-                    : 'Memberikan penilaian produk.';
+                // Hitung total ulasan untuk produk ini
+                $totalReviews = \App\Models\RatingProduk::where('id_produk', $produk->id)->count();
 
-                $detailProdukUrl = route('menu-produk.detail-produk', [
-                    'id_produk' => \Illuminate\Support\Facades\Crypt::encrypt($produk->id)
-                ]);
+                // Hanya kirim notifikasi ketika mencapai kelipatan 10 ulasan (10, 20, 30, dst.)
+                if ($totalReviews > 0 && ($totalReviews % 10 === 0)) {
+                    $detailProdukUrl = route('menu-produk.detail-produk', [
+                        'id_produk' => \Illuminate\Support\Facades\Crypt::encrypt($produk->id)
+                    ]);
 
-                \App\Models\CustomerNotification::notifyCustomer(
-                    $mitraId,
-                    'ulasan_baru',
-                    'Ulasan Baru Pada Produk!',
-                    "{$reviewerName} memberikan rating {$request->rating}★ pada produk \"{$produk->nama}\": \"{$snippet}\"",
-                    $ulasanText,
-                    $detailProdukUrl,
-                    $produk->id
-                );
+                    \App\Models\CustomerNotification::notifyCustomer(
+                        $mitraId,
+                        'ulasan_milestone',
+                        "Produk Mencapai {$totalReviews} Ulasan!",
+                        "Selamat! Produk \"{$produk->nama}\" telah mencapai total {$totalReviews} ulasan dari pelanggan. Ketuk untuk melihat detail ulasan produk Anda.",
+                        null,
+                        $detailProdukUrl,
+                        $produk->id
+                    );
+                }
             }
         } catch (\Exception $notifEx) {
             \Illuminate\Support\Facades\Log::error('Gagal mengirim CustomerNotification ulasan: ' . $notifEx->getMessage());

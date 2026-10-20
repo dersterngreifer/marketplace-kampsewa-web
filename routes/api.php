@@ -187,6 +187,19 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::get('/{kategori?}', 'getProdukByFilter');
         });
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notification Routes
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('notifikasi')
+        ->controller(\App\Http\Controllers\Api\NotificationApiController::class)
+        ->group(function () {
+            Route::get('/', 'index');
+            Route::post('/{id}/read', 'markRead');
+            Route::post('/mark-all-read', 'markAllRead');
+        });
+
 
     /*
     |--------------------------------------------------------------------------

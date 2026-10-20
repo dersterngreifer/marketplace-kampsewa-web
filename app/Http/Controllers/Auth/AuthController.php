@@ -48,10 +48,19 @@ class AuthController extends Controller
                 $request->session()->put('jenis_kelamin', $user->jenis_kelamin);
                 $request->session()->put('tanggal_lahir', $user->tanggal_lahir);
 
+                // Bersihkan url.intended jika mengarah ke generic /home, /login, atau / agar tidak nyangkut
+                $intended = session()->get('url.intended');
+                if ($intended) {
+                    $intendedPath = trim(parse_url($intended, PHP_URL_PATH) ?? '', '/');
+                    if ($intendedPath === 'home' || $intendedPath === 'login' || $intendedPath === '') {
+                        session()->forget('url.intended');
+                    }
+                }
+
                 // todo cek user login sesuai dengan level dan dialihkan ke dashboard bersangkutan
                 if ($user->type == 1) {
                     Alert::toast('Login success', 'success');
-                    return redirect()->intended('/developer/dashboard/home')->with('success', 'Login success');
+                    return redirect()->intended(route('home.index'))->with('success', 'Login success');
                 } elseif ($user->type == 0) {
                     // todo syarat menjadi mitra: verifikasi identitas harus sudah dilengkapi
                     if (empty($user->nomor_identitas)) {
@@ -59,7 +68,7 @@ class AuthController extends Controller
                         return redirect()->route('customer.isi-identitas');
                     }
                     Alert::toast('Login success', 'success');
-                    return redirect()->intended('/customer/dashboard/home/')->with('success', 'Login success');
+                    return redirect()->intended(route('dashboard-cust'))->with('success', 'Login success');
                 }
             } else {
                 Alert::toast('Password salah', 'error');
@@ -91,7 +100,14 @@ class AuthController extends Controller
 
         // Jika identitas sudah lengkap, langsung arahkan ke dashboard customer
         if (!empty($user->nomor_identitas)) {
-            return redirect()->intended('/customer/dashboard/home/');
+            $intended = session()->get('url.intended');
+            if ($intended) {
+                $intendedPath = trim(parse_url($intended, PHP_URL_PATH) ?? '', '/');
+                if ($intendedPath === 'home' || $intendedPath === 'login' || $intendedPath === '') {
+                    session()->forget('url.intended');
+                }
+            }
+            return redirect()->intended(route('dashboard-cust'));
         }
 
         return view('auth.isi-identitas', ['title' => 'Lengkapi Verifikasi Identitas']);

@@ -28,9 +28,16 @@
         {{-- Background cover tetap clipped, tapi action menu tidak ikut terpotong --}}
         <div
             class="absolute inset-0 overflow-hidden rounded-t-[28px] bg-gradient-to-br from-[#19191B] via-[#24243A] to-[#5038ED]">
-            <img class="h-full w-full object-cover opacity-50"
-                src="{{ asset('assets/image/customers/background/pexels-juan-mendez-1082316.jpg') }}"
-                alt="Background pengguna">
+            @php
+                $bgUser = !empty($data->background) && !in_array(strtolower(trim($data->background)), ['belum di isi', 'belum di isi.', 'belum diisi', 'belum diisi.', 'null', '-'])
+                    ? $data->background
+                    : null;
+            @endphp
+            @if ($bgUser && (file_exists(public_path('assets/image/customers/background/' . $bgUser)) || str_starts_with($bgUser, 'http')))
+                <img class="h-full w-full object-cover opacity-50"
+                    src="{{ str_starts_with($bgUser, 'http') ? $bgUser : asset('assets/image/customers/background/' . $bgUser) }}"
+                    alt="">
+            @endif
 
             <div class="absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent"></div>
         </div>

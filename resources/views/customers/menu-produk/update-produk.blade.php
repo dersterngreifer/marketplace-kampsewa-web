@@ -14,6 +14,54 @@
             </div>
             
             <div class="p-6 sm:p-8">
+                @if($produk->status === 'Ditangguhkan')
+                    @php
+                        $suspend = $produk->latestSuspend;
+                    @endphp
+                    @if($suspend && $suspend->status_revisi === 'sudah_diperbaiki')
+                        <div class="mb-6 rounded-2xl border-2 border-emerald-300 bg-emerald-50/90 p-5 flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                                <i class="bi bi-patch-check text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-sm font-bold text-emerald-950">Status: Sudah Direvisi & Menunggu Verifikasi Admin</h4>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-200 text-emerald-900">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                                        Direvisi
+                                    </span>
+                                </div>
+                                <p class="text-xs text-emerald-800 mt-1">Anda telah memperbarui produk ini. Tim Admin KampSewa telah diberi notifikasi untuk meninjau dan memulihkan produk Anda. Anda tetap dapat melakukan perubahan tambahan jika diperlukan.</p>
+                                @if(!empty($suspend->alasan ?? $suspend->alasan_suspend))
+                                    <div class="mt-2 text-xs bg-white/80 rounded-xl p-3 border border-emerald-200 text-slate-700">
+                                        <span class="font-bold text-emerald-900">Alasan Penangguhan Sebelumnya:</span> {{ $suspend->alasan ?? $suspend->alasan_suspend }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @else
+                        <div class="mb-6 rounded-2xl border-2 border-rose-300 bg-rose-50/90 p-5 flex items-start gap-4">
+                            <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                                <i class="bi bi-exclamation-octagon text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="text-sm font-bold text-rose-950">Perhatian: Produk Ini Sedang Ditangguhkan (Suspend)</h4>
+                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-900">
+                                        Perlu Revisi
+                                    </span>
+                                </div>
+                                <p class="text-xs text-rose-700 mt-1">Produk ini sementara dinonaktifkan dari katalog publik. Silakan perbaiki informasi / foto di bawah ini sesuai alasan penangguhan. Saat Anda menyimpan formulir ini, notifikasi perbaikan akan otomatis dikirimkan ke Admin untuk diverifikasi dan dipulihkan.</p>
+                                @if($suspend && !empty($suspend->alasan ?? $suspend->alasan_suspend))
+                                    <div class="mt-2 text-xs bg-white/90 rounded-xl p-3 border border-rose-200 text-slate-800">
+                                        <span class="font-bold text-rose-900">Alasan Penangguhan:</span> {{ $suspend->alasan ?? $suspend->alasan_suspend }}
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                @endif
+
                 <form id="form-update" action="{{ route('menu-produk.update-produk-put', ['id_produk' => $produk->id]) }}"
                     class="w-full flex flex-col gap-8 h-auto" method="POST" enctype="multipart/form-data">
                     @csrf

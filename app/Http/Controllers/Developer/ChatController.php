@@ -84,22 +84,11 @@ class ChatController extends Controller
         ];
     }
 
-    private function getMitraBaseQuery(?int $adminId = null)
+    private function getMitraBaseQuery()
     {
-        $adminId = $adminId ?? $this->getCurrentAdminId();
-
-        // Khusus users customer mitra yang sudah menyewakan produk, melakukan rental, atau memiliki chat dengan admin
+        // Khusus users customer mitra yang menyewakan produk (memiliki produk di tabel produk)
         return User::where('type', 0)
-            ->where(function ($q) use ($adminId) {
-                $q->whereHas('produk')
-                  ->orWhereHas('penyewaan')
-                  ->orWhereIn('id', function ($sub) use ($adminId) {
-                      $sub->select('user1_id')->from('chat_rooms')->where('user2_id', $adminId);
-                  })
-                  ->orWhereIn('id', function ($sub) use ($adminId) {
-                      $sub->select('user2_id')->from('chat_rooms')->where('user1_id', $adminId);
-                  });
-            });
+            ->whereHas('produk');
     }
 
     public function index(Request $request)
@@ -113,14 +102,15 @@ class ChatController extends Controller
             ->select('users.*')
             ->get();
 
-        $mitraQuery = $this->getMitraBaseQuery($adminId);
+        $mitraQuery = $this->getMitraBaseQuery();
         $totalMitrasCount = (clone $mitraQuery)->count();
 
-        // Daftar awal customer mitra (dibatasi 30, live search via AJAX)
+        // Ambil data awal 50 mitra
+        $initialLimit = 50;
         $mitras = (clone $mitraQuery)
             ->orderByRaw('CASE WHEN name_store IS NOT NULL AND name_store != "" THEN 0 ELSE 1 END')
-            ->orderBy('id', 'desc')
-            ->limit(30)
+            ->orderBy('name', 'asc')
+            ->limit($initialLimit)
             ->get()
             ->map(function ($mitra) {
                 return $this->formatUserPayload($mitra);
@@ -132,6 +122,9 @@ class ChatController extends Controller
             'admin_id' => $adminId,
             'mitras' => $mitras,
             'total_mitras_count' => $totalMitrasCount,
+            'initial_limit' => $initialLimit,
+            'has_more_mitras' => $totalMitrasCount > $initialLimit,
+            'remaining_mitras' => max(0, $totalMitrasCount - $initialLimit),
             'selected_partner_id' => $request->query('partner_id'),
         ]);
     }
@@ -139,6 +132,8 @@ class ChatController extends Controller
     public function searchMitras(Request $request)
     {
         $q = trim((string) $request->query('q', ''));
+        $offset = max(0, (int) $request->query('offset', 0));
+        $limit = max(1, min(100, (int) $request->query('limit', 50)));
 
         $query = $this->getMitraBaseQuery();
 
@@ -151,18 +146,29 @@ class ChatController extends Controller
             });
         }
 
-        $mitras = $query
+        $total = (clone $query)->count();
+
+        $mitras = (clone $query)
             ->orderByRaw('CASE WHEN name_store IS NOT NULL AND name_store != "" THEN 0 ELSE 1 END')
             ->orderBy('name', 'asc')
-            ->limit(30)
+            ->skip($offset)
+            ->take($limit)
             ->get()
             ->map(function ($mitra) {
                 return $this->formatUserPayload($mitra);
             });
 
+        $loadedCount = $offset + $mitras->count();
+        $hasMore = $loadedCount < $total;
+        $remaining = max(0, $total - $loadedCount);
+
         return response()->json([
             'success' => true,
             'mitras' => $mitras,
+            'total' => $total,
+            'offset' => $loadedCount,
+            'has_more' => $hasMore,
+            'remaining' => $remaining,
         ]);
     }
 

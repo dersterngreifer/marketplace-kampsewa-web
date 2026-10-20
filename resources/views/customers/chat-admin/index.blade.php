@@ -88,7 +88,7 @@
             <div class="flex items-center gap-3 self-start lg:self-center">
                 <div class="px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200/70 flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-xs">
-                        {{ count($admins) }}
+                        {{ $total_admins_count ?? count($admins) }}
                     </div>
                     <div>
                         <p class="text-[11px] font-bold text-slate-700 leading-tight">Admin Tersedia</p>
@@ -182,7 +182,7 @@
                     <button type="button" id="tabBtnAdmins" onclick="switchSidebarTab('admins')"
                         class="flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-extrabold transition-all text-slate-600 hover:text-slate-900 cursor-pointer">
                         <i class="bi bi-person-badge-fill"></i>
-                        <span>Pilih Admin ({{ count($admins) }})</span>
+                        <span>Pilih Admin ({{ $total_admins_count ?? count($admins) }})</span>
                     </button>
                 </div>
 
@@ -222,48 +222,58 @@
             </div>
 
             {{-- Admins Directory List Container (Hidden by default) --}}
-            <div id="adminsListContainer" class="hidden flex-1 min-h-0 max-h-full overflow-y-auto overscroll-contain chat-scrollbar divide-y divide-slate-100">
-                @foreach ($admins as $admin)
-                    <div data-admin-search="{{ strtolower($admin['name'] . ' ' . $admin['email'] . ' ' . $admin['nomor_telephone']) }}"
-                        data-admin-id="{{ $admin['id'] }}"
-                        onclick="selectAdminPartner({{ $admin['id'] }})"
-                        class="admin-directory-item p-3.5 hover:bg-blue-50/50 transition-colors cursor-pointer flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-3 min-w-0">
-                            <div class="relative shrink-0">
-                                @if ($admin['has_photo'] && $admin['avatar_url'])
-                                    <img src="{{ $admin['avatar_url'] }}" alt="{{ $admin['name'] }}"
-                                        class="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-xs"
-                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                    <div style="display:none;"
-                                        class="w-12 h-12 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-sm items-center justify-center shadow-xs">
-                                        {{ $admin['initials'] }}
-                                    </div>
-                                @else
-                                    <div class="w-12 h-12 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
-                                        {{ $admin['initials'] }}
-                                    </div>
-                                @endif
-                                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
-                            </div>
-                            <div class="min-w-0">
-                                <div class="flex items-center gap-1.5">
-                                    <h4 class="text-sm font-bold text-slate-900 truncate">{{ $admin['name'] }}</h4>
-                                    <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-100 text-blue-700">ADMIN</span>
+            <div id="adminsListContainer" class="hidden flex-1 min-h-0 max-h-full overflow-y-auto overscroll-contain chat-scrollbar">
+                <div id="adminsDirectoryList" class="divide-y divide-slate-100">
+                    @foreach ($admins as $admin)
+                        <div data-admin-search="{{ strtolower($admin['name'] . ' ' . $admin['email'] . ' ' . $admin['nomor_telephone']) }}"
+                            data-admin-id="{{ $admin['id'] }}"
+                            onclick="selectAdminPartner({{ $admin['id'] }})"
+                            class="admin-directory-item p-3.5 hover:bg-blue-50/50 transition-colors cursor-pointer flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-3 min-w-0">
+                                <div class="relative shrink-0">
+                                    @if ($admin['has_photo'] && $admin['avatar_url'])
+                                        <img src="{{ $admin['avatar_url'] }}" alt="{{ $admin['name'] }}"
+                                            class="w-12 h-12 rounded-2xl object-cover border border-slate-200 shadow-xs"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                        <div style="display:none;"
+                                            class="w-12 h-12 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-sm items-center justify-center shadow-xs">
+                                            {{ $admin['initials'] }}
+                                        </div>
+                                    @else
+                                        <div class="w-12 h-12 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-sm flex items-center justify-center shadow-xs">
+                                            {{ $admin['initials'] }}
+                                        </div>
+                                    @endif
+                                    <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
                                 </div>
-                                <p class="text-xs text-slate-500 truncate mt-0.5">
-                                    <i class="bi bi-envelope text-[10px] mr-1"></i>{{ $admin['email'] }}
-                                </p>
-                                <p class="text-[11px] text-slate-400 truncate mt-0.5">
-                                    <i class="bi bi-telephone text-[10px] mr-1"></i>{{ $admin['nomor_telephone'] }}
-                                </p>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-1.5">
+                                        <h4 class="text-sm font-bold text-slate-900 truncate">{{ $admin['name'] }}</h4>
+                                        <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-100 text-blue-700">ADMIN</span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 truncate mt-0.5">
+                                        <i class="bi bi-envelope text-[10px] mr-1"></i>{{ $admin['email'] }}
+                                    </p>
+                                    <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                                        <i class="bi bi-telephone text-[10px] mr-1"></i>{{ $admin['nomor_telephone'] }}
+                                    </p>
+                                </div>
                             </div>
+                            <button type="button"
+                                class="shrink-0 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-bold transition-colors">
+                                Chat
+                            </button>
                         </div>
-                        <button type="button"
-                            class="shrink-0 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-bold transition-colors">
-                            Chat
-                        </button>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
+                <div id="adminsLoadMoreContainer" class="p-3.5 text-center border-t border-slate-100 bg-slate-50/60">
+                    <button type="button" id="btnLoadMoreAdmins" onclick="loadMoreAdmins()"
+                        @if(empty($has_more_admins)) disabled @endif
+                        class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 {{ empty($has_more_admins) ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60' : 'bg-white hover:bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs hover:border-blue-300 cursor-pointer' }}">
+                        <span id="btnLoadMoreAdminsText">{{ empty($has_more_admins) ? 'Tidak ada lagi data' : 'Lihat Sebagian Lagi' }}</span>
+                        <i id="btnLoadMoreAdminsSpinner" class="bi bi-arrow-repeat hidden animate-spin"></i>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -453,51 +463,61 @@
             </div>
         </div>
 
-        <div class="max-h-[420px] overflow-y-auto chat-scrollbar p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            @foreach ($admins as $admin)
-                <div data-modal-admin="{{ strtolower($admin['name'] . ' ' . $admin['email'] . ' ' . $admin['nomor_telephone']) }}"
-                    onclick="selectAdminPartner({{ $admin['id'] }}); closeAdminModal();"
-                    class="modal-admin-card group p-4 rounded-2xl border border-slate-200/80 hover:border-blue-400 hover:bg-blue-50/30 transition-all flex items-start gap-3.5 cursor-pointer">
-                    <div class="relative shrink-0">
-                        @if ($admin['has_photo'] && $admin['avatar_url'])
-                            <img src="{{ $admin['avatar_url'] }}" alt="{{ $admin['name'] }}"
-                                class="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-xs"
-                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                            <div style="display:none;"
-                                class="w-14 h-14 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-base items-center justify-center shadow-xs">
-                                {{ $admin['initials'] }}
-                            </div>
-                        @else
-                            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-base flex items-center justify-center shadow-xs">
-                                {{ $admin['initials'] }}
-                            </div>
-                        @endif
-                        <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
-                    </div>
+        <div id="modalAdminsScrollArea" class="max-h-[460px] overflow-y-auto chat-scrollbar">
+            <div id="modalAdminsGrid" class="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                @foreach ($admins as $admin)
+                    <div data-modal-admin="{{ strtolower($admin['name'] . ' ' . $admin['email'] . ' ' . $admin['nomor_telephone']) }}"
+                        onclick="selectAdminPartner({{ $admin['id'] }}); closeAdminModal();"
+                        class="modal-admin-card group p-4 rounded-2xl border border-slate-200/80 hover:border-blue-400 hover:bg-blue-50/30 transition-all flex items-start gap-3.5 cursor-pointer">
+                        <div class="relative shrink-0">
+                            @if ($admin['has_photo'] && $admin['avatar_url'])
+                                <img src="{{ $admin['avatar_url'] }}" alt="{{ $admin['name'] }}"
+                                    class="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-xs"
+                                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                <div style="display:none;"
+                                    class="w-14 h-14 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-base items-center justify-center shadow-xs">
+                                    {{ $admin['initials'] }}
+                                </div>
+                            @else
+                                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br {{ $admin['gradient'] }} text-white font-extrabold text-base flex items-center justify-center shadow-xs">
+                                    {{ $admin['initials'] }}
+                                </div>
+                            @endif
+                            <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white"></span>
+                        </div>
 
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center justify-between gap-2">
-                            <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 truncate transition-colors">
-                                {{ $admin['name'] }}
-                            </h4>
-                        </div>
-                        <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100/80 text-blue-700">
-                            {{ $admin['role_label'] }}
-                        </span>
-                        <p class="text-[11px] text-slate-500 truncate mt-1.5">
-                            <i class="bi bi-envelope mr-1 text-slate-400"></i>{{ $admin['email'] }}
-                        </p>
-                        <p class="text-[11px] text-slate-500 truncate mt-0.5">
-                            <i class="bi bi-whatsapp mr-1 text-emerald-500"></i>{{ $admin['nomor_telephone'] }}
-                        </p>
-                        <div class="mt-2.5 flex items-center justify-end">
-                            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-600 text-white text-[11px] font-bold group-hover:bg-indigo-600 transition-colors">
-                                <i class="bi bi-chat-dots-fill"></i> Mulai Chat
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center justify-between gap-2">
+                                <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 truncate transition-colors">
+                                    {{ $admin['name'] }}
+                                </h4>
+                            </div>
+                            <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100/80 text-blue-700">
+                                {{ $admin['role_label'] }}
                             </span>
+                            <p class="text-[11px] text-slate-500 truncate mt-1.5">
+                                <i class="bi bi-envelope mr-1 text-slate-400"></i>{{ $admin['email'] }}
+                            </p>
+                            <p class="text-[11px] text-slate-500 truncate mt-0.5">
+                                <i class="bi bi-whatsapp mr-1 text-emerald-500"></i>{{ $admin['nomor_telephone'] }}
+                            </p>
+                            <div class="mt-2.5 flex items-center justify-end">
+                                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-600 text-white text-[11px] font-bold group-hover:bg-indigo-600 transition-colors">
+                                    <i class="bi bi-chat-dots-fill"></i> Mulai Chat
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
+            <div id="modalAdminsLoadMoreContainer" class="p-4 pt-1 text-center bg-slate-50/50 border-t border-slate-100">
+                <button type="button" id="btnModalLoadMoreAdmins" onclick="loadMoreModalAdmins()"
+                    @if(empty($has_more_admins)) disabled @endif
+                    class="w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 {{ empty($has_more_admins) ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60' : 'bg-white hover:bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs hover:border-blue-300 cursor-pointer' }}">
+                    <span id="btnModalLoadMoreAdminsText">{{ empty($has_more_admins) ? 'Tidak ada lagi data' : 'Lihat Sebagian Lagi' }}</span>
+                    <i id="btnModalLoadMoreAdminsSpinner" class="bi bi-arrow-repeat hidden animate-spin"></i>
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -505,11 +525,15 @@
 <script>
     const CHAT_CONFIG = {
         roomsUrl: @json(route('customer.chat-admin.rooms', ['id_user' => $encrypted_user_id])),
+        adminsUrl: @json(route('customer.chat-admin.admins', ['id_user' => $encrypted_user_id])),
         messagesBaseUrl: @json(url('/customer/dashboard/chat-admin/' . $encrypted_user_id . '/messages')),
         sendUrl: @json(route('customer.chat-admin.send', ['id_user' => $encrypted_user_id])),
         csrfToken: @json(csrf_token()),
         admins: @json($admins->values()),
         initialAdminId: @json($selected_admin_id ? (int) $selected_admin_id : null),
+        totalAdmins: {{ (int) ($total_admins_count ?? count($admins)) }},
+        initialLimit: {{ (int) ($initial_limit ?? 50) }},
+        hasMoreAdmins: @json(!empty($has_more_admins)),
     };
 
     let state = {
@@ -521,6 +545,14 @@
         messagesSignature: '',
         isSending: false,
         pollTimer: null,
+        searchTimer: null,
+        adminOffset: {{ count($admins) }},
+        adminHasMore: @json(!empty($has_more_admins)),
+        adminLoading: false,
+        modalAdminQuery: '',
+        modalAdminOffset: {{ count($admins) }},
+        modalAdminHasMore: @json(!empty($has_more_admins)),
+        modalAdminLoading: false,
     };
 
     function escapeHtml(str) {
@@ -560,6 +592,176 @@
         `;
     }
 
+    function renderAdminDirectoryItem(admin) {
+        const searchKeywords = escapeHtml((admin.name + ' ' + admin.email + ' ' + admin.nomor_telephone).toLowerCase());
+        return `
+            <div data-admin-search="${searchKeywords}"
+                data-admin-id="${admin.id}"
+                onclick="selectAdminPartner(${admin.id})"
+                class="admin-directory-item p-3.5 hover:bg-blue-50/50 transition-colors cursor-pointer flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    ${renderAvatarHtml(admin, 'w-12 h-12', 'rounded-2xl', 'text-sm')}
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-1.5">
+                            <h4 class="text-sm font-bold text-slate-900 truncate">${escapeHtml(admin.name)}</h4>
+                            <span class="px-1.5 py-0.2 rounded text-[9px] font-extrabold bg-blue-100 text-blue-700">ADMIN</span>
+                        </div>
+                        <p class="text-xs text-slate-500 truncate mt-0.5">
+                            <i class="bi bi-envelope text-[10px] mr-1"></i>${escapeHtml(admin.email)}
+                        </p>
+                        <p class="text-[11px] text-slate-400 truncate mt-0.5">
+                            <i class="bi bi-telephone text-[10px] mr-1"></i>${escapeHtml(admin.nomor_telephone)}
+                        </p>
+                    </div>
+                </div>
+                <button type="button"
+                    class="shrink-0 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white text-xs font-bold transition-colors">
+                    Chat
+                </button>
+            </div>
+        `;
+    }
+
+    function renderModalAdminCard(admin) {
+        const searchKeywords = escapeHtml((admin.name + ' ' + admin.email + ' ' + admin.nomor_telephone).toLowerCase());
+        return `
+            <div data-modal-admin="${searchKeywords}"
+                onclick="selectAdminPartner(${admin.id}); closeAdminModal();"
+                class="modal-admin-card group p-4 rounded-2xl border border-slate-200/80 hover:border-blue-400 hover:bg-blue-50/30 transition-all flex items-start gap-3.5 cursor-pointer">
+                ${renderAvatarHtml(admin, 'w-14 h-14', 'rounded-2xl', 'text-base')}
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center justify-between gap-2">
+                        <h4 class="text-sm font-extrabold text-slate-900 group-hover:text-blue-600 truncate transition-colors">
+                            ${escapeHtml(admin.name)}
+                        </h4>
+                    </div>
+                    <span class="inline-block mt-0.5 px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100/80 text-blue-700">
+                        ${escapeHtml(admin.role_label || 'Admin Support')}
+                    </span>
+                    <p class="text-[11px] text-slate-500 truncate mt-1.5">
+                        <i class="bi bi-envelope mr-1 text-slate-400"></i>${escapeHtml(admin.email)}
+                    </p>
+                    <p class="text-[11px] text-slate-500 truncate mt-0.5">
+                        <i class="bi bi-whatsapp mr-1 text-emerald-500"></i>${escapeHtml(admin.nomor_telephone)}
+                    </p>
+                    <div class="mt-2.5 flex items-center justify-end">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-600 text-white text-[11px] font-bold group-hover:bg-indigo-600 transition-colors">
+                            <i class="bi bi-chat-dots-fill"></i> Mulai Chat
+                        </span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    function updateAdminLoadMoreButtonState(status) {
+        const btn = document.getElementById('btnLoadMoreAdmins');
+        const textEl = document.getElementById('btnLoadMoreAdminsText');
+        const spinner = document.getElementById('btnLoadMoreAdminsSpinner');
+        if (!btn || !textEl) return;
+
+        if (status === 'loading') {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-500 border border-slate-200 cursor-wait';
+            textEl.textContent = 'Memuat admin...';
+            if (spinner) spinner.classList.remove('hidden');
+        } else if (status === 'empty' || !state.adminHasMore) {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60';
+            textEl.textContent = 'Tidak ada lagi data';
+            if (spinner) spinner.classList.add('hidden');
+        } else {
+            btn.disabled = false;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs hover:border-blue-300 cursor-pointer';
+            textEl.textContent = 'Lihat Sebagian Lagi';
+            if (spinner) spinner.classList.add('hidden');
+        }
+    }
+
+    async function loadMoreAdmins() {
+        if (state.adminLoading || !state.adminHasMore) return;
+        state.adminLoading = true;
+        updateAdminLoadMoreButtonState('loading');
+
+        try {
+            const query = state.searchQuery || '';
+            const offset = state.adminOffset;
+            const res = await fetch(`${CHAT_CONFIG.adminsUrl}?q=${encodeURIComponent(query)}&offset=${offset}&limit=50`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            if (data.success && data.admins) {
+                const listCont = document.getElementById('adminsDirectoryList');
+                if (listCont) {
+                    const html = data.admins.map(renderAdminDirectoryItem).join('');
+                    listCont.insertAdjacentHTML('beforeend', html);
+                }
+                state.adminOffset = data.offset;
+                state.adminHasMore = !!data.has_more;
+            }
+        } catch (e) {
+            console.error('Error loading more admins:', e);
+        } finally {
+            state.adminLoading = false;
+            updateAdminLoadMoreButtonState(state.adminHasMore ? 'ready' : 'empty');
+        }
+    }
+
+    function updateModalAdminLoadMoreButtonState(status) {
+        const btn = document.getElementById('btnModalLoadMoreAdmins');
+        const textEl = document.getElementById('btnModalLoadMoreAdminsText');
+        const spinner = document.getElementById('btnModalLoadMoreAdminsSpinner');
+        if (!btn || !textEl) return;
+
+        if (status === 'loading') {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-500 border border-slate-200 cursor-wait';
+            textEl.textContent = 'Memuat admin...';
+            if (spinner) spinner.classList.remove('hidden');
+        } else if (status === 'empty' || !state.modalAdminHasMore) {
+            btn.disabled = true;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60';
+            textEl.textContent = 'Tidak ada lagi data';
+            if (spinner) spinner.classList.add('hidden');
+        } else {
+            btn.disabled = false;
+            btn.className = 'w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-white hover:bg-blue-50 text-blue-700 border border-blue-200/80 shadow-2xs hover:border-blue-300 cursor-pointer';
+            textEl.textContent = 'Lihat Sebagian Lagi';
+            if (spinner) spinner.classList.add('hidden');
+        }
+    }
+
+    async function loadMoreModalAdmins() {
+        if (state.modalAdminLoading || !state.modalAdminHasMore) return;
+        state.modalAdminLoading = true;
+        updateModalAdminLoadMoreButtonState('loading');
+
+        try {
+            const query = state.modalAdminQuery || '';
+            const offset = state.modalAdminOffset;
+            const res = await fetch(`${CHAT_CONFIG.adminsUrl}?q=${encodeURIComponent(query)}&offset=${offset}&limit=50`, {
+                headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            if (!res.ok) throw new Error('Network error');
+            const data = await res.json();
+            if (data.success && data.admins) {
+                const grid = document.getElementById('modalAdminsGrid');
+                if (grid) {
+                    const html = data.admins.map(renderModalAdminCard).join('');
+                    grid.insertAdjacentHTML('beforeend', html);
+                }
+                state.modalAdminOffset = data.offset;
+                state.modalAdminHasMore = !!data.has_more;
+            }
+        } catch (e) {
+            console.error('Error loading more modal admins:', e);
+        } finally {
+            state.modalAdminLoading = false;
+            updateModalAdminLoadMoreButtonState(state.modalAdminHasMore ? 'ready' : 'empty');
+        }
+    }
+
     function switchSidebarTab(tab) {
         state.activeTab = tab;
         const tabBtnRooms = document.getElementById('tabBtnRooms');
@@ -581,7 +783,9 @@
             adminsList.classList.remove('hidden');
             roomsList.classList.add('hidden');
             filterBar.classList.add('hidden');
-            filterDirectoryAdmins(state.searchQuery);
+            if (state.searchQuery) {
+                filterDirectoryAdmins(state.searchQuery);
+            }
         }
     }
 
@@ -610,10 +814,35 @@
     }
 
     function filterDirectoryAdmins(query) {
-        document.querySelectorAll('.admin-directory-item').forEach(el => {
-            const hay = el.getAttribute('data-admin-search') || '';
-            el.style.display = (!query || hay.includes(query)) ? 'flex' : 'none';
-        });
+        clearTimeout(state.searchTimer);
+        state.searchTimer = setTimeout(async () => {
+            try {
+                updateAdminLoadMoreButtonState('loading');
+                const res = await fetch(`${CHAT_CONFIG.adminsUrl}?q=${encodeURIComponent(query || '')}&offset=0&limit=50`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.success) return;
+                const list = data.admins || [];
+                const listCont = document.getElementById('adminsDirectoryList');
+                if (!listCont) return;
+
+                state.adminOffset = data.offset || list.length;
+                state.adminHasMore = !!data.has_more;
+
+                if (list.length === 0) {
+                    listCont.innerHTML = `<div class="p-8 text-center text-xs text-slate-400">Tidak ada admin ditemukan.</div>`;
+                    updateAdminLoadMoreButtonState('empty');
+                    return;
+                }
+                listCont.innerHTML = list.map(renderAdminDirectoryItem).join('');
+                updateAdminLoadMoreButtonState(state.adminHasMore ? 'ready' : 'empty');
+            } catch (e) {
+                console.error(e);
+                updateAdminLoadMoreButtonState('empty');
+            }
+        }, 250);
     }
 
     function openAdminModal() {
@@ -629,11 +858,36 @@
     }
 
     function filterModalAdmins(query) {
-        const q = (query || '').trim().toLowerCase();
-        document.querySelectorAll('.modal-admin-card').forEach(el => {
-            const hay = el.getAttribute('data-modal-admin') || '';
-            el.style.display = (!q || hay.includes(q)) ? 'flex' : 'none';
-        });
+        state.modalAdminQuery = (query || '').trim();
+        clearTimeout(state.searchTimer);
+        state.searchTimer = setTimeout(async () => {
+            try {
+                updateModalAdminLoadMoreButtonState('loading');
+                const res = await fetch(`${CHAT_CONFIG.adminsUrl}?q=${encodeURIComponent(state.modalAdminQuery)}&offset=0&limit=50`, {
+                    headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (!data.success) return;
+                const list = data.admins || [];
+                const grid = document.getElementById('modalAdminsGrid');
+                if (!grid) return;
+
+                state.modalAdminOffset = data.offset || list.length;
+                state.modalAdminHasMore = !!data.has_more;
+
+                if (list.length === 0) {
+                    grid.innerHTML = `<div class="col-span-2 p-8 text-center text-xs text-slate-400">Tidak ada admin ditemukan.</div>`;
+                    updateModalAdminLoadMoreButtonState('empty');
+                    return;
+                }
+                grid.innerHTML = list.map(renderModalAdminCard).join('');
+                updateModalAdminLoadMoreButtonState(state.modalAdminHasMore ? 'ready' : 'empty');
+            } catch (e) {
+                console.error(e);
+                updateModalAdminLoadMoreButtonState('empty');
+            }
+        }, 250);
     }
 
     async function fetchRooms(silent = false) {

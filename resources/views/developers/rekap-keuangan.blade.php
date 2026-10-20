@@ -1,3 +1,4 @@
+@include('components.modals.import-rekap-dev')
 @extends('layouts.developers.ly-dashboard')
 @section('content')
     <div class="--container w-full h-auto p-8 flex flex-col gap-6">
@@ -191,26 +192,41 @@
         <div class="--component-kedua mt-2">
             <div class="--title text-[18px] font-bold text-gray-800 mb-3">Data Rekap Keuangan Harian</div>
             
-            {{-- Toolbar: Counter & Search --}}
+            {{-- Toolbar: Counter, Search & Actions --}}
             <div class="flex flex-col sm:flex-row w-full justify-between items-start sm:items-center gap-4 mb-4">
                 <div class="_total flex items-center gap-2">
-                    <span class="px-3 py-1.5 bg-[#EFF2F7] text-gray-700 text-[13px] font-bold rounded-lg border border-gray-200">
-                        <i class="bi bi-calendar-event text-[#5038ED] mr-1"></i> {{ number_format($rekapData->total(), 0, ',', '.') }} Rekap Tanggal
+                    <span class="inline-flex items-center h-10 px-3.5 bg-[#EFF2F7] text-gray-700 text-xs font-bold rounded-xl border border-gray-200">
+                        <i class="bi bi-calendar-event text-[#5038ED] mr-1.5 text-sm"></i> {{ number_format($rekapData->total(), 0, ',', '.') }} Rekap Tanggal
                     </span>
                 </div>
 
-                {{-- Search Filter --}}
-                <div class="_search-filter flex items-center gap-3">
-                    <form method="GET" action="{{ route('rekap-keuangan.index') }}" class="relative flex items-center">
-                        <input class="px-4 py-2 pl-10 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#7CA9CF] w-[260px] bg-white shadow-sm"
+                {{-- Action Group: Search, Export, Import --}}
+                <div class="_search-filter flex flex-wrap items-center gap-2.5">
+                    {{-- Search Filter --}}
+                    <form method="GET" action="{{ route('rekap-keuangan.index') }}" class="relative m-0 p-0 flex items-center">
+                        <input class="h-10 w-[240px] sm:w-[260px] pl-9 pr-8 text-xs font-medium text-slate-800 bg-white border border-slate-200 rounded-xl shadow-sm focus:outline-none focus:ring-2 focus:ring-violet-400 focus:border-violet-400 transition"
                             type="text" name="search" value="{{ $search ?? '' }}" placeholder="Cari tanggal (YYYY-MM-DD)...">
-                        <i class="bi bi-search absolute left-3.5 text-gray-400 text-sm"></i>
+                        <i class="bi bi-search absolute left-3 text-slate-400 text-xs pointer-events-none"></i>
                         @if (!empty($search))
-                            <a href="{{ route('rekap-keuangan.index') }}" class="absolute right-3 text-gray-400 hover:text-gray-600 text-xs">
+                            <a href="{{ route('rekap-keuangan.index') }}" class="absolute right-2.5 text-slate-400 hover:text-slate-600 text-xs" title="Reset pencarian">
                                 <i class="bi bi-x-circle-fill"></i>
                             </a>
                         @endif
                     </form>
+
+                    {{-- Tombol Export --}}
+                    <a href="{{ route('rekap-keuangan.export') }}" title="Export Data Rekap Keuangan ke File CSV/Excel"
+                        class="inline-flex items-center justify-center h-10 px-3.5 gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-xl shadow-sm transition active:scale-95">
+                        <i class="fi fi-rr-inbox-out text-[13px] text-emerald-600"></i>
+                        <span>Export</span>
+                    </a>
+
+                    {{-- Tombol Import --}}
+                    <button type="button" onclick="modalHandlerImportRekap(true)" title="Import Data Rekap Keuangan dari File CSV"
+                        class="inline-flex items-center justify-center h-10 px-3.5 gap-1.5 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-xl shadow-sm transition active:scale-95">
+                        <i class="fi fi-rr-inbox-in text-[13px] text-sky-600"></i>
+                        <span>Import</span>
+                    </button>
                 </div>
             </div>
 
@@ -301,6 +317,11 @@
 
     @push('scripts')
         <script>
+            function modalHandlerImportRekap(val) {
+                const m = document.getElementById('modal-import-rekap');
+                if (m) m.classList.toggle('hidden', !val);
+            }
+
             if (typeof window.initChartPerbandinganKeuntungan === 'function') {
                 window.initChartPerbandinganKeuntungan();
             }

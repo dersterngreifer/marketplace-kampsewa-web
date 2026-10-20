@@ -20,7 +20,7 @@
         <ul role="list" class="space-y-2">
             @forelse ($customer_baru_bulan_ini as $item)
                 <li>
-                    <a href="{{ route('detail-pengguna.index', [$item->name]) }}"
+                    <a href="{{ route('detail-pengguna.index', [$item->id]) }}"
                         class="group flex items-center gap-3 rounded-2xl border border-transparent p-3 transition-all duration-300 hover:border-slate-200 hover:bg-slate-50">
 
                         @include('components.ui.avatar', [

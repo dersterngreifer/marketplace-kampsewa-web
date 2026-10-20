@@ -26,10 +26,91 @@
             </div>
         </div>
 
+        {{-- Banner Alert Perlu Revisi --}}
+        @if (($total_suspend_perlu_revisi ?? 0) > 0)
+            <div class="w-full rounded-2xl border-2 border-rose-300 bg-rose-50/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="bi bi-exclamation-octagon text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-rose-950">Ada {{ $total_suspend_perlu_revisi }} Produk Anda yang Ditangguhkan (Suspend)</h4>
+                        <p class="text-xs text-rose-700 mt-0.5">Produk sementara disembunyikan dari publik. Silakan klik tombol <b>Edit / Perbaiki</b> untuk membaca instruksi revisi dari admin dan memperbarui data produk.</p>
+                    </div>
+                </div>
+                <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt($id_user_raw ?? session('id_user')), 'filter_status' => 'ditangguhkan']) }}"
+                    class="rounded-xl bg-rose-600 text-white px-4 py-2 text-xs font-bold hover:bg-rose-700 transition shadow-sm shrink-0">
+                    Lihat Produk Ditangguhkan
+                </a>
+            </div>
+        @endif
+
+        {{-- Banner Alert Sudah Direvisi & Menunggu Verifikasi --}}
+        @if (($total_suspend_direvisi ?? 0) > 0)
+            <div class="w-full rounded-2xl border-2 border-emerald-300 bg-emerald-50/90 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="bi bi-patch-check text-xl"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-emerald-950">Ada {{ $total_suspend_direvisi }} Produk yang Sudah Direvisi & Menunggu Verifikasi</h4>
+                        <p class="text-xs text-emerald-800 mt-0.5">Perbaikan produk Anda telah tersimpan dan Admin KampSewa telah diberi notifikasi untuk meninjau dan memulihkan produk Anda.</p>
+                    </div>
+                </div>
+                <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt($id_user_raw ?? session('id_user')), 'filter_status' => 'direvisi']) }}"
+                    class="rounded-xl bg-emerald-600 text-white px-4 py-2 text-xs font-bold hover:bg-emerald-700 transition shadow-sm shrink-0">
+                    Lihat Produk Direvisi
+                </a>
+            </div>
+        @endif
+
+        {{-- Quick Filter Status Tabs --}}
+        <div class="flex items-center gap-2 overflow-x-auto pb-1">
+            <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt($id_user_raw ?? session('id_user')), 'filter_status' => 'semua', 'search' => $search]) }}"
+               class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ ($filter_status ?? 'semua') === 'semua' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50' }}">
+                <span>Semua Produk</span>
+                <span class="rounded-full bg-black/10 px-2 py-0.5 text-[10px]">{{ $total_semua ?? $total_produk }}</span>
+            </a>
+
+            <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt($id_user_raw ?? session('id_user')), 'filter_status' => 'tersedia', 'search' => $search]) }}"
+               class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ ($filter_status ?? '') === 'tersedia' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50' }}">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                <span>Tersedia (Aktif)</span>
+                <span class="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-black">{{ $total_tersedia ?? 0 }}</span>
+            </a>
+
+            @if (($total_suspend ?? 0) > 0)
+                <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt($id_user_raw ?? session('id_user')), 'filter_status' => 'ditangguhkan', 'search' => $search]) }}"
+                   class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ ($filter_status ?? '') === 'ditangguhkan' || ($filter_status ?? '') === 'suspend' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-300' : 'bg-white text-rose-700 border border-rose-200 hover:bg-rose-50' }}">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                    </span>
+                    <span>Ditangguhkan</span>
+                    <span class="rounded-full bg-rose-100 text-rose-800 px-2 py-0.5 text-[10px] font-black">{{ $total_suspend ?? 0 }}</span>
+                </a>
+            @endif
+
+            @if (($total_suspend_direvisi ?? 0) > 0)
+                <a href="{{ route('menu-produk.kelola-produk', ['id_user' => Crypt::encrypt($id_user_raw ?? session('id_user')), 'filter_status' => 'direvisi', 'search' => $search]) }}"
+                   class="inline-flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-bold transition {{ ($filter_status ?? '') === 'direvisi' ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50' }}">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span>Sudah Direvisi</span>
+                    <span class="rounded-full bg-emerald-100 text-emerald-800 px-2 py-0.5 text-[10px] font-black">{{ $total_suspend_direvisi ?? 0 }}</span>
+                </a>
+            @endif
+        </div>
+
         <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-2">
-            <div class="text-gray-900 font-bold text-sm">{{ $total_produk }} Produk Total</div>
+            <div class="text-gray-900 font-bold text-sm">{{ $total_produk }} Produk Ditampilkan</div>
             <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
-                <form method="GET" class="w-full sm:w-auto">
+                <form method="GET" class="w-full sm:w-auto flex items-center gap-2">
+                    @if(!empty($filter_status) && $filter_status !== 'semua')
+                        <input type="hidden" name="filter_status" value="{{ $filter_status }}">
+                    @endif
                     <div class="relative w-full sm:w-64">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                             <i class="bi bi-search text-gray-400"></i>
@@ -106,10 +187,32 @@
                                                     onerror="this.onerror=null;this.src='{{ asset('images/illustration/filling-survey.png') }}';">
                                             </div>
                                             <div class="flex flex-col">
-                                                <a href="{{ route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($item->id_produk)]) }}" class="font-bold text-gray-900 text-[15px] hover:text-blue-600 transition-colors line-clamp-1 capitalize">
-                                                    {{ $item->nama_produk }}
-                                                </a>
-                                                <span class="text-xs font-medium text-gray-400 mt-0.5">ID: #{{ substr(md5($item->id_produk), 0, 8) }}</span>
+                                                <div class="flex items-center gap-2">
+                                                    <a href="{{ route('menu-produk.detail-produk', ['id_produk' => Crypt::encrypt($item->id_produk)]) }}" class="font-bold text-gray-900 text-[15px] hover:text-blue-600 transition-colors line-clamp-1 capitalize">
+                                                        {{ $item->nama_produk }}
+                                                    </a>
+                                                    @if(strtolower($item->status_produk) == 'ditangguhkan')
+                                                        @if($item->latestSuspend && $item->latestSuspend->status_revisi === 'sudah_diperbaiki')
+                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 shrink-0">
+                                                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse"></span>
+                                                                Direvisi
+                                                            </span>
+                                                        @elseif($item->latestSuspend && $item->latestSuspend->status_revisi === 'menunggu_perbaikan')
+                                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200 shrink-0">
+                                                                <i class="bi bi-exclamation-triangle-fill text-rose-500 text-[9px]"></i>
+                                                                Perlu Revisi
+                                                            </span>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                                                    <span class="text-xs font-medium text-gray-400">ID: #{{ substr(md5($item->id_produk), 0, 8) }}</span>
+                                                    @if(strtolower($item->status_produk) == 'ditangguhkan' && $item->latestSuspend && !empty($item->latestSuspend->alasan ?? $item->latestSuspend->alasan_suspend))
+                                                        <span class="text-xs text-rose-600 font-medium truncate max-w-[320px]" title="Alasan Ditangguhkan: {{ $item->latestSuspend->alasan ?? $item->latestSuspend->alasan_suspend }}">
+                                                            &bull; Alasan: {{ $item->latestSuspend->alasan ?? $item->latestSuspend->alasan_suspend }}
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -119,6 +222,29 @@
                                                 <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
                                                 {{ $item->status_produk }}
                                             </span>
+                                        @elseif(strtolower($item->status_produk) == 'ditangguhkan')
+                                            <div class="flex flex-col gap-1.5 items-start">
+                                                <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-200 shadow-xs">
+                                                    <span class="relative flex h-2 w-2">
+                                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                                    </span>
+                                                    Ditangguhkan
+                                                </span>
+                                                @if($item->latestSuspend && $item->latestSuspend->status_revisi === 'sudah_diperbaiki')
+                                                    <span class="inline-flex items-center gap-1.5 py-0.5 px-2.5 rounded-full text-[11px] font-black bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-xs" title="Perbaikan produk telah diajukan & sedang ditinjau admin">
+                                                        <span class="relative flex h-2 w-2">
+                                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                                        </span>
+                                                        Sudah Direvisi
+                                                    </span>
+                                                @elseif($item->latestSuspend && $item->latestSuspend->status_revisi === 'menunggu_perbaikan')
+                                                    <span class="inline-flex items-center gap-1 py-0.5 px-2 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Silakan lakukan perbaikan produk">
+                                                        <i class="bi bi-clock-history text-amber-500"></i> Perlu Perbaikan
+                                                    </span>
+                                                @endif
+                                            </div>
                                         @else
                                             <span class="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-full text-xs font-bold bg-orange-50 text-orange-600 border border-orange-100">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-orange-500"></span>
@@ -137,9 +263,9 @@
                                     <td class="px-6 py-4">
                                         <div class="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
                                             <a href="{{ route('menu-produk.update-produk', ['id_produk' => Crypt::encrypt($item->id_produk), 'id_user' => Crypt::encrypt($item->id_user)]) }}" 
-                                               class="w-9 h-9 flex items-center justify-center rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-all shadow-sm hover:shadow group/btn relative"
-                                               title="Edit Produk">
-                                                <i class="bi bi-pencil-square text-[15px]"></i>
+                                               class="w-9 h-9 flex items-center justify-center rounded-xl {{ strtolower($item->status_produk) == 'ditangguhkan' ? 'bg-amber-100 text-amber-700 hover:bg-amber-600 hover:text-white ring-2 ring-amber-300' : 'bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white' }} transition-all shadow-sm hover:shadow group/btn relative"
+                                               title="{{ strtolower($item->status_produk) == 'ditangguhkan' ? 'Perbaiki / Edit Produk' : 'Edit Produk' }}">
+                                                <i class="bi {{ strtolower($item->status_produk) == 'ditangguhkan' ? 'bi-tools' : 'bi-pencil-square' }} text-[15px]"></i>
                                             </a>
                                             
                                             <form id="delete-produk-{{ $item->id_produk }}"

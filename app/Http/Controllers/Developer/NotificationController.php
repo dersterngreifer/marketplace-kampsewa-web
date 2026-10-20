@@ -133,7 +133,7 @@ class NotificationController extends Controller
         $customerReplies = $this->getCustomerReplies($customerReplySort, $customerReplyKriteria);
 
         return view('developers.notification')->with([
-            'title'                  => 'Dashboard | Notification',
+            'title'                  => 'Dashboard | Help & Feedback Users',
             // Data baru
             'mitra_baru_hari_ini'   => $mitra_baru_hari_ini,
             'iklan_hampir_expired'  => $iklan_hampir_expired,

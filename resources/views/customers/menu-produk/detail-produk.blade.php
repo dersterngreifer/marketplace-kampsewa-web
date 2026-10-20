@@ -11,6 +11,69 @@
         <span class="dp-breadcrumb__current">{{ Str::limit($detail_produk->nama_produk, 50) }}</span>
     </nav>
 
+    {{-- Suspend Banner Notification untuk Customer --}}
+    @if (strtolower($detail_produk->status_produk) == 'ditangguhkan' || ($suspend_info && ($suspend_info->status_revisi ?? '') !== 'selesai'))
+        <div class="mb-6 rounded-2xl border-2 border-rose-200 bg-gradient-to-r from-rose-50 via-red-50 to-orange-50 p-5 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                <div class="flex items-start gap-3.5">
+                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-600 text-white shadow-md shadow-rose-500/25">
+                        <i class="bi bi-exclamation-octagon-fill text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-base font-black text-rose-950">Produk Anda Ditangguhkan oleh Admin KampSewa</h2>
+                            @if (($suspend_info->status_revisi ?? '') === 'sudah_diperbaiki')
+                                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800 border border-emerald-200">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    Perbaikan Sedang Ditinjau Admin
+                                </span>
+                            @else
+                                <span class="inline-flex items-center gap-1 rounded-full bg-rose-100 px-2.5 py-0.5 text-xs font-bold text-rose-800 border border-rose-200">
+                                    <i class="bi bi-clock-history"></i> Menunggu Perbaikan Mitra
+                                </span>
+                            @endif
+                        </div>
+
+                        <p class="mt-1 text-xs text-rose-800/90 leading-relaxed">
+                            Produk ini sementara tidak ditampilkan ke calon penyewa karena terdeteksi ketidaksesuaian atau indikasi pelanggaran panduan komunitas (foto/konten/deskripsi).
+                        </p>
+
+                        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <div class="rounded-xl bg-white/80 border border-rose-100 p-2.5">
+                                <span class="font-bold text-slate-500 block mb-0.5"><i class="bi bi-tag-fill text-rose-500"></i> Alasan Penangguhan:</span>
+                                <span class="font-extrabold text-slate-800">{{ $suspend_info->alasan ?? 'Peninjauan Keamanan Produk' }}</span>
+                            </div>
+                            @if (!empty($suspend_info->catatan))
+                                <div class="rounded-xl bg-white/80 border border-rose-100 p-2.5">
+                                    <span class="font-bold text-slate-500 block mb-0.5"><i class="bi bi-chat-left-text-fill text-amber-500"></i> Catatan Admin:</span>
+                                    <span class="font-semibold text-slate-700">{{ $suspend_info->catatan }}</span>
+                                </div>
+                            @endif
+                        </div>
+
+                        @if (($suspend_info->status_revisi ?? '') === 'sudah_diperbaiki')
+                            <div class="mt-3 flex items-center gap-2 rounded-xl bg-emerald-100/70 border border-emerald-200 px-3 py-2 text-xs text-emerald-800 font-semibold">
+                                <i class="bi bi-check2-circle text-base text-emerald-600 shrink-0"></i>
+                                <span>Terima kasih telah memperbarui produk ini. Notifikasi telah diteruskan ke admin KampSewa untuk diverifikasi dan dipulihkan kembali.</span>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+
+                <div class="shrink-0 flex items-center">
+                    <a href="{{ route('menu-produk.update-produk', ['id_produk' => Crypt::encrypt($detail_produk->id_produk), 'id_user' => Crypt::encrypt(session('id_user'))]) }}"
+                        class="inline-flex items-center gap-2 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-extrabold text-white shadow-md shadow-rose-500/20 hover:bg-rose-700 active:scale-95 transition-all">
+                        <i class="bi bi-pencil-square text-sm"></i>
+                        <span>{{ ($suspend_info->status_revisi ?? '') === 'sudah_diperbaiki' ? 'Edit Perbaikan Lagi' : 'Perbaiki / Edit Produk' }}</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    @endif
+
     {{-- Main Card: 2 kolom (Foto | Judul+Deskripsi+Edit) --}}
     <div class="dp-card">
 
@@ -59,6 +122,21 @@
                         <span class="dp-badge__dot dp-badge__dot--pulse"></span>
                         {{ $detail_produk->status_produk }}
                     </span>
+                @elseif(strtolower($detail_produk->status_produk) == 'ditangguhkan')
+                    <span class="dp-badge dp-badge--red">
+                        <span class="dp-badge__dot dp-badge__dot--pulse"></span>
+                        Ditangguhkan
+                    </span>
+                    @if (isset($suspend_info) && $suspend_info && $suspend_info->status_revisi === 'sudah_diperbaiki')
+                        <span class="dp-badge dp-badge--green">
+                            <span class="dp-badge__dot dp-badge__dot--pulse"></span>
+                            Sudah Direvisi
+                        </span>
+                    @elseif (isset($suspend_info) && $suspend_info && $suspend_info->status_revisi === 'menunggu_perbaikan')
+                        <span class="dp-badge dp-badge--orange">
+                            <i class="bi bi-clock-history mr-1"></i> Perlu Revisi
+                        </span>
+                    @endif
                 @else
                     <span class="dp-badge dp-badge--orange">
                         <span class="dp-badge__dot"></span>
@@ -500,6 +578,7 @@
     border-radius: 9999px; border: 1px solid;
 }
 .dp-badge--green  { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.dp-badge--red    { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
 .dp-badge--orange { background: #fff7ed; color: #ea580c; border-color: #fed7aa; }
 .dp-badge__dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .dp-badge__dot--pulse { animation: dp-pulse 1.5s infinite; }

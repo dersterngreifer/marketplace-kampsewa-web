@@ -16,6 +16,11 @@ class Feedback extends Model
         'deskripsi',
         'kriteria',
         'status',
+        'read_at',
+    ];
+
+    protected $casts = [
+        'read_at' => 'datetime',
     ];
 
      public function user()

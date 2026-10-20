@@ -67,6 +67,7 @@ class StoreController extends Controller
                     ->join('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
                     ->join('detail_variant_produk', 'variant_produk.id', '=', 'detail_variant_produk.id_variant_produk')
                     ->where('produk.id_user', $id_user)
+                    ->where('produk.status', '!=', 'Ditangguhkan')
                     ->whereNotNull('detail_variant_produk.harga_sewa')
                     ->where('detail_variant_produk.stok', '>', 0)
                     ->distinct('produk.id')
@@ -218,6 +219,12 @@ class StoreController extends Controller
                 ->where('produk.id_user', $id_user)
                 ->whereNotNull('detail_variant_produk.harga_sewa');
 
+            // Pengunjung publik tidak dapat melihat produk yang ditangguhkan
+            $currentUserId = auth('sanctum')->id();
+            if ($currentUserId != $id_user) {
+                $query->where('produk.status', '!=', 'Ditangguhkan');
+            }
+
             // Filter berdasarkan kategori
             if ($kategori && strtolower($kategori) !== 'semua') {
                 $query->where('produk.kategori', 'like', '%' . $kategori . '%');
@@ -293,6 +300,12 @@ class StoreController extends Controller
                     $item->total_disewa = (int) $item->total_disewa;
                     $item->total_ulasan = (int) $item->total_disewa;
                     $item->stok         = (int) $item->stok;
+
+                    $isLocked = strtolower($item->status ?? '') === 'ditangguhkan';
+                    $item->is_locked = $isLocked;
+                    $item->locked_message = $isLocked
+                        ? 'Produk ini ditangguhkan oleh Admin KampSewa. Silakan lakukan revisi perbaikan produk melalui Dashboard Web KampSewa.'
+                        : null;
 
                     return $item;
                 });

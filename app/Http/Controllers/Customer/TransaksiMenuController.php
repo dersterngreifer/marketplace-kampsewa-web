@@ -353,6 +353,24 @@ class TransaksiMenuController extends Controller
                 }
 
                 if ($penyewaan) {
+                    // Notifikasi ke penyewa bahwa pesanan disetujui
+                    try {
+                        $orderData = Penyewaan::find($id_penyewaan);
+                        if ($orderData && $orderData->id_user) {
+                            \App\Models\CustomerNotification::notifyCustomer(
+                                $orderData->id_user,
+                                'pesanan_disetujui',
+                                'Pesanan Sewa Telah Disetujui!',
+                                "Pesanan sewa Anda (#{$orderData->id}) telah disetujui oleh mitra toko. Silakan lakukan pengambilan barang sewa sesuai jadwal.",
+                                null,
+                                route('menu-transaksi.index', ['id_user' => Crypt::encrypt($orderData->id_user)], false),
+                                $orderData->id
+                            );
+                        }
+                    } catch (\Exception $notifEx) {
+                        Log::error('Gagal kirim notif pesanan_disetujui: ' . $notifEx->getMessage());
+                    }
+
                     Alert::toast('Order diterima! Pesanan masuk ke tahap Pengambilan.', 'success');
                 return redirect('customer/dashboard/pengambilan/' . $id_user);
                 } else {
@@ -362,6 +380,24 @@ class TransaksiMenuController extends Controller
                 $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Selesai']);
                 $this->restoreStok($id_penyewaan);
                 if ($penyewaan) {
+                    // Notifikasi ke penyewa bahwa sewa selesai
+                    try {
+                        $orderData = Penyewaan::find($id_penyewaan);
+                        if ($orderData && $orderData->id_user) {
+                            \App\Models\CustomerNotification::notifyCustomer(
+                                $orderData->id_user,
+                                'pesanan_selesai',
+                                'Penyewaan Selesai',
+                                "Masa sewa untuk pesanan (#{$orderData->id}) telah selesai dan barang telah dikembalikan. Terima kasih telah menyewa!",
+                                null,
+                                route('menu-transaksi.index', ['id_user' => Crypt::encrypt($orderData->id_user)], false),
+                                $orderData->id
+                            );
+                        }
+                    } catch (\Exception $notifEx) {
+                        Log::error('Gagal kirim notif pesanan_selesai: ' . $notifEx->getMessage());
+                    }
+
                     Alert::toast('Pengembalian berhasil disimpan dan stok produk dikembalikan!', 'success');
                     return redirect('customer/dashboard/order-selesai/' . $id_user);
                 } else {
@@ -382,6 +418,24 @@ class TransaksiMenuController extends Controller
                 $penyewaan->status_penyewaan = 'Dibatalkan';
                 $penyewaan->save();
                 $this->restoreStok($id_penyewaan);
+
+                // Notifikasi ke penyewa bahwa pesanan dibatalkan
+                try {
+                    if ($penyewaan->id_user) {
+                        \App\Models\CustomerNotification::notifyCustomer(
+                            $penyewaan->id_user,
+                            'pesanan_dibatalkan',
+                            'Pesanan Sewa Dibatalkan',
+                            "Pesanan sewa Anda (#{$penyewaan->id}) telah dibatalkan oleh mitra toko.",
+                            null,
+                            route('menu-transaksi.index', ['id_user' => Crypt::encrypt($penyewaan->id_user)], false),
+                            $penyewaan->id
+                        );
+                    }
+                } catch (\Exception $notifEx) {
+                    Log::error('Gagal kirim notif pesanan_dibatalkan: ' . $notifEx->getMessage());
+                }
+
                 Alert::toast('Pesanan berhasil ditolak/dibatalkan dan stok telah dikembalikan!', 'success');
             } else {
                 Alert::toast('Pesanan tidak ditemukan!', 'error');
@@ -441,6 +495,35 @@ class TransaksiMenuController extends Controller
                     'nominal' => $denda,
                     'id_pembayaran_penyewaan' => null,
                 ]);
+            }
+
+            // Kirim notifikasi denda / selesai ke penyewa
+            try {
+                if ($penyewaan->id_user) {
+                    if ($denda > 0) {
+                        \App\Models\CustomerNotification::notifyCustomer(
+                            $penyewaan->id_user,
+                            'pesanan_denda',
+                            'Pemberitahuan Denda Pengembalian',
+                            "Terdapat denda sebesar Rp " . number_format($denda, 0, ',', '.') . " pada pesanan sewa (#{$penyewaan->id}). Kondisi barang: {$request->input('kondisi_barang')}. Silakan cek rincian di menu Riwayat.",
+                            "Kondisi: {$request->input('kondisi_barang')} | Catatan: {$request->input('catatan')}",
+                            route('menu-transaksi.index', ['id_user' => Crypt::encrypt($penyewaan->id_user)], false),
+                            $penyewaan->id
+                        );
+                    } else {
+                        \App\Models\CustomerNotification::notifyCustomer(
+                            $penyewaan->id_user,
+                            'pesanan_selesai',
+                            'Sewa Selesai',
+                            "Masa sewa untuk pesanan (#{$penyewaan->id}) telah selesai dan barang telah dikembalikan. Terima kasih telah menyewa di KampSewa!",
+                            null,
+                            route('menu-transaksi.index', ['id_user' => Crypt::encrypt($penyewaan->id_user)], false),
+                            $penyewaan->id
+                        );
+                    }
+                }
+            } catch (\Exception $notifEx) {
+                Log::error('Gagal kirim notif prosesPengembalian: ' . $notifEx->getMessage());
             }
 
             Alert::toast('Proses pengembalian berhasil disimpan!', 'success');
@@ -626,6 +709,24 @@ class TransaksiMenuController extends Controller
         try {
             $penyewaan = Penyewaan::where('id', $id_penyewaan)->update(['status_penyewaan' => 'Aktif']);
             if ($penyewaan) {
+                // Notifikasi ke penyewa bahwa barang telah diserahkan / diambil
+                try {
+                    $orderData = Penyewaan::find($id_penyewaan);
+                    if ($orderData && $orderData->id_user) {
+                        \App\Models\CustomerNotification::notifyCustomer(
+                            $orderData->id_user,
+                            'pesanan_diambil',
+                            'Barang Telah Diambil',
+                            "Barang sewa untuk pesanan (#{$orderData->id}) telah berhasil diserahkan. Masa sewa Anda kini sedang berlangsung.",
+                            null,
+                            route('menu-transaksi.index', ['id_user' => Crypt::encrypt($orderData->id_user)], false),
+                            $orderData->id
+                        );
+                    }
+                } catch (\Exception $notifEx) {
+                    Log::error('Gagal kirim notif pesanan_diambil: ' . $notifEx->getMessage());
+                }
+
                 Alert::toast('Barang diserahkan! Status penyewaan menjadi Aktif.', 'success');
                 return redirect('customer/dashboard/sewa-berlangsung/' . $id_user);
             } else {

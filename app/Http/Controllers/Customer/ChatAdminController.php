@@ -95,8 +95,13 @@ class ChatAdminController extends Controller
     {
         $customerId = $this->resolveCustomerId($id_user);
 
-        $admins = User::where('type', 1)
+        $adminQuery = User::where('type', 1);
+        $totalAdminsCount = (clone $adminQuery)->count();
+        $initialLimit = 50;
+
+        $admins = (clone $adminQuery)
             ->orderBy('name', 'asc')
+            ->limit($initialLimit)
             ->get()
             ->map(function ($admin) use ($customerId) {
                 $payload = $this->formatUserPayload($admin);
@@ -121,7 +126,67 @@ class ChatAdminController extends Controller
             'id_user' => $customerId,
             'encrypted_user_id' => Crypt::encrypt($customerId),
             'admins' => $admins,
+            'total_admins_count' => $totalAdminsCount,
+            'initial_limit' => $initialLimit,
+            'has_more_admins' => $totalAdminsCount > $initialLimit,
+            'remaining_admins' => max(0, $totalAdminsCount - $initialLimit),
             'selected_admin_id' => $request->query('admin_id'),
+        ]);
+    }
+
+    public function getAdmins(Request $request, $id_user)
+    {
+        $customerId = $this->resolveCustomerId($id_user);
+        $q = trim((string) $request->query('q', ''));
+        $offset = max(0, (int) $request->query('offset', 0));
+        $limit = max(1, min(100, (int) $request->query('limit', 50)));
+
+        $query = User::where('type', 1);
+
+        if ($q !== '') {
+            $query->where(function ($sub) use ($q) {
+                $sub->where('name', 'like', "%{$q}%")
+                    ->orWhere('email', 'like', "%{$q}%")
+                    ->orWhere('nomor_telephone', 'like', "%{$q}%");
+            });
+        }
+
+        $total = (clone $query)->count();
+
+        $admins = (clone $query)
+            ->orderBy('name', 'asc')
+            ->skip($offset)
+            ->take($limit)
+            ->get()
+            ->map(function ($admin) use ($customerId) {
+                $payload = $this->formatUserPayload($admin);
+                $room = ChatRoom::where(function ($qr) use ($customerId, $admin) {
+                    $qr->where('user1_id', $customerId)->where('user2_id', $admin->id);
+                })->orWhere(function ($qr) use ($customerId, $admin) {
+                    $qr->where('user1_id', $admin->id)->where('user2_id', $customerId);
+                })->first();
+
+                $payload['room_id'] = $room?->id;
+                $payload['unread_count'] = $room
+                    ? ChatMessage::where('room_id', $room->id)
+                        ->where('receiver_id', $customerId)
+                        ->where('is_read', false)
+                        ->count()
+                    : 0;
+                return $payload;
+            });
+
+        $loadedCount = $offset + $admins->count();
+        $hasMore = $loadedCount < $total;
+        $remaining = max(0, $total - $loadedCount);
+
+        return response()->json([
+            'success' => true,
+            'admins' => $admins,
+            'total' => $total,
+            'offset' => $loadedCount,
+            'has_more' => $hasMore,
+            'remaining' => $remaining,
         ]);
     }
 

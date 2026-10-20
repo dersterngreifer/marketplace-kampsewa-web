@@ -170,6 +170,53 @@ class DashboardCustController extends Controller
                 ->orderBy('detail_iklan.force_completed_at', 'desc')
                 ->get();
 
+            // Pesanan Sewa Baru yang Masuk (Pending) dan butuh konfirmasi mitra
+            $pesanan_pending = Penyewaan::join('detail_penyewaan', 'penyewaan.id', '=', 'detail_penyewaan.id_penyewaan')
+                ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                ->leftJoin('users as penyewa', 'penyewaan.id_user', '=', 'penyewa.id')
+                ->leftJoin('pembayaran_penyewaan', 'penyewaan.id', '=', 'pembayaran_penyewaan.id_penyewaan')
+                ->where('produk.id_user', $id_user_dec)
+                ->where('penyewaan.status_penyewaan', 'Pending')
+                ->select(
+                    'penyewaan.id as id_penyewaan',
+                    'penyewaan.id_user as id_user_penyewa',
+                    DB::raw('COALESCE(penyewa.name, penyewaan.nama_pelanggan_offline, "Pelanggan") as nama_penyewa'),
+                    'penyewa.foto as foto_penyewa',
+                    DB::raw('COALESCE(penyewa.nomor_telephone, penyewaan.no_hp_offline, "-") as nomor_telephone'),
+                    'penyewaan.tanggal_mulai',
+                    'penyewaan.tanggal_selesai',
+                    'penyewaan.tipe_pesanan',
+                    'penyewaan.opsi_pengiriman',
+                    'penyewaan.pesan',
+                    'penyewaan.created_at',
+                    'pembayaran_penyewaan.id as id_pembayaran',
+                    'pembayaran_penyewaan.total_pembayaran',
+                    'pembayaran_penyewaan.status_pembayaran',
+                    'pembayaran_penyewaan.metode',
+                    'pembayaran_penyewaan.bukti_pembayaran'
+                )
+                ->distinct()
+                ->orderByDesc('penyewaan.created_at')
+                ->take(10)
+                ->get();
+
+            $pesanan_pending->each(function ($order) {
+                $items = DB::table('detail_penyewaan')
+                    ->join('produk', 'detail_penyewaan.id_produk', '=', 'produk.id')
+                    ->leftJoin('foto_produk', function ($join) {
+                        $join->on('produk.id', '=', 'foto_produk.id_produk')
+                             ->where('foto_produk.urutan', 1);
+                    })
+                    ->where('detail_penyewaan.id_penyewaan', $order->id_penyewaan)
+                    ->select('produk.id', 'produk.nama', 'foto_produk.url_foto', 'detail_penyewaan.qty', 'detail_penyewaan.subtotal')
+                    ->get();
+
+                $order->items = $items;
+                $order->total_qty = $items->sum('qty');
+                $order->nama_produk_ringkas = $items->pluck('nama')->take(2)->implode(', ') . ($items->count() > 2 ? ' + ' . ($items->count() - 2) . ' barang lainnya' : '');
+                $order->first_foto = $items->first()->url_foto ?? null;
+            });
+
             return view('customers.menu-dashboard-cust.dashboard')->with([
                 'title' => 'Dashboard | Customer',
                 'user_name' => $user_name,
@@ -192,6 +239,7 @@ class DashboardCustController extends Controller
                 'denda_penyewa' => $denda_penyewa,
                 'iklan_suspended' => $iklan_suspended,
                 'iklan_force_completed' => $iklan_force_completed,
+                'pesanan_pending' => $pesanan_pending,
             ]);
         } catch (\Exception $e) {
             Log::error('Error DashboardCustController: ' . $e->getMessage());
@@ -215,6 +263,9 @@ class DashboardCustController extends Controller
                 'penyewa_berlangsung' => collect([]),
                 'riwayat_penyewa' => collect([]),
                 'denda_penyewa' => collect([]),
+                'iklan_suspended' => collect([]),
+                'iklan_force_completed' => collect([]),
+                'pesanan_pending' => collect([]),
             ]);
         }
     }

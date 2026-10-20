@@ -3,25 +3,78 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\PemasukanPerusahaan;
+use App\Models\PengeluaranPerusahaan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ProfileController extends Controller
 {
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('dev');
     }
-    public function index($nama_lengkap){
-          // ambil user berdasarkan yang baru saja terdaftar
-          $user_baru_terdaftar = User::select('users.*')
-          ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
-          ->where('users.type', 0)
-          ->whereDate('users.created_at', Carbon::today())
-          ->where('status_notifikasi_user.status', 'unread')
-          ->orderByDesc('users.created_at')->limit(10)
-          ->get();
-        return view('developers.menu-profile.profile', ['title' => 'Profile | Developer Kamp Sewa', 'name' => $nama_lengkap, 'user_baru_terdaftar' => $user_baru_terdaftar]);
+
+    public function index($nama_lengkap, Request $request)
+    {
+        $decodedName = trim(urldecode($nama_lengkap));
+
+        $user = User::where('name', $decodedName)
+            ->orWhere('name', $nama_lengkap)
+            ->first();
+
+        if (!$user && is_numeric($decodedName)) {
+            $user = User::find($decodedName);
+        }
+
+        if (!$user) {
+            $user = User::where('name', 'LIKE', '%' . $decodedName . '%')->first();
+        }
+
+        if (!$user) {
+            $user = auth()->user();
+        }
+
+        // Ambil riwayat pemasukan manual yang diinput oleh admin ini
+        $historyPemasukanQuery = PemasukanPerusahaan::where('id_user', $user->id)
+            ->orderByDesc('created_at');
+        
+        $totalInputPemasukan = (clone $historyPemasukanQuery)->count();
+        $totalNominalPemasukan = (clone $historyPemasukanQuery)->sum('nominal');
+        $historyPemasukan = (clone $historyPemasukanQuery)->paginate(8, ['*'], 'pemasukan_page')->appends($request->query());
+
+        // Ambil riwayat pengeluaran yang diinput oleh admin ini
+        $historyPengeluaranQuery = PengeluaranPerusahaan::where('id_user', $user->id)
+            ->orderByDesc('created_at');
+
+        $totalInputPengeluaran = (clone $historyPengeluaranQuery)->count();
+        $totalNominalPengeluaran = (clone $historyPengeluaranQuery)->sum('nominal');
+        $historyPengeluaran = (clone $historyPengeluaranQuery)->paginate(8, ['*'], 'pengeluaran_page')->appends($request->query());
+
+        // User baru terdaftar untuk sidebar notifikasi kompatibilitas
+        $user_baru_terdaftar = User::select('users.*')
+            ->join('status_notifikasi_user', 'users.id', '=', 'status_notifikasi_user.id_user')
+            ->where('users.type', 0)
+            ->whereDate('users.created_at', Carbon::today())
+            ->where('status_notifikasi_user.status', 'unread')
+            ->orderByDesc('users.created_at')
+            ->limit(10)
+            ->get();
+
+        return view('developers.menu-profile.profile', [
+            'title' => 'Profile | Developer Kamp Sewa',
+            'user' => $user,
+            'name' => $user->name,
+            'isOwnProfile' => auth()->id() === $user->id,
+            'historyPemasukan' => $historyPemasukan,
+            'totalInputPemasukan' => $totalInputPemasukan,
+            'totalNominalPemasukan' => $totalNominalPemasukan,
+            'historyPengeluaran' => $historyPengeluaran,
+            'totalInputPengeluaran' => $totalInputPengeluaran,
+            'totalNominalPengeluaran' => $totalNominalPengeluaran,
+            'user_baru_terdaftar' => $user_baru_terdaftar,
+        ]);
     }
 
     public function update(Request $request)

@@ -6,10 +6,10 @@
         <div class="mb-5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
                 <h1 class="text-2xl font-black tracking-tight text-slate-900">
-                    Pusat Notifikasi
+                    Help & Feedback Users
                 </h1>
                 <p class="mt-1 text-sm font-medium text-slate-500">
-                    Pantau semua aktivitas platform: feedback, mitra baru, iklan kadaluarsa, rating buruk, dan transaksi masuk.
+                    Kelola interaksi, pertanyaan bantuan, saran, serta percakapan pesan feedback dari mitra dan pelanggan KampSewa.
                 </p>
             </div>
 

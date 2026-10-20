@@ -64,7 +64,7 @@ class PromoController extends Controller
         $activeStoreWide = PromoService::getActiveStoreWidePromo($userId);
 
         $forceCompletedAdsCount = DB::table('detail_iklan')
-            ->join('iklan', 'detail_iklan.id_iklan', '=', 'iklan.id_iklan')
+            ->join('iklan', 'detail_iklan.id_iklan', '=', 'iklan.id')
             ->where('iklan.id_user', $userId)
             ->where('detail_iklan.is_force_completed', true)
             ->where('detail_iklan.tanggal_akhir', '>=', Carbon::today()->toDateString())

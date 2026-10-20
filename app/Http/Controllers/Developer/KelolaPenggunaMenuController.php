@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Developer;
 
 use App\Http\Controllers\Controller;
+use App\Models\PemasukanPerusahaan;
+use App\Models\PengeluaranPerusahaan;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -10,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\File;
+use Illuminate\Validation\Rule;
+use RealRashid\SweetAlert\Facades\Alert;
 
 class KelolaPenggunaMenuController extends Controller
 {
@@ -170,10 +174,38 @@ class KelolaPenggunaMenuController extends Controller
         }
     }
 
-    public function createAdmin()
+    public function createAdmin(Request $request)
     {
-        return view('developers.tambah-admin')->with([
-            'title' => 'Tambah Admin KampSewa | Developer',
+        $search = $request->query('search');
+        $adminQuery = User::where('type', 1)
+            ->withCount(['pemasukanPerusahaan', 'pengeluaranPerusahaan'])
+            ->orderByDesc('created_at');
+
+        if ($search) {
+            $adminQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('nomor_telephone', 'like', "%{$search}%");
+            });
+        }
+
+        $adminList = $adminQuery->paginate(10)->withQueryString();
+
+        $totalAdmin = User::where('type', 1)->count();
+        $adminLakiCount = User::where('type', 1)->where('jenis_kelamin', 'Laki-laki')->count();
+        $adminPerempuanCount = User::where('type', 1)->where('jenis_kelamin', 'Perempuan')->count();
+        $totalPemasukanInput = PemasukanPerusahaan::whereNotNull('id_user')->count();
+        $totalPengeluaranInput = PengeluaranPerusahaan::whereNotNull('id_user')->count();
+
+        return view('developers.tambah-admin', [
+            'title' => 'Kelola & Tambah Admin KampSewa | Developer',
+            'adminList' => $adminList,
+            'search' => $search,
+            'totalAdmin' => $totalAdmin,
+            'adminLakiCount' => $adminLakiCount,
+            'adminPerempuanCount' => $adminPerempuanCount,
+            'totalPemasukanInput' => $totalPemasukanInput,
+            'totalPengeluaranInput' => $totalPengeluaranInput,
         ]);
     }
 
@@ -186,7 +218,7 @@ class KelolaPenggunaMenuController extends Controller
             'password' => ['required', 'string', 'min:6'],
             'date_of_birth' => ['required', 'date'],
             'gender' => ['required', 'in:Laki-laki,Perempuan'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:10240'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ], [
             'fullname.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Email wajib diisi.',
@@ -199,7 +231,7 @@ class KelolaPenggunaMenuController extends Controller
             'date_of_birth.required' => 'Tanggal lahir wajib diisi.',
             'gender.required' => 'Jenis kelamin wajib dipilih.',
             'photo.image' => 'File harus berupa gambar.',
-            'photo.mimes' => 'Foto harus berformat JPG, JPEG, atau PNG.',
+            'photo.mimes' => 'Foto harus berformat JPG, JPEG, PNG, atau WEBP.',
             'photo.max' => 'Ukuran foto maksimal 10 MB.',
         ]);
 
@@ -223,7 +255,7 @@ class KelolaPenggunaMenuController extends Controller
             $user->tanggal_lahir = $validated['date_of_birth'];
             $user->foto = $photoPath;
             $user->jenis_kelamin = $validated['gender'];
-            $user->status = null;
+            $user->status = 'Aktif';
             $user->background = 'Belum Di isi';
             $user->time_login = null;
             $user->last_login = null;
@@ -232,15 +264,91 @@ class KelolaPenggunaMenuController extends Controller
 
             DB::commit();
 
+            Alert::toast("Admin KampSewa {$user->name} berhasil ditambahkan", 'success');
             return redirect()
-                ->route('kelola-pengguna.index')
-                ->with('success', 'Admin KampSewa berhasil ditambahkan.');
+                ->route('kelola-pengguna.create-admin')
+                ->with('success', "Admin KampSewa {$user->name} berhasil ditambahkan.");
         } catch (\Throwable $th) {
             DB::rollBack();
 
+            Alert::toast('Gagal menambahkan Admin: ' . $th->getMessage(), 'error');
             return back()
                 ->withInput()
                 ->with('error', 'Gagal menambahkan Admin: ' . $th->getMessage());
+        }
+    }
+
+    public function updateAdmin(Request $request, $id)
+    {
+        $user = User::where('type', 1)->findOrFail($id);
+
+        $validated = $request->validate([
+            'fullname' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'number_phone' => ['required', 'string', 'max:20', Rule::unique('users', 'nomor_telephone')->ignore($user->id)],
+            'password' => ['nullable', 'string', 'min:6'],
+            'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'in:Laki-laki,Perempuan'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ], [
+            'fullname.required' => 'Nama lengkap wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Email sudah digunakan pengguna lain.',
+            'number_phone.required' => 'Nomor telepon wajib diisi.',
+            'number_phone.unique' => 'Nomor telepon sudah digunakan pengguna lain.',
+            'password.min' => 'Password minimal 6 karakter.',
+        ]);
+
+        try {
+            $user->name = $validated['fullname'];
+            $user->email = $validated['email'];
+            $user->nomor_telephone = $validated['number_phone'];
+            if (!empty($validated['date_of_birth'])) {
+                $user->tanggal_lahir = $validated['date_of_birth'];
+            }
+            if (!empty($validated['gender'])) {
+                $user->jenis_kelamin = $validated['gender'];
+            }
+            if (!empty($validated['password'])) {
+                $user->password = Hash::make($validated['password']);
+            }
+
+            if ($request->hasFile('photo')) {
+                $file = $request->file('photo');
+                $photoPath = time() . '_admin_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('assets/image/customers/profile/'), $photoPath);
+                $user->foto = $photoPath;
+            }
+
+            $user->save();
+
+            Alert::toast("Data admin {$user->name} berhasil diperbarui", 'success');
+            return redirect()
+                ->route('kelola-pengguna.create-admin')
+                ->with('success', "Data admin {$user->name} berhasil diperbarui.");
+        } catch (\Throwable $th) {
+            Alert::toast("Gagal memperbarui admin: {$th->getMessage()}", 'error');
+            return back()
+                ->with('error', 'Gagal memperbarui data admin: ' . $th->getMessage());
+        }
+    }
+
+    public function destroyAdmin($id)
+    {
+        try {
+            $user = User::where('type', 1)->findOrFail($id);
+            $userName = $user->name;
+            $user->delete();
+
+            Alert::toast("Admin {$userName} berhasil dihapus", 'success');
+            return redirect()
+                ->route('kelola-pengguna.create-admin')
+                ->with('success', "Admin {$userName} berhasil dihapus.");
+        } catch (\Throwable $th) {
+            Alert::toast("Gagal menghapus admin: {$th->getMessage()}", 'error');
+            return back()
+                ->with('error', 'Gagal menghapus admin: ' . $th->getMessage());
         }
     }
 

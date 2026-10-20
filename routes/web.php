@@ -10,6 +10,7 @@ use App\Http\Controllers\Customer\ProdukController;
 use App\Http\Controllers\Customer\PromoController;
 use App\Http\Controllers\Customer\SetDataController;
 use App\Http\Controllers\Customer\TransaksiMenuController;
+use App\Http\Controllers\Developer\ActivityNotificationController;
 use App\Http\Controllers\Developer\DashboardController;
 use App\Http\Controllers\Developer\DetailPenggunaController;
 use App\Http\Controllers\Developer\IklanController;
@@ -66,6 +67,29 @@ Route::post('/logout', [AuthController::class, 'logout'])
 Route::get('/customer/isi-identitas', [AuthController::class, 'isiIdentitas'])
     ->middleware('auth')
     ->name('customer.isi-identitas');
+
+/*
+|--------------------------------------------------------------------------
+| Universal Home Route (Fallback & Role Redirect)
+|--------------------------------------------------------------------------
+| Menangani route /home agar tidak pernah 404 ketika diakses via autocomplete,
+| bookmark, sesi lama, atau redirect bawaan Laravel.
+*/
+Route::get('/home', function () {
+    if (auth()->check()) {
+        $user = auth()->user();
+        if ($user->type == 1) {
+            return redirect()->route('home.index');
+        } elseif ($user->type == 0) {
+            if (empty($user->nomor_identitas)) {
+                return redirect()->route('customer.isi-identitas');
+            }
+            return redirect()->route('dashboard-cust');
+        }
+        return redirect()->route('landing-page.halaman-beranda');
+    }
+    return redirect()->route('login');
+})->name('home');
 
 
 /*
@@ -137,6 +161,25 @@ Route::middleware('auth')->group(function () {
 
         /*
         |--------------------------------------------------------------------------
+        | General Activity Notifications Center (Halaman Notifikasi Baru)
+        |--------------------------------------------------------------------------
+        */
+
+        Route::prefix('aktivitas-notifikasi')
+            ->name('developer.notifications.')
+            ->controller(ActivityNotificationController::class)
+            ->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('/mark-all-read', 'markAllAsRead')->name('mark-all-read');
+                Route::post('/mark-item-read', 'markItemAsRead')->name('mark-item-read');
+            });
+
+        Route::get('/notifications', function () {
+            return redirect()->route('developer.notifications.index');
+        });
+
+        /*
+        |--------------------------------------------------------------------------
         | Live Chat Mitra & Customer
         |--------------------------------------------------------------------------
         */
@@ -171,6 +214,12 @@ Route::middleware('auth')->group(function () {
             Route::post('/tambah-admin', [KelolaPenggunaMenuController::class, 'storeAdmin'])
                 ->name('kelola-pengguna.store-admin');
 
+            Route::put('/admin/{id}', [KelolaPenggunaMenuController::class, 'updateAdmin'])
+                ->name('kelola-pengguna.update-admin');
+
+            Route::delete('/admin/{id}', [KelolaPenggunaMenuController::class, 'destroyAdmin'])
+                ->name('kelola-pengguna.destroy-admin');
+
             Route::delete('/delete-selected', [KelolaPenggunaMenuController::class, 'bulkDestroy'])
                 ->name('kelola-pengguna.bulk-destroy');
 
@@ -192,6 +241,12 @@ Route::middleware('auth')->group(function () {
 
             Route::delete('/detail/{id}', [DetailPenggunaController::class, 'destroy'])
                 ->name('kelola-pengguna.detail-destroy');
+
+            Route::put('/produk/{id_produk}/suspend', [DetailPenggunaController::class, 'suspendProduk'])
+                ->name('kelola-pengguna.produk-suspend');
+
+            Route::put('/produk/{id_produk}/pulihkan', [DetailPenggunaController::class, 'pulihkanProduk'])
+                ->name('kelola-pengguna.produk-pulihkan');
         });
 
         Route::get('/informasi-pengguna', [InformasiPenggunaController::class, 'index'])
@@ -251,15 +306,34 @@ Route::middleware('auth')->group(function () {
         |--------------------------------------------------------------------------
         */
 
+        // Penghasilan
         Route::get('/penghasilan', [PenghasilanController::class, 'index'])->name('penghasilan.index');
+        Route::get('/penghasilan/export', [PenghasilanController::class, 'exportPenghasilan'])->name('penghasilan.export');
+        Route::get('/penghasilan/template-csv', [PenghasilanController::class, 'templateCsv'])->name('penghasilan.template-csv');
+        Route::post('/penghasilan/import', [PenghasilanController::class, 'importPenghasilan'])->name('penghasilan.import');
         Route::post('/penghasilan/tambah-penghasila-dev/{id_user}', [PenghasilanController::class, 'tambahPenghasilan'])
             ->name('penghasilan.tambah-penghasilan-dev');
+        Route::put('/penghasilan/{id}', [PenghasilanController::class, 'updatePenghasilan'])
+            ->name('penghasilan.update');
         Route::delete('/penghasilan/{id}', [PenghasilanController::class, 'hapusPenghasilan'])
             ->name('penghasilan.destroy');
 
+        // Pengeluaran
         Route::get('/pengeluaran', [PengeluaranController::class, 'index'])->name('pengeluaran.index');
+        Route::get('/pengeluaran/export', [PengeluaranController::class, 'exportPengeluaran'])->name('pengeluaran.export');
+        Route::get('/pengeluaran/template-csv', [PengeluaranController::class, 'templateCsv'])->name('pengeluaran.template-csv');
+        Route::post('/pengeluaran/import', [PengeluaranController::class, 'importPengeluaran'])->name('pengeluaran.import');
+        Route::post('/pengeluaran', [PengeluaranController::class, 'tambahPengeluaran'])
+            ->name('pengeluaran.store');
+        Route::put('/pengeluaran/{id}', [PengeluaranController::class, 'updatePengeluaran'])
+            ->name('pengeluaran.update');
+        Route::delete('/pengeluaran/{id}', [PengeluaranController::class, 'hapusPengeluaran'])
+            ->name('pengeluaran.destroy');
 
         Route::get('/rekap-keuangan', [RekapKeuanganController::class, 'index'])->name('rekap-keuangan.index');
+        Route::get('/rekap-keuangan/export', [RekapKeuanganController::class, 'exportRekap'])->name('rekap-keuangan.export');
+        Route::get('/rekap-keuangan/template-csv', [RekapKeuanganController::class, 'templateCsv'])->name('rekap-keuangan.template-csv');
+        Route::post('/rekap-keuangan/import', [RekapKeuanganController::class, 'importRekap'])->name('rekap-keuangan.import');
 
         /*
         |--------------------------------------------------------------------------
@@ -282,6 +356,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/delete-selected-products', [DetailPenggunaController::class, 'deleteSelectedProducts'])
         ->name('delete-selected-products');
+    Route::post('/delete-selected-products-alias', [DetailPenggunaController::class, 'deleteSelectedProducts'])
+        ->name('delete_selected_products');
 });
 
 
@@ -447,6 +523,7 @@ Route::middleware('auth')->prefix('customer/dashboard')->group(function () {
         ->group(function () {
             Route::get('/{id_user}', 'index')->name('index');
             Route::get('/{id_user}/rooms', 'getRooms')->name('rooms');
+            Route::get('/{id_user}/admins', 'getAdmins')->name('admins');
             Route::get('/{id_user}/messages/{admin_id}', 'getMessages')->name('messages');
             Route::post('/{id_user}/send', 'sendMessage')->name('send');
         });

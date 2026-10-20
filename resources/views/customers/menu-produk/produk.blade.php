@@ -160,6 +160,19 @@
                                                 {{ $item->kategori_produk }}
                                             </span>
                                         </div>
+                                        @if(strtolower($item->status_produk ?? '') == 'ditangguhkan')
+                                            <div class="absolute top-3 right-3 flex flex-col items-end gap-1">
+                                                <span class="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider bg-rose-600/90 text-white rounded-lg shadow-sm backdrop-blur">
+                                                    Ditangguhkan
+                                                </span>
+                                                @if($item->latestSuspend && $item->latestSuspend->status_revisi === 'sudah_diperbaiki')
+                                                    <span class="px-2 py-0.5 text-[9px] font-black bg-emerald-600/90 text-white rounded-md shadow-sm backdrop-blur flex items-center gap-1">
+                                                        <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
+                                                        Direvisi
+                                                    </span>
+                                                @endif
+                                            </div>
+                                        @endif
                                     </div>
 
                                     <!-- Content -->

@@ -98,11 +98,35 @@
                 <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600">
                     <i class="fi fi-rr-ban flex text-[20px]"></i>
                 </div>
-                <span class="rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700">Perlu Revisi</span>
+                @if (($get_count_iklan_sudah_direvisi ?? 0) > 0)
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 border border-emerald-300 px-2.5 py-1 text-[11px] font-black text-emerald-800 shadow-xs">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        {{ $get_count_iklan_sudah_direvisi }} Sudah Direvisi
+                    </span>
+                @else
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 border border-red-200 px-2.5 py-1 text-[11px] font-bold text-red-700">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                        </span>
+                        Perlu Revisi
+                    </span>
+                @endif
             </div>
             <p class="mt-4 text-xs font-bold uppercase tracking-wider text-slate-400">Ditangguhkan</p>
-            <p class="mt-1 text-3xl font-black text-slate-900">{{ number_format($get_count_total_iklan_suspend, 0, ',', '.') }}</p>
-            <p class="mt-1 text-xs text-slate-400">Iklan butuh revisi mitra</p>
+            <div class="mt-1 flex items-baseline gap-2">
+                <p class="text-3xl font-black text-slate-900">{{ number_format($get_count_total_iklan_suspend, 0, ',', '.') }}</p>
+                @if (($get_count_iklan_sudah_direvisi ?? 0) > 0)
+                    <span class="text-xs font-black text-emerald-600">({{ $get_count_iklan_sudah_direvisi }} siap dipulihkan)</span>
+                @endif
+            </div>
+            <p class="mt-1 text-xs text-slate-400">
+                <span class="inline-flex items-center gap-1 text-emerald-600 font-bold"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span> {{ $get_count_iklan_sudah_direvisi ?? 0 }} direvisi</span> &bull; 
+                <span class="inline-flex items-center gap-1 text-rose-500 font-medium"><span class="h-1.5 w-1.5 rounded-full bg-rose-500"></span> {{ $get_count_iklan_menunggu_revisi ?? $get_count_total_iklan_suspend }} belum revisi</span>
+            </p>
         </div>
 
         {{-- Card 4: Total Transaksi Iklan --}}
@@ -250,9 +274,9 @@
             @endif
 
             {{-- Card Iklan Ditangguhkan (Suspend) --}}
-            <div class="w-full overflow-hidden rounded-[28px] border-2 border-red-200/90 bg-white shadow-sm">
+            <div id="card-iklan-suspend" class="w-full overflow-hidden rounded-[28px] border-2 border-red-200/90 bg-white shadow-sm scroll-mt-24">
                 <div class="border-b border-red-100 bg-red-50/40 p-5 sm:p-6">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
                             <div class="mb-2 inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-red-700 border border-red-200/60">
                                 <i class="fi fi-rr-ban flex text-[10px]"></i>
@@ -262,6 +286,32 @@
                             <p class="mt-1 text-sm text-slate-500">
                                 Terdapat <b>{{ $get_count_total_iklan_suspend }}</b> iklan yang ditarik dari mobile karena butuh perbaikan oleh mitra.
                             </p>
+                        </div>
+
+                        {{-- Filter Tabs Khusus Suspend --}}
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a href="{{ route('iklan.index', ['filter_suspend' => 'semua', 'cari' => $cari]) }}#card-iklan-suspend"
+                                class="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition shadow-xs {{ ($filter_suspend ?? 'semua') === 'semua' ? 'bg-slate-900 text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50' }}">
+                                Semua ({{ $get_count_total_iklan_suspend }})
+                            </a>
+
+                            <a href="{{ route('iklan.index', ['filter_suspend' => 'revisi', 'cari' => $cari]) }}#card-iklan-suspend"
+                                class="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition shadow-xs {{ ($filter_suspend ?? 'semua') === 'revisi' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300' : 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100' }}">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ ($filter_suspend ?? 'semua') === 'revisi' ? 'bg-white' : 'bg-emerald-400' }} opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 {{ ($filter_suspend ?? 'semua') === 'revisi' ? 'bg-white' : 'bg-emerald-500' }}"></span>
+                                </span>
+                                Sudah Direvisi ({{ $get_count_iklan_sudah_direvisi ?? 0 }})
+                            </a>
+
+                            <a href="{{ route('iklan.index', ['filter_suspend' => 'menunggu', 'cari' => $cari]) }}#card-iklan-suspend"
+                                class="inline-flex items-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs font-bold transition shadow-xs {{ ($filter_suspend ?? 'semua') === 'menunggu' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-300' : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100' }}">
+                                <span class="relative flex h-2 w-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full {{ ($filter_suspend ?? 'semua') === 'menunggu' ? 'bg-white' : 'bg-rose-400' }} opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full h-2 w-2 {{ ($filter_suspend ?? 'semua') === 'menunggu' ? 'bg-white' : 'bg-rose-500' }}"></span>
+                                </span>
+                                Masih Suspend ({{ $get_count_iklan_menunggu_revisi ?? 0 }})
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -273,14 +323,35 @@
                         $posterSuspend = $resolvePoster($suspend->poster);
                         $isProductTarget = in_array(strtolower((string) $suspend->target_type), ['product', 'produk'], true) || !empty($suspend->id_produk);
                         $targetLabel = $isProductTarget ? 'Produk: ' . ($suspend->nama_produk ?? 'ID Produk #' . $suspend->id_produk) : 'Toko: ' . ($suspend->name_store ?? $suspend->name);
+                        $isRevised = (($suspend->suspend_status_revisi ?? '') === 'sudah_diperbaiki');
                     @endphp
 
-                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 hover:bg-red-50/30 transition">
+                    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-5 transition {{ $isRevised ? 'border-l-[6px] border-l-emerald-500 bg-emerald-50/25 hover:bg-emerald-50/45' : 'border-l-[6px] border-l-rose-500 bg-red-50/15 hover:bg-red-50/30' }}">
                         {{-- Sisi Kiri: Poster 16:9 + Info Iklan --}}
                         <div class="flex items-start gap-4 min-w-0 flex-1">
                             {{-- Poster Thumbnail (16:9) --}}
                             <div class="relative w-28 sm:w-36 aspect-video shrink-0 overflow-hidden rounded-2xl bg-slate-100 border border-slate-200 shadow-sm cursor-pointer group"
                                 onclick='openDetailModal(@json($suspend), @json($posterSuspend))'>
+                                
+                                {{-- Floating Animated Badge on Poster --}}
+                                @if ($isRevised)
+                                <div class="absolute top-1.5 left-1.5 z-10 flex items-center gap-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs px-2 py-0.5 text-[9px] font-black text-emerald-300 border border-emerald-400/50 shadow-sm">
+                                    <span class="relative flex h-1.5 w-1.5">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+                                    </span>
+                                    Sudah Direvisi
+                                </div>
+                                @else
+                                <div class="absolute top-1.5 left-1.5 z-10 flex items-center gap-1.5 rounded-full bg-slate-900/90 backdrop-blur-xs px-2 py-0.5 text-[9px] font-black text-rose-300 border border-rose-400/50 shadow-sm">
+                                    <span class="relative flex h-1.5 w-1.5">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-rose-500"></span>
+                                    </span>
+                                    Masih Suspend
+                                </div>
+                                @endif
+
                                 <img src="{{ $posterSuspend }}" class="h-full w-full object-cover transition duration-300 group-hover:scale-105" alt="{{ $suspend->judul }}" onerror="this.src='{{ $svgFallback }}'; this.onerror=null;">
                                 <div class="absolute inset-0 bg-slate-900/20 group-hover:bg-slate-900/40 flex items-center justify-center transition opacity-0 group-hover:opacity-100">
                                     <span class="rounded-lg bg-black/60 px-2 py-1 text-[10px] font-bold text-white flex items-center gap-1">
@@ -296,16 +367,24 @@
                                         <i class="{{ $isProductTarget ? 'fi fi-rr-box' : 'fi fi-rr-shop' }} text-[10px]"></i>
                                         {{ $targetLabel }}
                                     </span>
-                                    <span class="rounded-md bg-red-100 text-red-800 border border-red-200 px-2.5 py-0.5 text-[10px] font-bold flex items-center gap-1">
-                                        <i class="fi fi-rr-ban text-[10px]"></i> Ditangguhkan
-                                    </span>
-                                    @if (($suspend->suspend_status_revisi ?? '') === 'sudah_diperbaiki')
-                                    <span class="rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 text-[10px] font-bold flex items-center gap-1">
-                                        <i class="fi fi-rr-check-circle text-[10px]"></i> Sudah Direvisi Mitra
+
+                                    @if ($isRevised)
+                                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 border-2 border-emerald-300 px-3 py-1 text-xs font-black text-emerald-800 shadow-xs ring-2 ring-emerald-100">
+                                        <span class="relative flex h-2.5 w-2.5">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                                        </span>
+                                        <i class="fi fi-rr-check-circle text-[11px] text-emerald-600"></i>
+                                        Sudah Direvisi Mitra (Siap Ditinjau)
                                     </span>
                                     @else
-                                    <span class="rounded-md bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold">
-                                        Menunggu Revisi Mitra
+                                    <span class="inline-flex items-center gap-2 rounded-full bg-rose-100 border-2 border-rose-300 px-3 py-1 text-xs font-black text-rose-800 shadow-xs ring-2 ring-rose-100">
+                                        <span class="relative flex h-2.5 w-2.5">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500"></span>
+                                        </span>
+                                        <i class="fi fi-rr-ban text-[11px] text-rose-600"></i>
+                                        Masih Suspend (Menunggu Revisi Mitra)
                                     </span>
                                     @endif
                                 </div>
@@ -318,12 +397,17 @@
                                 
                                 {{-- Alasan Penangguhan --}}
                                 @if (!empty($suspend->suspend_alasan))
-                                <div class="mt-1.5 p-2 rounded-xl bg-red-50 border border-red-200/70 text-xs text-red-800 flex items-start gap-1.5">
-                                    <i class="fi fi-rr-info text-[11px] mt-0.5 shrink-0 text-red-600"></i>
+                                <div class="mt-1.5 p-2 rounded-xl {{ $isRevised ? 'bg-emerald-50/80 border border-emerald-200/80 text-emerald-900' : 'bg-red-50 border border-red-200/70 text-red-800' }} text-xs flex items-start gap-1.5">
+                                    <i class="fi {{ $isRevised ? 'fi-rr-check text-emerald-600' : 'fi-rr-info text-red-600' }} text-[11px] mt-0.5 shrink-0"></i>
                                     <div>
-                                        <span class="font-bold">Alasan:</span> {{ $suspend->suspend_alasan }}
+                                        <span class="font-bold">Alasan Suspend:</span> {{ $suspend->suspend_alasan }}
                                         @if (!empty($suspend->suspend_catatan))
-                                        <p class="mt-0.5 text-[11px] text-red-700 font-medium">Catatan: {{ $suspend->suspend_catatan }}</p>
+                                        <p class="mt-0.5 text-[11px] {{ $isRevised ? 'text-emerald-700' : 'text-red-700' }} font-medium">Catatan: {{ $suspend->suspend_catatan }}</p>
+                                        @endif
+                                        @if ($isRevised)
+                                        <p class="mt-1 text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                                            <i class="fi fi-rr-time-check text-[10px]"></i> Mitra telah memperbarui iklan ini {{ !empty($suspend->suspend_updated_at) ? \Carbon\Carbon::parse($suspend->suspend_updated_at)->diffForHumans() : 'baru saja' }}.
+                                        </p>
                                         @endif
                                     </div>
                                 </div>
@@ -368,10 +452,21 @@
 
                                 <form method="POST" action="{{ route('iklan.aktivasi', $suspend->id_detail_iklan) }}">
                                     @csrf @method('PUT')
+                                    @if ($isRevised)
+                                    <button type="submit" title="{{ $sisa_slot_aktif > 0 ? 'Pulihkan iklan ke slot aktif' : 'Slot penuh (15/15)' }}"
+                                        class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-xs font-black text-white hover:from-emerald-700 hover:to-teal-700 transition active:scale-95 shadow-md shadow-emerald-500/25 ring-2 ring-emerald-200">
+                                        <span class="relative flex h-2 w-2">
+                                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+                                        </span>
+                                        <i class="fi fi-rr-play text-[11px]"></i> Pulihkan Iklan
+                                    </button>
+                                    @else
                                     <button type="submit" title="{{ $sisa_slot_aktif > 0 ? 'Pulihkan iklan ke slot aktif' : 'Slot penuh (15/15)' }}"
                                         class="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition active:scale-95 shadow-sm">
                                         <i class="fi fi-rr-play text-[11px]"></i> Pulihkan Iklan
                                     </button>
+                                    @endif
                                 </form>
 
                                 <form id="form_delete_{{ $suspend->id_iklan_main }}"
@@ -1348,8 +1443,13 @@
         var statusIklan = (data.status_iklan || 'Aktif').toUpperCase();
         var statusIklanEl = document.getElementById('modalStatusIklanBadge');
         if (statusIklan === 'NONAKTIF') {
-            statusIklanEl.className = 'font-bold text-red-600';
-            statusIklanEl.innerText = 'Ditangguhkan (Suspended)';
+            if (data.suspend_status_revisi === 'sudah_diperbaiki') {
+                statusIklanEl.className = 'inline-flex items-center gap-1.5 font-black text-emerald-600';
+                statusIklanEl.innerHTML = '<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span> Sudah Direvisi Mitra (Ditangguhkan)';
+            } else {
+                statusIklanEl.className = 'inline-flex items-center gap-1.5 font-black text-rose-600';
+                statusIklanEl.innerHTML = '<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></span> Ditangguhkan (Masih Suspend)';
+            }
         } else if (statusIklan === 'PENDING') {
             statusIklanEl.className = 'font-bold text-amber-600';
             statusIklanEl.innerText = 'Menunggu Giliran (Pending)';
@@ -1370,11 +1470,11 @@
 
             var statusRevisiBadge = document.getElementById('modalSuspendStatusRevisiBadge');
             if (data.suspend_status_revisi === 'sudah_diperbaiki') {
-                statusRevisiBadge.innerText = 'Sudah Direvisi Mitra';
-                statusRevisiBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200';
+                statusRevisiBadge.innerHTML = '<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span></span> Sudah Direvisi Mitra';
+                statusRevisiBadge.className = 'inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-300';
             } else {
-                statusRevisiBadge.innerText = 'Menunggu Revisi Mitra';
-                statusRevisiBadge.className = 'text-[10px] font-bold px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200';
+                statusRevisiBadge.innerHTML = '<span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span></span> Masih Suspend (Menunggu Revisi Mitra)';
+                statusRevisiBadge.className = 'inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-full bg-rose-50 text-rose-800 border border-rose-300';
             }
 
             var bagianContainer = document.getElementById('modalSuspendBagianRevisi');

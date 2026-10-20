@@ -50,7 +50,7 @@
     }
 
     $hasAdWarnings = ($navSuspendedCount > 0 || $navForceCompletedCount > 0);
-    $hasRedUnread = $navCustomerNotifications->where('is_read', false)->whereIn('tipe', ['iklan_suspend', 'iklan_force_complete', 'pesanan_dibatalkan'])->count() > 0;
+    $hasRedUnread = $navCustomerNotifications->where('is_read', false)->whereIn('tipe', ['iklan_suspend', 'iklan_force_complete', 'pesanan_dibatalkan', 'produk_suspend'])->count() > 0;
 @endphp
 <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100 shadow-sm w-full transition-all duration-300">
     <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -192,9 +192,9 @@
                         <div class="max-h-[350px] overflow-y-auto divide-y divide-gray-50">
                             @forelse ($navCustomerNotifications as $notif)
                                 @php
-                                    $isSuspend = $notif->tipe === 'iklan_suspend';
+                                    $isSuspend = in_array($notif->tipe, ['iklan_suspend', 'produk_suspend']);
                                     $isForce = $notif->tipe === 'iklan_force_complete';
-                                    $isReaktif = $notif->tipe === 'iklan_reaktif';
+                                    $isReaktif = in_array($notif->tipe, ['iklan_reaktif', 'produk_pulihkan']);
                                     $isPesanan = in_array($notif->tipe, ['pesanan_masuk', 'order_masuk', 'penyewaan_baru']);
                                     $isPembayaran = in_array($notif->tipe, ['pembayaran_masuk', 'bukti_pembayaran']);
                                     $isBatal = in_array($notif->tipe, ['pesanan_dibatalkan', 'order_dibatalkan']);
@@ -205,7 +205,7 @@
                                         $bgColor = $isUnread ? 'bg-red-50/80 hover:bg-red-100/70' : 'bg-white hover:bg-gray-50';
                                         $iconBg = 'bg-red-100 text-red-600';
                                         $iconClass = 'bi bi-exclamation-octagon-fill';
-                                        $badgeText = 'Ditangguhkan';
+                                        $badgeText = $notif->tipe === 'produk_suspend' ? 'Produk Ditangguhkan' : 'Ditangguhkan';
                                         $badgeClass = 'bg-red-100 text-red-700';
                                     } elseif ($isForce) {
                                         $bgColor = $isUnread ? 'bg-orange-50/80 hover:bg-orange-100/70' : 'bg-white hover:bg-gray-50';
@@ -217,7 +217,7 @@
                                         $bgColor = $isUnread ? 'bg-emerald-50/80 hover:bg-emerald-100/70' : 'bg-white hover:bg-gray-50';
                                         $iconBg = 'bg-emerald-100 text-emerald-600';
                                         $iconClass = 'bi bi-check-circle-fill';
-                                        $badgeText = 'Direaktifkan';
+                                        $badgeText = $notif->tipe === 'produk_pulihkan' ? 'Produk Dipulihkan' : 'Direaktifkan';
                                         $badgeClass = 'bg-emerald-100 text-emerald-700';
                                     } elseif ($isPesanan) {
                                         $bgColor = $isUnread ? 'bg-blue-50/80 hover:bg-blue-100/70' : 'bg-white hover:bg-gray-50';

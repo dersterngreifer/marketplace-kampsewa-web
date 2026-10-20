@@ -1184,13 +1184,14 @@ class IklanController extends Controller
 
             // Jika iklan ini sedang disuspend, tandai revisi sudah dikirim mitra
             $suspend = \App\Models\IklanSuspend::where('id_iklan', $id_iklan)
-                ->where('status_revisi', 'menunggu_perbaikan')
+                ->whereIn('status_revisi', ['menunggu_perbaikan', 'sudah_diperbaiki'])
                 ->latest()
                 ->first();
 
             if ($suspend) {
                 $suspend->update([
                     'status_revisi' => 'sudah_diperbaiki',
+                    'read_at'       => null,
                 ]);
                 Alert::success('Perubahan Disimpan!', 'Iklan berhasil diperbarui dan status revisi telah diteruskan ke admin untuk peninjauan & pemulihan.')->persistent(true);
             } else {

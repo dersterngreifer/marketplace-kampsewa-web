@@ -42,12 +42,13 @@ class ProdukController extends Controller
                     'produk.id_user as id_user',
                     'produk.nama as nama_produk',
                     'produk.kategori as kategori_produk',
+                    'produk.status as status_produk',
                     'produk.created_at',
                     DB::raw('SUM(detail_variant_produk.stok) as stok_produk'),
                     DB::raw('MAX(detail_variant_produk.harga_sewa) as harga_sewa_max'),
                     DB::raw('MIN(detail_variant_produk.harga_sewa) as harga_sewa_min'),
                 )
-                ->with('foto')
+                ->with(['foto', 'latestSuspend'])
                 ->where('produk.id_user', $id_user_decrypt);
 
             // Apply search filter
@@ -104,6 +105,7 @@ class ProdukController extends Controller
         $id = Crypt::decrypt($id_user);
 
         $search = request()->query('search');
+        $filter_status = request()->query('filter_status', 'semua');
 
         // Create the base query
         $base_query = Produk::leftJoin('variant_produk', 'produk.id', '=', 'variant_produk.id_produk')
@@ -115,7 +117,19 @@ class ProdukController extends Controller
                 'produk.nama as nama_produk',
                 'produk.status as status_produk',
                 DB::raw('SUM(detail_variant_produk.stok) as stok_produk')
-            )->with('foto')->where('produk.id_user', $id);
+            )->with(['foto', 'latestSuspend'])->where('produk.id_user', $id);
+
+        // Filter status tab jika dipilih
+        if ($filter_status === 'tersedia') {
+            $base_query->where('produk.status', 'Tersedia');
+        } elseif ($filter_status === 'ditangguhkan' || $filter_status === 'suspend') {
+            $base_query->where('produk.status', 'Ditangguhkan');
+        } elseif ($filter_status === 'direvisi') {
+            $base_query->where('produk.status', 'Ditangguhkan')
+                ->whereHas('latestSuspend', function ($q) {
+                    $q->where('status_revisi', 'sudah_diperbaiki');
+                });
+        }
 
         // Clone the base query to count the total number of products
         $count_query = clone $base_query;
@@ -140,6 +154,21 @@ class ProdukController extends Controller
         // Count the total number of products
         $total_product = $count_query->count();
 
+        // Hitung total untuk badge filter tabs
+        $total_semua = Produk::where('id_user', $id)->count();
+        $total_tersedia = Produk::where('id_user', $id)->where('status', 'Tersedia')->count();
+        $total_suspend = Produk::where('id_user', $id)->where('status', 'Ditangguhkan')->count();
+        $total_suspend_direvisi = Produk::where('id_user', $id)
+            ->where('status', 'Ditangguhkan')
+            ->whereHas('latestSuspend', function ($q) {
+                $q->where('status_revisi', 'sudah_diperbaiki');
+            })->count();
+        $total_suspend_perlu_revisi = Produk::where('id_user', $id)
+            ->where('status', 'Ditangguhkan')
+            ->whereHas('latestSuspend', function ($q) {
+                $q->where('status_revisi', 'menunggu_perbaikan');
+            })->count();
+
         // Ambil semua kategori unik milik user
         $user_categories = Produk::where('id_user', $id)
                                  ->whereNotNull('kategori')
@@ -153,8 +182,16 @@ class ProdukController extends Controller
                 'title' => 'Kelola Produk | KampSewa',
                 'produk' => $produk_result,
                 'search' => $search,
+                'filter_status' => $filter_status,
                 'total_produk' => $total_product,
+                'total_semua' => $total_semua,
+                'total_tersedia' => $total_tersedia,
+                'total_suspend' => $total_suspend,
+                'total_suspend_direvisi' => $total_suspend_direvisi,
+                'total_suspend_perlu_revisi' => $total_suspend_perlu_revisi,
                 'user_categories' => $user_categories,
+                'id_user_raw' => $id,
+                'id_user_encrypted' => $id_user,
             ]
         );
     }
@@ -439,6 +476,12 @@ class ProdukController extends Controller
 
         $total_ulasan = RatingProduk::where('id_produk', $id_product_decrypt)->count();
 
+        // Mengambil status penangguhan (suspend) produk jika ada
+        $suspend_info = \App\Models\ProdukSuspend::with('admin')
+            ->where('id_produk', $id_product_decrypt)
+            ->latest()
+            ->first();
+
         return view('customers.menu-produk.detail-produk')->with([
             'title' => 'Detail Produk',
             'detail_produk' => $product_detail,
@@ -446,6 +489,7 @@ class ProdukController extends Controller
             'rating' => $rating,
             'userRatings' => $userRatings,
             'total_ulasan' => $total_ulasan,
+            'suspend_info' => $suspend_info,
         ]);
     }
 
@@ -596,7 +640,22 @@ class ProdukController extends Controller
                 ->whereNotIn('id', $existingVariantIds)
                 ->delete();
 
-            Alert::toast('Produk berhasil di update!', 'success');
+            // Cek apakah produk ini sebelumnya berstatus ditangguhkan (suspend) dan menunggu perbaikan
+            $latestSuspend = \App\Models\ProdukSuspend::where('id_produk', $id_produk)
+                ->where('status_revisi', 'menunggu_perbaikan')
+                ->latest()
+                ->first();
+
+            if ($latestSuspend) {
+                $latestSuspend->update([
+                    'status_revisi' => 'sudah_diperbaiki',
+                    'read_at' => null, // Reset agar notifikasi muncul sebagai belum dibaca bagi developer/admin
+                ]);
+                Alert::toast('Produk berhasil diperbarui dan notifikasi telah dikirim ke Admin untuk ditinjau & dipulihkan!', 'success');
+            } else {
+                Alert::toast('Produk berhasil di update!', 'success');
+            }
+
             return back();
         } catch (\Exception $error) {
             Log::error('Error :' . $error->getMessage());

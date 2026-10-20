@@ -11,9 +11,20 @@ class PemasukanPerusahaan extends Model
 
     protected $table = 'pemasukan_perusahaan';
     protected $fillable = [
+        'id_user',
         'sumber',
         'deskripsi',
         'nominal',
         'id_pembayaran_penyewaan',
     ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function pembayaranPenyewaan()
+    {
+        return $this->belongsTo(PembayaranPenyewaan::class, 'id_pembayaran_penyewaan');
+    }
 }

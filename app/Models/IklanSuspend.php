@@ -19,10 +19,12 @@ class IklanSuspend extends Model
         'bagian_revisi',
         'catatan',
         'status_revisi',
+        'read_at',
     ];
 
     protected $casts = [
         'bagian_revisi' => 'array',
+        'read_at' => 'datetime',
     ];
 
     public function iklan()
