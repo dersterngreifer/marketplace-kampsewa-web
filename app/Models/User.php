@@ -39,6 +39,11 @@ class User extends Authenticatable
         // Profil toko
         'deskripsi_toko',
         'banner_toko',
+        'is_populer',
+        'slogan_toko',
+        'badge_toko',
+        'rating_toko',
+        'total_penyewaan_toko',
     ];
 
     /**
@@ -59,7 +64,44 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'is_verified' => 'boolean',
+        'is_populer' => 'boolean',
+        'rating_toko' => 'float',
+        'total_penyewaan_toko' => 'integer',
     ];
+
+    public function scopePopuler($query)
+    {
+        return $query->where('is_populer', true)
+            ->whereNotNull('name_store')
+            ->where('name_store', '!=', '')
+            ->orderBy('rating_toko', 'desc')
+            ->orderBy('id', 'asc');
+    }
+
+    public function getFotoTokoUrlAttribute(): string
+    {
+        if (empty($this->foto_toko) || $this->foto_toko === 'Belum Di isi') {
+            return asset('template/envato/img/toko-eiger.jpeg');
+        }
+
+        if (str_starts_with($this->foto_toko, 'http://') || str_starts_with($this->foto_toko, 'https://')) {
+            return $this->foto_toko;
+        }
+
+        if (file_exists(public_path('assets/image/customers/logo_toko/' . $this->foto_toko))) {
+            return asset('assets/image/customers/logo_toko/' . $this->foto_toko);
+        }
+
+        if (file_exists(public_path('template/envato/img/' . $this->foto_toko))) {
+            return asset('template/envato/img/' . $this->foto_toko);
+        }
+
+        if (file_exists(public_path('assets/image/toko/' . $this->foto_toko))) {
+            return asset('assets/image/toko/' . $this->foto_toko);
+        }
+
+        return asset('template/envato/img/toko-eiger.jpeg');
+    }
 
     public function followers()
     {

@@ -103,6 +103,7 @@ Route::controller(LandingPageController::class)->group(function () {
     Route::get('/halaman-destinasi', 'halaman_destinasi')->name('landing-page.halaman-destinasi');
     Route::get('/halaman-sewabarang', 'halaman_sewabarang')->name('landing-page.halaman-sewabarang');
     Route::get('/halaman-testimoni', 'halaman_testimoni')->name('landing-page.halaman-testimoni');
+    Route::post('/halaman-testimoni/kirim', 'submitTestimoni')->name('landing-page.submit-testimoni');
     Route::get('/halaman-tentangkami', 'halaman_tentangkami')->name('landing-page.halaman-tentangkami');
 });
 

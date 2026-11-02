@@ -58,5 +58,14 @@ class DatabaseSeeder extends Seeder
             PenyewaanSeeder::class,
             PemasukanPengeluaranPerusahaanSeeder::class,
         ]);
+
+        // Tier 6: Landing Page & Master Data Dinamis
+        $this->call([
+            TokoPopulerSeeder::class,
+            KategoriProdukSeeder::class,
+            TestimonialSeeder::class,
+            LandingPageContentSeeder::class,
+            DestinasiLandingSeeder::class,
+        ]);
     }
 }

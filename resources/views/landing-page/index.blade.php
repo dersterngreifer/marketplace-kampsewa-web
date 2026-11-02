@@ -42,30 +42,35 @@
                     <div class="col-lg-10 col-xl-9">
                         <!-- Pill Badge -->
                         <div class="badge-hero-pill">
-                            <i class="fas fa-fire text-warning"></i>
-                            <span>#1 Marketplace Sewa Alat Camping & Outdoor Indonesia</span>
+                            <i class="{{ $heroContent->icon ?? 'fas fa-fire text-warning' }}"></i>
+                            <span>{{ $heroContent->badge ?? '#1 Marketplace Sewa Alat Camping & Outdoor Indonesia' }}</span>
                         </div>
 
                         <!-- Main Headline -->
                         <h1 class="hero-title-main">
-                            Sewa Perlengkapan Outdoor <br>
-                            <span class="text-white">Mudah, Hemat & Terpercaya</span>
+                            {!! $heroContent->title ?? 'Sewa Perlengkapan Outdoor <br><span class="text-white">Mudah, Hemat & Terpercaya</span>' !!}
                         </h1>
 
                         <!-- Subtitle -->
                         <p class="hero-subtitle">
-                            Tak perlu repot membeli atau merawat barang mahal. Jelajahi ribuan peralatan camping berkualitas tinggi dari 150+ vendor terverifikasi siap menemani petualangan serumu.
+                            {{ $heroContent->subtitle ?? 'Tak perlu repot membeli atau merawat barang mahal. Jelajahi ribuan peralatan camping berkualitas tinggi dari 150+ vendor terverifikasi siap menemani petualangan serumu.' }}
                         </p>
 
                         <!-- Interactive Glass Search Bar -->
                         <div class="hero-glass-search">
                             <div class="search-category-pills">
-                                <span class="cat-pill"><i class="fas fa-campground"></i> Tenda</span>
-                                <span class="cat-pill"><i class="fas fa-hiking"></i> Carrier & Ransel</span>
-                                <span class="cat-pill"><i class="fas fa-shoe-prints"></i> Sepatu Gunung</span>
-                                <span class="cat-pill"><i class="fas fa-utensils"></i> Cooking Set</span>
-                                <span class="cat-pill"><i class="fas fa-lightbulb"></i> Headlamp & GPS</span>
-                                <span class="cat-pill"><i class="fas fa-bed"></i> Sleeping Bag</span>
+                                @forelse($kategoriList as $cat)
+                                    <a href="{{ route('landing-page.halaman-sewabarang') }}?kategori={{ urlencode($cat->nama_kategori) }}" class="cat-pill text-decoration-none">
+                                        <i class="{{ $cat->icon ?? 'fas fa-campground' }}"></i> {{ $cat->nama_kategori }}
+                                    </a>
+                                @empty
+                                    <span class="cat-pill"><i class="fas fa-campground"></i> Tenda</span>
+                                    <span class="cat-pill"><i class="fas fa-hiking"></i> Carrier & Ransel</span>
+                                    <span class="cat-pill"><i class="fas fa-shoe-prints"></i> Sepatu Gunung</span>
+                                    <span class="cat-pill"><i class="fas fa-utensils"></i> Cooking Set</span>
+                                    <span class="cat-pill"><i class="fas fa-lightbulb"></i> Headlamp & GPS</span>
+                                    <span class="cat-pill"><i class="fas fa-bed"></i> Sleeping Bag</span>
+                                @endforelse
                             </div>
                             
                             <form action="{{ route('landing-page.halaman-sewabarang') }}" method="GET">
@@ -82,14 +87,14 @@
                             </form>
                         </div>
 
-                        <!-- Floating Live Stats -->
+                        <!-- Floating Live Stats Dinamis dari Database -->
                         <div class="hero-floating-stats">
                             <div class="stat-item-hero">
                                 <div class="stat-icon-circle">
                                     <i class="fas fa-star"></i>
                                 </div>
                                 <div class="stat-text-hero">
-                                    <h4>4.9 / 5.0</h4>
+                                    <h4>{{ $stats['rating'] ?? '4.9 / 5.0' }}</h4>
                                     <span>Rating Kepuasan</span>
                                 </div>
                             </div>
@@ -98,7 +103,7 @@
                                     <i class="fas fa-handshake"></i>
                                 </div>
                                 <div class="stat-text-hero">
-                                    <h4>150+ Vendor</h4>
+                                    <h4>{{ $stats['total_vendor'] ?? '150+ Vendor' }}</h4>
                                     <span>Mitra Terverifikasi</span>
                                 </div>
                             </div>
@@ -107,7 +112,7 @@
                                     <i class="fas fa-boxes"></i>
                                 </div>
                                 <div class="stat-text-hero">
-                                    <h4>10.000+ SKU</h4>
+                                    <h4>{{ $stats['total_sku'] ?? '10.000+ SKU' }}</h4>
                                     <span>Alat Ready & Steril</span>
                                 </div>
                             </div>
@@ -125,7 +130,7 @@
     </div>
     <!-- Navbar & Hero End -->
 
-    <!-- Popular Categories Showcase Start -->
+    <!-- Popular Categories Showcase Start (Dinamis dari Database) -->
     <section id="katalog-section" class="category-section">
         <div class="container">
             <div class="section-header-modern">
@@ -135,113 +140,29 @@
             </div>
 
             <div class="row g-4">
-                <div class="col-sm-6 col-md-4 col-lg-4">
-                    <a href="{{ route('landing-page.halaman-sewabarang') }}" class="category-card-modern">
-                        <div class="cat-img-wrapper">
-                            <img src="{{ asset('template/envato/img/barang-tenda.jpg') }}" alt="Tenda Camping">
-                            <span class="cat-count-badge">120+ Pilihan</span>
-                        </div>
-                        <div class="cat-content-box">
-                            <div>
-                                <h4>Tenda Camping</h4>
-                                <small class="text-muted">Dome, Tunnel, Glamping</small>
+                @forelse($kategoriList as $kategori)
+                    <div class="col-sm-6 col-md-4 col-lg-4">
+                        <a href="{{ route('landing-page.halaman-sewabarang') }}?kategori={{ urlencode($kategori->nama_kategori) }}" class="category-card-modern">
+                            <div class="cat-img-wrapper">
+                                <img src="{{ $kategori->gambar_url }}" alt="{{ $kategori->nama_kategori }}" onerror="this.onerror=null; this.src='{{ asset('template/envato/img/barang-tenda.jpg') }}';">
+                                <span class="cat-count-badge">{{ $kategori->jumlah_pilihan ?? 'Pilihan Lengkap' }}</span>
                             </div>
-                            <div class="cat-arrow-btn">
-                                <i class="fas fa-arrow-right"></i>
+                            <div class="cat-content-box">
+                                <div>
+                                    <h4>{{ $kategori->nama_kategori }}</h4>
+                                    <small class="text-muted">{{ $kategori->deskripsi_singkat ?? 'Koleksi Terbaik' }}</small>
+                                </div>
+                                <div class="cat-arrow-btn">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
                             </div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-4">
-                    <a href="{{ route('landing-page.halaman-sewabarang') }}" class="category-card-modern">
-                        <div class="cat-img-wrapper">
-                            <img src="{{ asset('template/envato/img/barang-hiking.jpg') }}" alt="Carrier & Ransel">
-                            <span class="cat-count-badge">85+ Pilihan</span>
-                        </div>
-                        <div class="cat-content-box">
-                            <div>
-                                <h4>Carrier & Ransel</h4>
-                                <small class="text-muted">35L, 45L, 60L - 80L</small>
-                            </div>
-                            <div class="cat-arrow-btn">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-4">
-                    <a href="{{ route('landing-page.halaman-sewabarang') }}" class="category-card-modern">
-                        <div class="cat-img-wrapper">
-                            <img src="{{ asset('template/envato/img/barang-sleeping-bag.jpg') }}" alt="Sleeping Bag & Matras">
-                            <span class="cat-count-badge">150+ Pilihan</span>
-                        </div>
-                        <div class="cat-content-box">
-                            <div>
-                                <h4>Sleeping Bag & Matras</h4>
-                                <small class="text-muted">Polar, Bulu Angsa, Foil</small>
-                            </div>
-                            <div class="cat-arrow-btn">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-4">
-                    <a href="{{ route('landing-page.halaman-sewabarang') }}" class="category-card-modern">
-                        <div class="cat-img-wrapper">
-                            <img src="{{ asset('template/envato/img/barang-makan.webp') }}" alt="Cooking Set & Kompor">
-                            <span class="cat-count-badge">90+ Pilihan</span>
-                        </div>
-                        <div class="cat-content-box">
-                            <div>
-                                <h4>Cooking Set & Kompor</h4>
-                                <small class="text-muted">Nesting, Kompor Windproof</small>
-                            </div>
-                            <div class="cat-arrow-btn">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-4">
-                    <a href="{{ route('landing-page.halaman-sewabarang') }}" class="category-card-modern">
-                        <div class="cat-img-wrapper">
-                            <img src="{{ asset('template/envato/img/barang-gps.jpeg') }}" alt="Lighting & Navigasi">
-                            <span class="cat-count-badge">60+ Pilihan</span>
-                        </div>
-                        <div class="cat-content-box">
-                            <div>
-                                <h4>Lighting & Navigasi</h4>
-                                <small class="text-muted">Headlamp, GPS, Lentera</small>
-                            </div>
-                            <div class="cat-arrow-btn">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-4">
-                    <a href="{{ route('landing-page.halaman-sewabarang') }}" class="category-card-modern">
-                        <div class="cat-img-wrapper">
-                            <img src="{{ asset('template/envato/img/barang-flysheet.jpg') }}" alt="Flysheet & Hammock">
-                            <span class="cat-count-badge">75+ Pilihan</span>
-                        </div>
-                        <div class="cat-content-box">
-                            <div>
-                                <h4>Flysheet & Hammock</h4>
-                                <small class="text-muted">Waterproof 3x3, Single/Double</small>
-                            </div>
-                            <div class="cat-arrow-btn">
-                                <i class="fas fa-arrow-right"></i>
-                            </div>
-                        </div>
-                    </a>
-                </div>
+                        </a>
+                    </div>
+                @empty
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted">Kategori perlengkapan sedang diperbarui.</p>
+                    </div>
+                @endforelse
             </div>
 
             <div class="text-center mt-5">
@@ -254,14 +175,14 @@
     </section>
     <!-- Popular Categories Showcase End -->
 
-    <!-- Modern About Us Start -->
+    <!-- Modern About Us Start (Dinamis dari Database) -->
     <section class="about-modern-section">
         <div class="container">
             <div class="row g-5 align-items-center">
                 <div class="col-lg-6">
                     <div class="about-img-collage">
                         <div class="about-img-main">
-                            <img src="{{ asset('template/envato/img/about-kamp.jpg') }}" alt="Tentang KampSewa">
+                            <img src="{{ asset($aboutContent->image ?? 'template/envato/img/about-kamp.jpg') }}" alt="Tentang KampSewa">
                         </div>
                         <!-- Floating Glass Experience Badge -->
                         <div class="about-floating-glass-card">
@@ -282,47 +203,54 @@
                 </div>
 
                 <div class="col-lg-6">
-                    <span class="badge-section">Tentang Kami</span>
+                    <span class="badge-section">{{ $aboutContent->badge ?? 'Tentang Kami' }}</span>
                     <h2 class="mb-3" style="font-size: clamp(2rem, 3.5vw, 2.8rem); font-weight: 800;">
-                        Revolusi Cara Kamu <br><span class="text-gradient-blue">Menikmati Alam</span>
+                        {!! $aboutContent->title ?? 'Revolusi Cara Kamu <br><span class="text-gradient-blue">Menikmati Alam</span>' !!}
                     </h2>
                     <p class="text-muted mb-4" style="font-size: 1.05rem; line-height: 1.7;">
-                        Di KampSewa, kami percaya bahwa petualangan harus dapat diakses oleh siapa saja tanpa hambatan biaya peralatan yang mahal. Kami hadir sebagai platform marketplace yang mempertemukan pecinta alam dengan penyedia jasa rental perlengkapan outdoor berkualitas tinggi.
+                        {{ $aboutContent->content ?? 'Di KampSewa, kami percaya bahwa petualangan harus dapat diakses oleh siapa saja tanpa hambatan biaya peralatan yang mahal. Kami hadir sebagai platform marketplace yang mempertemukan pecinta alam dengan penyedia jasa rental perlengkapan outdoor berkualitas tinggi.' }}
                     </p>
 
-                    <!-- Feature 2x2 Grid -->
+                    <!-- Feature 2x2 Grid Dinamis dari Database -->
                     <div class="feature-grid-2x2">
-                        <div class="feature-check-card">
-                            <div class="feature-check-header">
-                                <div class="check-icon-circle"><i class="fas fa-check"></i></div>
-                                <h5>Pilihan Terlengkap</h5>
+                        @forelse($aboutFeatures as $feature)
+                            <div class="feature-check-card">
+                                <div class="feature-check-header">
+                                    <div class="check-icon-circle"><i class="{{ $feature->icon ?? 'fas fa-check' }}"></i></div>
+                                    <h5>{{ $feature->title }}</h5>
+                                </div>
+                                <p>{{ $feature->content }}</p>
                             </div>
-                            <p>Ribuan SKU perlengkapan camping siap sewa dari merek lokal & internasional.</p>
-                        </div>
-
-                        <div class="feature-check-card">
-                            <div class="feature-check-header">
-                                <div class="check-icon-circle"><i class="fas fa-check"></i></div>
-                                <h5>Jaminan Steril & Bersih</h5>
+                        @empty
+                            <div class="feature-check-card">
+                                <div class="feature-check-header">
+                                    <div class="check-icon-circle"><i class="fas fa-check"></i></div>
+                                    <h5>Pilihan Terlengkap</h5>
+                                </div>
+                                <p>Ribuan SKU perlengkapan camping siap sewa dari merek lokal & internasional.</p>
                             </div>
-                            <p>Seluruh alat disanitasi & diperiksa teliti sebelum diserahkan ke tanganmu.</p>
-                        </div>
-
-                        <div class="feature-check-card">
-                            <div class="feature-check-header">
-                                <div class="check-icon-circle"><i class="fas fa-check"></i></div>
-                                <h5>Durasi Sewa Fleksibel</h5>
+                            <div class="feature-check-card">
+                                <div class="feature-check-header">
+                                    <div class="check-icon-circle"><i class="fas fa-check"></i></div>
+                                    <h5>Jaminan Steril & Bersih</h5>
+                                </div>
+                                <p>Seluruh alat disanitasi & diperiksa teliti sebelum diserahkan ke tanganmu.</p>
                             </div>
-                            <p>Sewa harian, mingguan, atau paket khusus ekspedisi sesuai jadwalmu.</p>
-                        </div>
-
-                        <div class="feature-check-card">
-                            <div class="feature-check-header">
-                                <div class="check-icon-circle"><i class="fas fa-check"></i></div>
-                                <h5>Antar-Jemput Mudah</h5>
+                            <div class="feature-check-card">
+                                <div class="feature-check-header">
+                                    <div class="check-icon-circle"><i class="fas fa-check"></i></div>
+                                    <h5>Durasi Sewa Fleksibel</h5>
+                                </div>
+                                <p>Sewa harian, mingguan, atau paket khusus ekspedisi sesuai jadwalmu.</p>
                             </div>
-                            <p>Layanan kurir instan langsung ke rumah atau titik kumpul keberangkatan.</p>
-                        </div>
+                            <div class="feature-check-card">
+                                <div class="feature-check-header">
+                                    <div class="check-icon-circle"><i class="fas fa-check"></i></div>
+                                    <h5>Antar-Jemput Mudah</h5>
+                                </div>
+                                <p>Layanan kurir instan langsung ke rumah atau titik kumpul keberangkatan.</p>
+                            </div>
+                        @endforelse
                     </div>
 
                     <div class="mt-2">
@@ -337,7 +265,7 @@
     </section>
     <!-- Modern About Us End -->
 
-    <!-- Why Choose Us (Keunggulan) Start -->
+    <!-- Why Choose Us (Keunggulan) Start (Dinamis dari Database) -->
     <section class="why-choose-section">
         <div class="container">
             <div class="section-header-modern">
@@ -347,65 +275,36 @@
             </div>
 
             <div class="why-grid-modern">
-                <!-- Card 1 -->
-                <div class="why-card-modern">
-                    <div class="why-icon-box bg-light-emerald">
-                        <i class="fas fa-recycle"></i>
+                @forelse($keunggulanList as $item)
+                    <div class="why-card-modern">
+                        <div class="why-icon-box {{ $item->icon_bg ?? 'bg-light-emerald' }}">
+                            <i class="{{ $item->icon ?? 'fas fa-shield-alt' }}"></i>
+                        </div>
+                        <h4>{{ $item->title }}</h4>
+                        <p>{{ $item->content }}</p>
                     </div>
-                    <h4>Bebas Limbah & Ramah Lingkungan</h4>
-                    <p>Konsep shared-economy melalui sewa peralatan membantu mengurangi limbah produksi alat outdoor serta mendukung kelestarian alam nusantara.</p>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="why-card-modern">
-                    <div class="why-icon-box bg-light-amber">
-                        <i class="fas fa-money-bill-wave"></i>
+                @empty
+                    <div class="why-card-modern">
+                        <div class="why-icon-box bg-light-emerald">
+                            <i class="fas fa-recycle"></i>
+                        </div>
+                        <h4>Bebas Limbah & Ramah Lingkungan</h4>
+                        <p>Konsep shared-economy melalui sewa peralatan membantu mengurangi limbah produksi alat outdoor serta mendukung kelestarian alam nusantara.</p>
                     </div>
-                    <h4>Hemat Biaya Hingga 70%</h4>
-                    <p>Nikmati perlengkapan spesifikasi mendaki gunung tertinggi tanpa perlu mengeluarkan uang jutaan rupiah untuk membeli atau biaya perawatan tahunan.</p>
-                </div>
-
-                <!-- Card 3 -->
-                <div class="why-card-modern">
-                    <div class="why-icon-box bg-light-blue">
-                        <i class="fas fa-search-dollar"></i>
+                    <div class="why-card-modern">
+                        <div class="why-icon-box bg-light-amber">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <h4>Hemat Biaya Hingga 70%</h4>
+                        <p>Nikmati perlengkapan spesifikasi mendaki gunung tertinggi tanpa perlu mengeluarkan uang jutaan rupiah untuk membeli atau biaya perawatan tahunan.</p>
                     </div>
-                    <h4>Coba Dulu, Beli Nanti</h4>
-                    <p>Ragu membeli carrier atau tenda impian? Sewa dan uji kenyamanannya langsung di medan pendakian sebelum kamu memutuskan untuk membelinya.</p>
-                </div>
-
-                <!-- Card 4 -->
-                <div class="why-card-modern">
-                    <div class="why-icon-box bg-light-purple">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <h4>Jaminan Keamanan & Transparansi</h4>
-                    <p>Sistem transaksi marketplace bergaransi dengan review autentik dari pengguna, serta kejelasan standar spesifikasi barang yang disewakan.</p>
-                </div>
-
-                <!-- Card 5 -->
-                <div class="why-card-modern">
-                    <div class="why-icon-box bg-light-rose">
-                        <i class="fas fa-shipping-fast"></i>
-                    </div>
-                    <h4>Pengiriman Instan & Praktis</h4>
-                    <p>Tak perlu repot bermacet-macetan ke toko rental. Kurir mitra kami siap mengantar dan menjemput perlengkapan tepat waktu di depan rumahmu.</p>
-                </div>
-
-                <!-- Card 6 -->
-                <div class="why-card-modern">
-                    <div class="why-icon-box bg-light-cyan">
-                        <i class="fas fa-users"></i>
-                    </div>
-                    <h4>Komunitas Petualang Aktif</h4>
-                    <p>Bergabung dalam ekosistem ribuan pendaki dan campers untuk berbagi informasi rute pendakian, tips bertahan di alam, hingga mencari rekan mabar.</p>
-                </div>
+                @endforelse
             </div>
         </div>
     </section>
     <!-- Why Choose Us End -->
 
-    <!-- NEW! How It Works (4 Langkah Mudah) Start -->
+    <!-- How It Works (Alur Sewa 4 Langkah) Start (Dinamis dari Database) -->
     <section class="workflow-section">
         <div class="container">
             <div class="section-header-modern">
@@ -415,41 +314,46 @@
             </div>
 
             <div class="workflow-grid">
-                <div class="workflow-step-card">
-                    <div class="step-num-circle">01</div>
-                    <h4>Cari & Pilih Alat</h4>
-                    <p>Jelajahi katalog dan pilih perlengkapan outdoor berkualitas dari vendor terdekat sesuai kebutuhan petualanganmu.</p>
-                </div>
-
-                <div class="workflow-step-card">
-                    <div class="step-num-circle">02</div>
-                    <h4>Tentukan Durasi</h4>
-                    <p>Pilih tanggal pemakaian dan durasi sewa yang kamu inginkan dengan harga yang transparan dan bersahabat.</p>
-                </div>
-
-                <div class="workflow-step-card">
-                    <div class="step-num-circle">03</div>
-                    <h4>Terima Perlengkapan</h4>
-                    <p>Alat diantar oleh kurir ke lokasi tujuanmu dalam kondisi steril, harum, dan sudah lolos quality check fisik 100%.</p>
-                </div>
-
-                <div class="workflow-step-card">
-                    <div class="step-num-circle">04</div>
-                    <h4>Nikmati Petualangan!</h4>
-                    <p>Nikmati momen berharga di alam bebas! Setelah selesai, tinggal kembalikan barang dengan jadwal penjemputan mudah.</p>
-                </div>
+                @forelse($alurSewaList as $step)
+                    <div class="workflow-step-card">
+                        <div class="step-num-circle">{{ $step->step_number ?? sprintf('%02d', $loop->iteration) }}</div>
+                        <h4>{{ $step->title }}</h4>
+                        <p>{{ $step->content }}</p>
+                    </div>
+                @empty
+                    <div class="workflow-step-card">
+                        <div class="step-num-circle">01</div>
+                        <h4>Cari & Pilih Alat</h4>
+                        <p>Jelajahi katalog dan pilih perlengkapan outdoor berkualitas dari vendor terdekat sesuai kebutuhan petualanganmu.</p>
+                    </div>
+                    <div class="workflow-step-card">
+                        <div class="step-num-circle">02</div>
+                        <h4>Tentukan Durasi</h4>
+                        <p>Pilih tanggal pemakaian dan durasi sewa yang kamu inginkan dengan harga yang transparan dan bersahabat.</p>
+                    </div>
+                    <div class="workflow-step-card">
+                        <div class="step-num-circle">03</div>
+                        <h4>Terima Perlengkapan</h4>
+                        <p>Alat diantar oleh kurir ke lokasi tujuanmu dalam kondisi steril, harum, dan sudah lolos quality check fisik 100%.</p>
+                    </div>
+                    <div class="workflow-step-card">
+                        <div class="step-num-circle">04</div>
+                        <h4>Nikmati Petualangan!</h4>
+                        <p>Nikmati momen berharga di alam bebas! Setelah selesai, tinggal kembalikan barang dengan jadwal penjemputan mudah.</p>
+                    </div>
+                @endforelse
             </div>
         </div>
     </section>
     <!-- How It Works End -->
 
-    <!-- Destinations Section Start -->
+    <!-- Destinations Section Start (Dinamis dari Database: Tabel Articles) -->
     <section class="destinations-section">
         <div class="container">
             <div class="section-header-modern">
                 <span class="badge-section">Rekomendasi Destinasi</span>
                 <h2>Jelajahi Spot Camping & Outdoor Favorit</h2>
-                <p>Belum punya ide mau camping ke mana? Lihat beberapa destinasi wisata alam terpopuler pilihan komunitas petualang KampSewa.</p>
+                <p>Belum punya ide mau camping ke mana? Lihat beberapa destinasi wisata alam terpopuler pilihan komunitas petualang KampSewa langsung dari database kami.</p>
             </div>
 
             <div class="dest-filter-container text-center mb-5">
@@ -461,29 +365,62 @@
                 </button>
             </div>
 
-            <!-- Loading Spinner / Status -->
-            <div id="dest-loading-status" class="text-center py-5">
-                <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-3 text-muted fw-bold">Mengambil data wisata populer &amp; rating tertinggi dari API Gratis Indonesia...</p>
+            <!-- Destination Grid Container (Dinamis dari Database) -->
+            <div id="dest-grid-container" class="row g-4 text-start">
+                @foreach($destinasiPopuler as $item)
+                    @php
+                        $mapsQuery = urlencode($item->judul . ' ' . $item->lokasi . ' Indonesia');
+                        $mapsUrl = $item->sumber_url ?: "https://www.google.com/maps/search/?api=1&query={$mapsQuery}";
+                        $viewDisplay = number_format($item->views_count, 0, ',', '.') . ' Views';
+                    @endphp
+                    <div class="col-md-6 col-lg-4 dest-item-card" data-category="populer">
+                        <a href="{{ $mapsUrl }}" target="_blank" rel="noopener noreferrer" class="destination-card-modern" title="Lihat lokasi {{ $item->judul }} di Google Maps">
+                            <img src="{{ $item->gambar_url }}" alt="{{ $item->judul }}" onerror="this.onerror=null; this.src='{{ asset('template/envato/img/tempat-lombok.jpg') }}';">
+                            <div class="dest-overlay-bottom">
+                                <span class="dest-badge-loc"><i class="fas fa-map-marker-alt text-warning"></i> {{ $item->lokasi }}</span>
+                                <h4 class="dest-title">{{ $item->judul }}</h4>
+                                <div class="dest-meta-row">
+                                    <span><i class="fas fa-star text-warning"></i> 5.0 ({{ $viewDisplay }})</span>
+                                    <span class="text-info fw-bold">Buka Peta <i class="fas fa-map-marked-alt ms-1"></i></span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
+
+                @foreach($destinasiRating as $item)
+                    @php
+                        $mapsQuery = urlencode($item->judul . ' ' . $item->lokasi . ' Indonesia');
+                        $mapsUrl = $item->sumber_url ?: "https://www.google.com/maps/search/?api=1&query={$mapsQuery}";
+                        $viewDisplay = number_format($item->views_count, 0, ',', '.') . ' Views';
+                    @endphp
+                    <div class="col-md-6 col-lg-4 dest-item-card" data-category="rating" style="display: none;">
+                        <a href="{{ $mapsUrl }}" target="_blank" rel="noopener noreferrer" class="destination-card-modern" title="Lihat lokasi {{ $item->judul }} di Google Maps">
+                            <img src="{{ $item->gambar_url }}" alt="{{ $item->judul }}" onerror="this.onerror=null; this.src='{{ asset('template/envato/img/tempat-papuma.png') }}';">
+                            <div class="dest-overlay-bottom">
+                                <span class="dest-badge-loc"><i class="fas fa-map-marker-alt text-warning"></i> {{ $item->lokasi }}</span>
+                                <h4 class="dest-title">{{ $item->judul }}</h4>
+                                <div class="dest-meta-row">
+                                    <span><i class="fas fa-star text-warning"></i> 5.0 ({{ $viewDisplay }})</span>
+                                    <span class="text-info fw-bold">Buka Peta <i class="fas fa-map-marked-alt ms-1"></i></span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                @endforeach
             </div>
 
-            <!-- Destination Grid Container -->
-            <div id="dest-grid-container" class="row g-4 text-start" style="display: none;"></div>
-
-                <div class="text-center mt-5">
-                    <a href="{{ route('landing-page.halaman-destinasi') }}" class="btn-modern-primary">
-                        <span>Lihat Semua Destinasi</span>
-                        <i class="fas fa-map-marked-alt"></i>
-                    </a>
-                </div>
+            <div class="text-center mt-5">
+                <a href="{{ route('landing-page.halaman-destinasi') }}" class="btn-modern-primary">
+                    <span>Lihat Semua Destinasi</span>
+                    <i class="fas fa-map-marked-alt"></i>
+                </a>
             </div>
         </div>
     </section>
     <!-- Destinations Section End -->
 
-    <!-- Partner & Vendor Terpercaya Start -->
+    <!-- Partner & Vendor Terpercaya (Toko Populer Dinamis dari Database) Start -->
     <section class="vendor-section">
         <div class="container">
             <div class="section-header-modern">
@@ -493,123 +430,35 @@
             </div>
 
             <div class="row g-4">
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-rei.jpg') }}" alt="Rei Outdoor Gear">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Rei Outdoor Gear</h4>
-                            <p>Specialist Tenda & Ransel</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 4.9 | Terlaris Minggu Ini</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-eiger.jpeg') }}" alt="Eiger Adventure">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Eiger Adventure Store</h4>
-                            <p>Top Brand Outdoor Gear</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 5.0 | Mitra Utama</span>
+                @forelse($tokoPopuler as $toko)
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <div class="vendor-card-modern">
+                            <div class="vendor-banner-img">
+                                <img src="{{ $toko->foto_toko_url }}" alt="{{ $toko->name_store }}" onerror="this.onerror=null; this.src='{{ asset('template/envato/img/toko-eiger.jpeg') }}';">
+                                @if($toko->is_verified)
+                                    <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
+                                @endif
+                            </div>
+                            <div class="vendor-info-box">
+                                <h4>{{ $toko->name_store }}</h4>
+                                <p>{{ $toko->slogan_toko ?? $toko->deskripsi_toko ?? 'Rental Alat Outdoor Terpercaya' }}</p>
+                                <span class="vendor-stats-pill">
+                                    <i class="fas fa-star text-warning me-1"></i> {{ number_format($toko->rating_toko ?? 5.0, 1) }} | {{ $toko->badge_toko ?? 'Mitra Unggulan' }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-consina.png') }}" alt="Consina Outdoor">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Consina The Outdoor Lifestyle</h4>
-                            <p>Carrier & Apparel Camping</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 4.9 | Terlaris Minggu Ini</span>
-                        </div>
+                @empty
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted">Daftar toko populer sedang dipersiapkan.</p>
                     </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-tnf.jpg') }}" alt="The North Face">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>The North Face ID</h4>
-                            <p>Premium Mountaineering</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 4.9 | Official Brand</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-deca.jpg') }}" alt="Decathlon">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Decathlon Indonesia</h4>
-                            <p>Peralatan Camping & Olahraga</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 4.8 | Terpopuler</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-deuter.webp') }}" alt="Deuter Store">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Deuter Official Store</h4>
-                            <p>Legendary German Backpacks</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 5.0 | Top Quality</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-avtech.jpg') }}" alt="Avtech Store">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Avtech Adventure Equipment</h4>
-                            <p>Tenda & Sleeping Bag Profesional</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 4.8 | Favorit Pendaki</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="col-sm-6 col-md-4 col-lg-3">
-                    <div class="vendor-card-modern">
-                        <div class="vendor-banner-img">
-                            <img src="{{ asset('template/envato/img/toko-jack.jpg') }}" alt="Jack Wolfskin">
-                            <span class="vendor-verified-tag"><i class="fas fa-check-circle"></i> Verified</span>
-                        </div>
-                        <div class="vendor-info-box">
-                            <h4>Jack Wolfskin Store</h4>
-                            <p>German Outdoor Brand</p>
-                            <span class="vendor-stats-pill"><i class="fas fa-star text-warning me-1"></i> 4.9 | Premium Gear</span>
-                        </div>
-                    </div>
-                </div>
+                @endforelse
             </div>
         </div>
     </section>
     <!-- Partner & Vendor Terpercaya End -->
 
-    <!-- NEW! Testimonials & Stories Start -->
+    <!-- Testimonials & Stories Start (Dinamis dari Database) -->
     <section class="testimonials-section">
         <div class="container">
             <div class="section-header-modern">
@@ -619,97 +468,35 @@
             </div>
 
             <div class="row g-4">
-                <!-- Testi 1 -->
-                <div class="col-md-6 col-lg-3">
-                    <div class="testimonial-card-modern">
-                        <div>
-                            <div class="testi-stars">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                @forelse($testimonials as $testi)
+                    <div class="col-md-6 col-lg-3">
+                        <div class="testimonial-card-modern">
+                            <div>
+                                <div class="testi-stars">
+                                    @for($i = 0; $i < ($testi->rating ?? 5); $i++)
+                                        <i class="fas fa-star"></i>
+                                    @endfor
+                                </div>
+                                <p class="testi-quote-text">
+                                    "{{ $testi->ulasan }}"
+                                </p>
                             </div>
-                            <p class="testi-quote-text">
-                                "KampSewa bener-bener penyelamat! Mau naik gunung Rinjani tapi carrier lagi dipinjem temen. Cari di sini langsung dapet Eiger yang super bersih dan harum. Harga sewanya ramah banget buat kantong mahasiswa!"
-                            </p>
-                        </div>
-                        <div class="testi-user-row">
-                            <div class="testi-avatar">
-                                <img src="{{ asset('template/envato/img/Testimoni-1.jpg') }}" alt="Rizky Ramadhan">
-                            </div>
-                            <div class="testi-user-info">
-                                <h5>Rizky Ramadhan</h5>
-                                <span>Pendaki Gunung Rinjani</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Testi 2 -->
-                <div class="col-md-6 col-lg-3">
-                    <div class="testimonial-card-modern">
-                        <div>
-                            <div class="testi-stars">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
-                            <p class="testi-quote-text">
-                                "Sewa cooking set lengkap sama tenda glamping buat liburan keluarga akhir pekan di Songgolangit. Barang diantar tepat waktu ke lokasi camp. Pelayanan vendornya ramah, bakal jadi langganan terus!"
-                            </p>
-                        </div>
-                        <div class="testi-user-row">
-                            <div class="testi-avatar">
-                                <img src="{{ asset('template/envato/img/Testimoni-2.jpg') }}" alt="Anisa & Keluarga">
-                            </div>
-                            <div class="testi-user-info">
-                                <h5>Anisa & Keluarga</h5>
-                                <span>Family Camper Jember</span>
+                            <div class="testi-user-row">
+                                <div class="testi-avatar">
+                                    <img src="{{ $testi->avatar_url }}" alt="{{ $testi->nama }}" onerror="this.onerror=null; this.src='{{ asset('template/envato/img/Testimoni-1.jpg') }}';">
+                                </div>
+                                <div class="testi-user-info">
+                                    <h5>{{ $testi->nama }}</h5>
+                                    <span>{{ $testi->peran }}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <!-- Testi 3 -->
-                <div class="col-md-6 col-lg-3">
-                    <div class="testimonial-card-modern">
-                        <div>
-                            <div class="testi-stars">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
-                            <p class="testi-quote-text">
-                                "Sebagai content creator outdoor, sering banget butuh coba berbagai macam alat baru sebelum beli. Fitur 'Coba Dulu Beli Nanti' di KampSewa inovatif banget. Kualitas barang dijamin 100% layak pakai!"
-                            </p>
-                        </div>
-                        <div class="testi-user-row">
-                            <div class="testi-avatar">
-                                <img src="{{ asset('template/envato/img/Testimoni-3.jpg') }}" alt="Bima Satria">
-                            </div>
-                            <div class="testi-user-info">
-                                <h5>Bima Satria</h5>
-                                <span>Solo Camper & Creator</span>
-                            </div>
-                        </div>
+                @empty
+                    <div class="col-12 text-center py-4">
+                        <p class="text-muted">Testimoni sedang dipersiapkan.</p>
                     </div>
-                </div>
-
-                <!-- Testi 4 -->
-                <div class="col-md-6 col-lg-3">
-                    <div class="testimonial-card-modern">
-                        <div>
-                            <div class="testi-stars">
-                                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
-                            </div>
-                            <p class="testi-quote-text">
-                                "Buat acara diklat pecinta alam kampus, kita butuh 15 tenda dome dan 30 sleeping bag. Lewat KampSewa tinggal pesan borongan dari satu vendor terpercaya, langsung diantar ke kampus. Sangat mempermudah kepanitiaan!"
-                            </p>
-                        </div>
-                        <div class="testi-user-row">
-                            <div class="testi-avatar">
-                                <img src="{{ asset('template/envato/img/Testimoni-4.jpg') }}" alt="Dewi Lestari">
-                            </div>
-                            <div class="testi-user-info">
-                                <h5>Dewi Lestari</h5>
-                                <span>Koordinator Mapala</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                @endforelse
             </div>
 
             <div class="text-center mt-5">
@@ -722,14 +509,14 @@
     </section>
     <!-- Testimonials End -->
 
-    <!-- High-Impact CTA Banner Start -->
+    <!-- High-Impact CTA Banner Start (Dinamis dari Database) -->
     <section class="cta-modern-section" id="download-app">
         <div class="container">
             <div class="cta-banner-card">
                 <div class="cta-content-inner">
-                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3"><i class="fas fa-rocket me-1"></i> Aplikasi KampSewa Mobile</span>
-                    <h2>Siap Memulai Petualangan Serumu Berikutnya?</h2>
-                    <p>Unduh aplikasi KampSewa sekarang di smartphonemu! Nikmati kemudahan booking perlengkapan outdoor di mana saja, kapan saja, lengkap dengan promo diskon perdana untuk pengguna baru.</p>
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3"><i class="fas fa-rocket me-1"></i> {{ $ctaContent->badge ?? 'Aplikasi KampSewa Mobile' }}</span>
+                    <h2>{{ $ctaContent->title ?? 'Siap Memulai Petualangan Serumu Berikutnya?' }}</h2>
+                    <p>{{ $ctaContent->subtitle ?? 'Unduh aplikasi KampSewa sekarang di smartphonemu! Nikmati kemudahan booking perlengkapan outdoor di mana saja, kapan saja, lengkap dengan promo diskon perdana untuk pengguna baru.' }}</p>
                     
                     <div class="cta-buttons-group">
                         <a href="#appNotAvailableModal" data-bs-toggle="modal" onclick="showAppModal('Google Play')" class="btn-app-store">
@@ -790,131 +577,28 @@
 
     @include('landing-page.halamanbawah')
 
-    <!-- Dynamic Destination Loader & Filter Script from API Gratis -->
+    <!-- Destination Filter Script (Instant & Dynamic dari Database) -->
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const destMetadata = [
-            // Spot Terpopuler
-            { title: "Gunung Rinjani", queryTitle: "Gunung_Rinjani", location: "Lombok, NTB", rating: "5.0", reviews: "5.2k Review", category: "populer", forceLocalImg: true, fallbackImg: "{{ asset('template/envato/img/tempat-lombok.jpg') }}" },
-            { title: "Ranu Kumbolo", queryTitle: "Ranu_Kumbolo", location: "Semeru, Jawa Timur", rating: "4.9", reviews: "6.1k Review", category: "populer", fallbackImg: "{{ asset('template/envato/img/tempat-tumpak-sewu.webp') }}" },
-            { title: "Gunung Bromo", queryTitle: "Gunung_Bromo", location: "Probolinggo, Jawa Timur", rating: "4.9", reviews: "8.4k Review", category: "populer", fallbackImg: "{{ asset('template/envato/img/tempat-gunung-gambir.jpg') }}" },
-            { title: "Taman Nasional Baluran", queryTitle: "Taman_Nasional_Baluran", location: "Situbondo, Jawa Timur", rating: "4.9", reviews: "4.3k Review", category: "populer", forceLocalImg: true, fallbackImg: "{{ asset('template/envato/img/tempat-taman-nasional-baluran.jpeg') }}" },
-            { title: "Gunung Prau", queryTitle: "Gunung_Prau", location: "Dieng, Jawa Tengah", rating: "4.8", reviews: "3.9k Review", category: "populer", fallbackImg: "{{ asset('template/envato/img/tempat-dringo.jpg') }}" },
-            { title: "Gunung Merbabu", queryTitle: "Gunung_Merbabu", location: "Magelang, Jawa Tengah", rating: "4.9", reviews: "4.7k Review", category: "populer", fallbackImg: "{{ asset('template/envato/img/tempat-nglimut.webp') }}" },
-
-            // Rating Tertinggi
-            { title: "Gunung Gede Pangrango", queryTitle: "Taman_Nasional_Gunung_Gede_Pangrango", location: "Cianjur, Jawa Barat", rating: "5.0", reviews: "6.8k Review", category: "rating", forceLocalImg: true, fallbackImg: "{{ asset('template/envato/img/tempat-taman-nasional.jpg') }}" },
-            { title: "Ranca Upas", queryTitle: "Ranca_Upas", location: "Bandung, Jawa Barat", rating: "5.0", reviews: "5.1k Review", category: "rating", fallbackImg: "{{ asset('template/envato/img/tempat-dago.webp') }}" },
-            { title: "Pantai Tanjung Papuma", queryTitle: "Pantai_Papuma", location: "Jember, Jawa Timur", rating: "5.0", reviews: "3.8k Review", category: "rating", fallbackImg: "{{ asset('template/envato/img/tempat-papuma.png') }}" },
-            { title: "Danau Segara Anak", queryTitle: "Segara_Anak", location: "Lombok, NTB", rating: "5.0", reviews: "2.9k Review", category: "rating", fallbackImg: "{{ asset('template/envato/img/tempat-khayangan.webp') }}" },
-            { title: "Wae Rebo", queryTitle: "Wae_Rebo", location: "Manggarai, NTT", rating: "5.0", reviews: "1.8k Review", category: "rating", fallbackImg: "{{ asset('template/envato/img/tempat-suluban.webp') }}" },
-            { title: "Gunung Papandayan", queryTitle: "Gunung_Papandayan", location: "Garut, Jawa Barat", rating: "4.9", reviews: "4.2k Review", category: "rating", fallbackImg: "{{ asset('template/envato/img/tempat-glamping.jpg') }}" }
-        ];
-
-        let destDataLoaded = [];
-        let currentFilter = 'populer';
-
         window.switchDestFilter = function(filter, btnElement) {
-            currentFilter = filter;
             document.querySelectorAll('.dest-filter-btn').forEach(b => b.classList.remove('active'));
             if (btnElement) {
                 btnElement.classList.add('active');
             }
-            renderDestinations();
+            
+            document.querySelectorAll('.dest-item-card').forEach(card => {
+                if (card.getAttribute('data-category') === filter) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         };
 
         window.showAppModal = function(platform) {
             const el = document.getElementById('app-platform-name');
-            if(el) el.textContent = platform;
+            if (el) el.textContent = platform;
         };
-
-        function renderDestinations() {
-            const container = document.getElementById('dest-grid-container');
-            if (!container) return;
-            const filtered = destDataLoaded.filter(d => d.category === currentFilter);
-            
-            const fallbackSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400' fill='%231e293b'><rect width='600' height='400' fill='%230f172a'/><text x='50%' y='50%' font-family='sans-serif' font-size='22' font-weight='bold' fill='%2394a3b8' dominant-baseline='middle' text-anchor='middle'>🖼️ Gambar Tidak Tersedia</text></svg>";
-
-            container.innerHTML = filtered.map(item => `
-                <div class="col-md-6 col-lg-4">
-                    <a href="${item.mapsUrl}" target="_blank" rel="noopener noreferrer" class="destination-card-modern" title="Lihat lokasi ${item.title} di Google Maps">
-                        <img src="${item.image}" alt="${item.title}" onerror="this.onerror=null; if(this.src !== '${item.fallbackImg}') { this.src='${item.fallbackImg}'; } else { this.src=\"${fallbackSvg}\"; }">
-                        <div class="dest-overlay-bottom">
-                            <span class="dest-badge-loc"><i class="fas fa-map-marker-alt text-warning"></i> ${item.location}</span>
-                            <h4 class="dest-title">${item.title}</h4>
-                            <div class="dest-meta-row">
-                                <span><i class="fas fa-star text-warning"></i> ${item.rating} (${item.reviews})</span>
-                                <span class="text-info fw-bold">Lihat Detail <i class="fas fa-map-marked-alt ms-1"></i></span>
-                            </div>
-                        </div>
-                    </a>
-                </div>
-            `).join('');
-        }
-
-        async function fetchFreeApiDestinations() {
-            try {
-                const titles = destMetadata.map(d => d.queryTitle).join('|');
-                const apiUrl = `https://id.wikipedia.org/w/api.php?action=query&format=json&origin=*&prop=pageimages|extracts&exintro&explaintext&piprop=thumbnail&pithumbsize=600&titles=${encodeURIComponent(titles)}`;
-                
-                const response = await fetch(apiUrl);
-                const data = await response.json();
-                const pages = data?.query?.pages || {};
-                
-                const pageMap = {};
-                Object.values(pages).forEach(p => {
-                    if (p.title) {
-                        pageMap[p.title.toLowerCase().replace(/ /g, '_')] = p;
-                        pageMap[p.title.toLowerCase()] = p;
-                    }
-                });
-
-                destDataLoaded = destMetadata.map(item => {
-                    const normalizedKey = item.queryTitle.toLowerCase();
-                    const normalizedTitle = item.title.toLowerCase();
-                    const apiItem = pageMap[normalizedKey] || pageMap[normalizedTitle] || {};
-                    
-                    const apiImage = apiItem.thumbnail?.source;
-                    const isBadOrLogoImg = apiImage && (
-                        apiImage.toLowerCase().includes('logo') ||
-                        apiImage.toLowerCase().includes('lambang') ||
-                        apiImage.toLowerCase().includes('emblem') ||
-                        apiImage.toLowerCase().includes('icon') ||
-                        apiImage.toLowerCase().includes('seal') ||
-                        apiImage.toLowerCase().includes('svg') ||
-                        apiImage.toLowerCase().includes('badge') ||
-                        apiImage.toLowerCase().includes('coat') ||
-                        apiImage.toLowerCase().includes('taman_nasional') ||
-                        item.forceLocalImg
-                    );
-                    const finalImage = (!apiImage || isBadOrLogoImg) ? item.fallbackImg : apiImage;
-                    
-                    const mapsQuery = encodeURIComponent(`${item.title} ${item.location} Indonesia`);
-                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${mapsQuery}`;
-
-                    return {
-                        ...item,
-                        image: finalImage,
-                        mapsUrl: mapsUrl
-                    };
-                });
-            } catch (e) {
-                console.warn("API Gratis fallback mode activated:", e);
-                destDataLoaded = destMetadata.map(item => ({
-                    ...item,
-                    image: item.fallbackImg,
-                    mapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.title + ' ' + item.location + ' Indonesia')}`
-                }));
-            } finally {
-                const loadingEl = document.getElementById('dest-loading-status');
-                const gridEl = document.getElementById('dest-grid-container');
-                if (loadingEl) loadingEl.style.display = 'none';
-                if (gridEl) gridEl.style.display = 'flex';
-                renderDestinations();
-            }
-        }
-
-        fetchFreeApiDestinations();
     });
     </script>
 

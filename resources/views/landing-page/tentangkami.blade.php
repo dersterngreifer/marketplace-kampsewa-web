@@ -14,7 +14,7 @@
     <div class="container-fluid position-relative p-0">
         @include('landing-page.navbar')
 
-        <!-- Cinematic About Hero Section -->
+        <!-- Cinematic About Hero Section (Dinamis dari Database) -->
         <section class="hero-about-modern">
             <!-- Background Slider -->
             <div class="hero-bg-carousel">
@@ -40,16 +40,15 @@
             <div class="container about-hero-content">
                 <div class="badge-hero-pill">
                     <i class="fas fa-fire text-warning"></i>
-                    <span>#1 Marketplace Sewa & Menyewakan Alat Outdoor Indonesia</span>
+                    <span>{{ $heroContent->badge ?? '#1 Marketplace Sewa & Menyewakan Alat Outdoor Indonesia' }}</span>
                 </div>
 
                 <h1 class="about-hero-title">
-                    Mengenal KampSewa <br>
-                    <span class="text-white">Lebih Dekat</span>
+                    {!! $heroContent->title ?? 'Mengenal KampSewa <br><span class="text-white">Lebih Dekat</span>' !!}
                 </h1>
 
                 <p class="about-hero-desc">
-                    Pelajari visi, misi, dan komitmen kami dalam menyediakan layanan penyewaan perlengkapan camping terbaik untuk mendukung setiap petualangan Anda.
+                    {{ $heroContent->subtitle ?? 'Pelajari visi, misi, dan komitmen kami dalam menyediakan layanan penyewaan perlengkapan camping terbaik untuk mendukung setiap petualangan Anda.' }}
                 </p>
 
                 <div class="about-hero-stats-bar">
@@ -67,7 +66,7 @@
                             <i class="fas fa-handshake"></i>
                         </div>
                         <div class="about-stat-text">
-                            <h4>150+ Vendor</h4>
+                            <h4>{{ $stats['total_vendor'] ?? '150+ Vendor' }}</h4>
                             <span>Mitra Terverifikasi</span>
                         </div>
                     </div>
@@ -76,7 +75,7 @@
                             <i class="fas fa-boxes"></i>
                         </div>
                         <div class="about-stat-text">
-                            <h4>10.000+ SKU</h4>
+                            <h4>{{ $stats['total_sku'] ?? '10.000+ SKU' }}</h4>
                             <span>Alat Ready & Steril</span>
                         </div>
                     </div>
@@ -85,7 +84,7 @@
                             <i class="fas fa-star"></i>
                         </div>
                         <div class="about-stat-text">
-                            <h4>4.9 / 5.0</h4>
+                            <h4>{{ $stats['rating'] ?? '4.9 / 5.0' }}</h4>
                             <span>Rating Kepuasan</span>
                         </div>
                     </div>
@@ -95,14 +94,14 @@
     </div>
     <!-- Navbar & Hero End -->
 
-    <!-- Cerita Kami Start -->
+    <!-- Cerita Kami Start (Dinamis dari Database) -->
     <section class="story-section-modern">
         <div class="container">
             <div class="row g-5 align-items-center">
                 <div class="col-lg-6">
                     <div class="story-collage-wrapper">
                         <div class="story-img-main">
-                            <img src="{{ asset('template/envato/img/home-1.jpg') }}" alt="Cerita KampSewa">
+                            <img src="{{ asset($story->image ?? 'template/envato/img/home-1.jpg') }}" alt="Cerita KampSewa">
                         </div>
                         
                         <!-- Floating Year Badge -->
@@ -117,8 +116,8 @@
                                 <i class="fas fa-shield-alt"></i>
                             </div>
                             <div class="story-glass-text">
-                                <h5>Solusi Terpercaya</h5>
-                                <span>Menghubungkan pendaki & vendor rental seluruh Indonesia.</span>
+                                <h5>{{ $story->subtitle ?? 'Solusi Terpercaya' }}</h5>
+                                <span>Menghubungkan ribuan pendaki & vendor rental outdoor di Indonesia.</span>
                             </div>
                         </div>
                     </div>
@@ -126,14 +125,14 @@
 
                 <div class="col-lg-6">
                     <div class="story-content-box">
-                        <span class="badge-section">Cerita Kami</span>
-                        <h2>Mendukung Setiap <br><span class="text-gradient-blue">Petualanganmu</span></h2>
+                        <span class="badge-section">{{ $story->badge ?? 'Cerita Kami' }}</span>
+                        <h2>{!! $story->title ?? 'Mendukung Setiap <br><span class="text-gradient-blue">Petualanganmu</span>' !!}</h2>
                         
                         <p class="story-text-lead">
-                            KampSewa lahir dari kecintaan kami terhadap alam bebas dan keinginan untuk membuat kegiatan outdoor lebih mudah diakses oleh semua kalangan. Kami menyadari bahwa membeli peralatan camping berkualitas seringkali membutuhkan biaya yang besar, perawatan ekstra, dan ruang penyimpanan yang tidak sedikit di rumah.
+                            {{ $story->content ?? 'KampSewa lahir dari kecintaan kami terhadap alam bebas dan keinginan untuk membuat kegiatan outdoor lebih mudah diakses oleh semua kalangan. Kami menyadari bahwa membeli peralatan camping berkualitas seringkali membutuhkan biaya yang besar, perawatan ekstra, dan ruang penyimpanan yang tidak sedikit di rumah.' }}
                         </p>
                         <p class="story-text-body">
-                            Oleh karena itu, kami hadir sebagai solusi yang praktis, ekonomis, dan berkelanjutan. Dengan menghubungkan para pecinta alam dengan vendor-vendor penyewaan alat outdoor terpercaya di berbagai daerah, kami memastikan setiap orang dapat menikmati keindahan alam dan pengalaman berkemah yang nyaman tanpa batasan finansial maupun logistik.
+                            Oleh karena itu, kami hadir sebagai solusi praktis, ekonomis, dan berkelanjutan. Dengan menghubungkan para pecinta alam dengan vendor-vendor penyewaan alat outdoor terpercaya di berbagai daerah, kami memastikan setiap orang dapat menikmati keindahan alam dan pengalaman berkemah yang nyaman tanpa batasan finansial maupun logistik.
                         </p>
 
                         <!-- 2x2 Feature Check Grid -->
@@ -162,7 +161,7 @@
     </section>
     <!-- Cerita Kami End -->
 
-    <!-- Visi & Misi Start -->
+    <!-- Visi & Misi Start (Dinamis dari Database) -->
     <section class="vision-mission-dark">
         <div class="container position-relative" style="z-index: 5;">
             <div class="section-header-modern mb-5" style="max-width: 820px;">
@@ -177,18 +176,18 @@
                     <div class="vm-card-modern">
                         <div class="vm-card-header">
                             <div class="vm-icon-box amber">
-                                <i class="fas fa-eye"></i>
+                                <i class="{{ $visi->icon ?? 'fas fa-eye' }}"></i>
                             </div>
                             <div>
-                                <h2>Visi Kami</h2>
-                                <span>Tujuan & Cita-Cita Masa Depan</span>
+                                <h2>{{ $visi->title ?? 'Visi Kami' }}</h2>
+                                <span>{{ $visi->subtitle ?? 'Tujuan & Cita-Cita Masa Depan' }}</span>
                             </div>
                         </div>
 
                         <div class="visi-quote-box">
                             <i class="fas fa-quote-left visi-quote-icon"></i>
                             <p class="visi-quote-text">
-                                "Menjadi platform penyewaan perlengkapan outdoor terdepan dan terpercaya di Indonesia yang menginspirasi lebih banyak orang untuk mencintai dan menjaga kelestarian alam melalui pengalaman petualangan yang aman, nyaman, dan terjangkau."
+                                "{{ $visi->content ?? 'Menjadi platform penyewaan perlengkapan outdoor terdepan dan terpercaya di Indonesia yang menginspirasi lebih banyak orang untuk mencintai dan menjaga kelestarian alam melalui pengalaman petualangan yang aman, nyaman, dan terjangkau.' }}"
                             </p>
                         </div>
                     </div>
@@ -208,18 +207,25 @@
                         </div>
 
                         <ul class="misi-list-modern">
-                            <li class="misi-item-modern">
-                                <div class="misi-number-badge">01</div>
-                                <p>Menyediakan akses mudah, cepat, dan terpercaya ke peralatan camping berkualitas premium.</p>
-                            </li>
-                            <li class="misi-item-modern">
-                                <div class="misi-number-badge">02</div>
-                                <p>Membangun ekosistem ekonomi kolaboratif yang memberdayakan vendor penyewaan alat outdoor lokal.</p>
-                            </li>
-                            <li class="misi-item-modern">
-                                <div class="misi-number-badge">03</div>
-                                <p>Mendorong gaya hidup ramah lingkungan (eco-friendly) dengan mengurangi konsumsi berlebih melalui konsep berbagi (sewa).</p>
-                            </li>
+                            @forelse($misiList as $misi)
+                                <li class="misi-item-modern">
+                                    <div class="misi-number-badge">{{ sprintf('%02d', $loop->iteration) }}</div>
+                                    <p>{{ $misi->content }}</p>
+                                </li>
+                            @empty
+                                <li class="misi-item-modern">
+                                    <div class="misi-number-badge">01</div>
+                                    <p>Menyediakan akses mudah, cepat, dan terpercaya ke peralatan camping berkualitas premium.</p>
+                                </li>
+                                <li class="misi-item-modern">
+                                    <div class="misi-number-badge">02</div>
+                                    <p>Membangun ekosistem ekonomi kolaboratif yang memberdayakan vendor penyewaan alat outdoor lokal.</p>
+                                </li>
+                                <li class="misi-item-modern">
+                                    <div class="misi-number-badge">03</div>
+                                    <p>Mendorong gaya hidup ramah lingkungan dengan mengurangi konsumsi berlebih melalui konsep berbagi.</p>
+                                </li>
+                            @endforelse
                         </ul>
                     </div>
                 </div>
@@ -228,7 +234,7 @@
     </section>
     <!-- Visi & Misi End -->
 
-    <!-- Nilai Utama Start -->
+    <!-- Nilai Utama Start (Dinamis dari Database) -->
     <section class="values-section-modern">
         <div class="container">
             <div class="section-header-modern">
@@ -238,44 +244,33 @@
             </div>
 
             <div class="row g-4">
-                <!-- Value 1 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="value-card-modern">
-                        <div class="value-icon-circle bg-light-blue">
-                            <i class="fas fa-shield-alt"></i>
+                @forelse($valuesList as $val)
+                    <div class="col-lg-4 col-md-6">
+                        <div class="value-card-modern">
+                            <div class="value-icon-circle {{ $val->icon_bg ?? 'bg-light-blue' }}">
+                                <i class="{{ $val->icon ?? 'fas fa-shield-alt' }}"></i>
+                            </div>
+                            <h4>{{ $val->title }}</h4>
+                            <p>{{ $val->content }}</p>
                         </div>
-                        <h4>Keamanan & Kualitas</h4>
-                        <p>Kami memiliki standar tinggi. Semua peralatan dari mitra vendor selalu melalui proses pengecekan kelayakan pakai dan kebersihan sebelum disewakan kepada Anda.</p>
                     </div>
-                </div>
-
-                <!-- Value 2 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="value-card-modern">
-                        <div class="value-icon-circle bg-light-amber">
-                            <i class="fas fa-handshake"></i>
+                @empty
+                    <div class="col-lg-4 col-md-6">
+                        <div class="value-card-modern">
+                            <div class="value-icon-circle bg-light-blue">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h4>Keamanan & Kualitas</h4>
+                            <p>Kami memiliki standar tinggi. Semua peralatan dari mitra vendor selalu melalui proses pengecekan kelayakan pakai dan kebersihan sebelum disewakan kepada Anda.</p>
                         </div>
-                        <h4>Mitra Terpercaya</h4>
-                        <p>KampSewa menyeleksi dan bermitra dengan penyedia alat camping berpengalaman di berbagai kota untuk memastikan Anda mendapatkan pelayanan yang ramah, tepat waktu, dan profesional.</p>
                     </div>
-                </div>
-
-                <!-- Value 3 -->
-                <div class="col-lg-4 col-md-6">
-                    <div class="value-card-modern">
-                        <div class="value-icon-circle bg-light-emerald">
-                            <i class="fas fa-leaf"></i>
-                        </div>
-                        <h4>Kelestarian Alam</h4>
-                        <p>Kami sangat peduli pada bumi. Dengan memilih untuk menyewa, Anda ikut berkontribusi mengurangi produksi limbah dan jejak karbon, mendukung pariwisata yang berkelanjutan.</p>
-                    </div>
-                </div>
+                @endforelse
             </div>
         </div>
     </section>
     <!-- Nilai Utama End -->
 
-    <!-- Dampak Nyata Counter Start -->
+    <!-- Dampak Nyata Counter Start (Dinamis dari Database) -->
     <section class="impact-banner-modern">
         <div class="container">
             <div class="impact-grid">
@@ -284,11 +279,11 @@
                     <p>Tahun Berdiri & Mengabdi</p>
                 </div>
                 <div class="impact-item">
-                    <h3>150+</h3>
+                    <h3>{{ $stats['total_vendor'] ?? '150+ Vendor' }}</h3>
                     <p>Vendor & Mitra Toko</p>
                 </div>
                 <div class="impact-item">
-                    <h3>10.000+</h3>
+                    <h3>{{ $stats['total_sku'] ?? '10.000+ SKU' }}</h3>
                     <p>SKU Alat Ready & Steril</p>
                 </div>
                 <div class="impact-item">

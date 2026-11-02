@@ -31,5 +31,5 @@
         <!-- KampSewa Design Fixes -->
         <link href="{{asset('template/envato/css/kampsewa-fixes.css')}}" rel="stylesheet">
         <!-- KampSewa Modern 2026 Redesign -->
-        <link href="{{asset('template/envato/css/modern-landing.css')}}" rel="stylesheet">
+        <link href="{{asset('template/envato/css/modern-landing.css')}}?v={{ file_exists(public_path('template/envato/css/modern-landing.css')) ? filemtime(public_path('template/envato/css/modern-landing.css')) : time() }}" rel="stylesheet">
     </head>

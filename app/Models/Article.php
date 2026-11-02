@@ -21,6 +21,10 @@ class Article extends Model
         'deskripsi_singkat',
         'konten',
         'lokasi',
+        'kategori_wisata',
+        'wilayah',
+        'rating_wisata',
+        'is_recommended',
         'sumber_url',
         'sumber_nama',
         'author_id',
@@ -29,9 +33,11 @@ class Article extends Model
     ];
 
     protected $casts = [
-        'views_count' => 'integer',
-        'created_at'  => 'datetime',
-        'updated_at'  => 'datetime',
+        'views_count'    => 'integer',
+        'rating_wisata'  => 'float',
+        'is_recommended' => 'boolean',
+        'created_at'     => 'datetime',
+        'updated_at'     => 'datetime',
     ];
 
     /**

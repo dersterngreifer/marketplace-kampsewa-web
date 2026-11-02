@@ -16,6 +16,9 @@ class KategoriProduk extends Model
         'nama_kategori',
         'slug',
         'icon',
+        'gambar',
+        'deskripsi_singkat',
+        'jumlah_pilihan',
         'urutan',
     ];
 
@@ -35,6 +38,26 @@ class KategoriProduk extends Model
                 $kategori->slug = Str::slug($kategori->nama_kategori);
             }
         });
+    }
+
+    /**
+     * URL Gambar kategori
+     */
+    public function getGambarUrlAttribute(): string
+    {
+        if (empty($this->gambar)) {
+            return asset('template/envato/img/barang-tenda.jpg');
+        }
+
+        if (str_starts_with($this->gambar, 'http://') || str_starts_with($this->gambar, 'https://')) {
+            return $this->gambar;
+        }
+
+        if (file_exists(public_path('template/envato/img/' . $this->gambar))) {
+            return asset('template/envato/img/' . $this->gambar);
+        }
+
+        return asset('template/envato/img/' . $this->gambar);
     }
 
     /**

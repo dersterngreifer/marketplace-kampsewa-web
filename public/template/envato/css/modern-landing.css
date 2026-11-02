@@ -2838,11 +2838,13 @@ h1, h2, h3, h4, h5, h6, .navbar-brand h1 {
     margin-bottom: 30px;
 }
 
-.vendor-grid-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 22px;
-    margin-bottom: 40px;
+.vendor-grid-container,
+.vendor-showcase-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 24px !important;
+    margin-bottom: 40px !important;
+    width: 100% !important;
 }
 
 .vendor-store-card {
@@ -3166,8 +3168,10 @@ h1, h2, h3, h4, h5, h6, .navbar-brand h1 {
 }
 
 @media (max-width: 1199px) {
-    .vendor-grid-container {
-        grid-template-columns: repeat(3, 1fr);
+    .vendor-grid-container,
+    .vendor-showcase-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 20px !important;
     }
     .gear-grid-container {
         grid-template-columns: repeat(3, 1fr);
@@ -3175,8 +3179,10 @@ h1, h2, h3, h4, h5, h6, .navbar-brand h1 {
 }
 
 @media (max-width: 991px) {
-    .vendor-grid-container {
-        grid-template-columns: repeat(2, 1fr);
+    .vendor-grid-container,
+    .vendor-showcase-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 16px !important;
     }
     .gear-grid-container {
         grid-template-columns: repeat(2, 1fr);
@@ -3192,8 +3198,10 @@ h1, h2, h3, h4, h5, h6, .navbar-brand h1 {
 }
 
 @media (max-width: 767px) {
-    .vendor-grid-container {
-        grid-template-columns: 1fr;
+    .vendor-grid-container,
+    .vendor-showcase-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
     }
     .gear-grid-container {
         grid-template-columns: 1fr;

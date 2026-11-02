@@ -30,11 +30,12 @@
                 <div class="footer-item d-flex flex-column">
                     <h4 class="mb-4 fw-bold" style="color: #1a1f2e !important; border-bottom: 2px solid var(--bs-primary); display: inline-block; padding-bottom: 8px; width: fit-content;">Menu Navigasi</h4>
                     <a href="{{ route('landing-page.halaman-beranda') }}" class="footer-menu-link"><i class="fas fa-angle-right me-2 text-primary"></i>Home</a>
+                    <a href="{{ route('landing-page.halaman-tentangkami') }}" class="footer-menu-link"><i class="fas fa-angle-right me-2 text-primary"></i>Tentang Kami</a>
                     <a href="{{ route('landing-page.halaman-destinasi') }}" class="footer-menu-link"><i class="fas fa-angle-right me-2 text-primary"></i>Destinasi</a>
                     <a href="{{ route('landing-page.halaman-testimoni') }}" class="footer-menu-link"><i class="fas fa-angle-right me-2 text-primary"></i>Testimoni</a>
                     <a href="{{ route('landing-page.halaman-sewabarang') }}" class="footer-menu-link"><i class="fas fa-angle-right me-2 text-primary"></i>Perlengkapan Camping</a>
                     <a href="#download-app" class="footer-menu-link" style="color: var(--bs-primary) !important; font-weight: 600;"><i class="fas fa-mobile-alt me-2 text-warning"></i>Download Aplikasi Mobile</a>
-                    <a href="#" class="footer-menu-link mt-2 pt-2 border-top" style="font-size: 0.88rem;"><i class="fas fa-user-shield me-2 text-success"></i><strong>Portal Admin Toko (Mitra)</strong></a>
+                    <a href="{{ url('/login') }}" class="footer-menu-link mt-2 pt-2 border-top" style="font-size: 0.88rem;"><i class="fas fa-user-shield me-2 text-success"></i><strong>Portal Admin Toko (Mitra)</strong></a>
                 </div>
             </div>
 
