@@ -1,66 +1,220 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
-
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+  <a href="https://github.com" target="_blank">
+    <img src="public/assets/logo/logo-kampsewa.png" width="180" alt="KampSewa Logo">
+  </a>
 </p>
 
-## About Laravel
+<h1 align="center">🏕️ KampSewa Web</h1>
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+<p align="center">
+  <strong>Platform Marketplace Persewaan Peralatan Camping & Outdoor Berbasis Laravel & Blade</strong>
+</p>
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+<p align="center">
+  Solusi digital persewaan perlengkapan petualangan luar ruangan (outdoor, hiking, camping) terintegrasi untuk kalangan mahasiswa dan umum dengan arsitektur modern, sistem template modular <strong>Blade</strong>, real-time chat, dan payment gateway.
+</p>
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+<p align="center">
+  <a href="https://github.com"><img src="https://img.shields.io/badge/Language-Blade-f7523f?style=for-the-badge&logo=laravel&logoColor=white" alt="Blade"></a>
+  <a href="https://laravel.com"><img src="https://img.shields.io/badge/Laravel-10.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel 10"></a>
+  <a href="https://php.net"><img src="https://img.shields.io/badge/PHP-^8.1-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP 8.1+"></a>
+  <a href="https://laravel.com/docs/reverb"><img src="https://img.shields.io/badge/Realtime-Laravel_Reverb-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel Reverb"></a>
+  <a href="https://midtrans.com"><img src="https://img.shields.io/badge/Payment-Midtrans-002B49?style=for-the-badge" alt="Midtrans"></a>
+  <a href="https://tailwindcss.com"><img src="https://img.shields.io/badge/UI-Tailwind%20%26%20Bootstrap-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="UI Styling"></a>
+  <a href="https://mysql.com"><img src="https://img.shields.io/badge/Database-MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge" alt="License"></a>
+</p>
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 📖 Tentang KampSewa
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+**KampSewa** adalah platform marketplace penyewaan alat berkemah dan aktivitas luar ruangan yang menjembatani para pemilik rental alat outdoor dengan komunitas pecinta alam, pendaki, maupun mahasiswa kampus. 
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Aplikasi web ini dibangun dengan memanfaatkan kekuatan **Laravel Framework** dan arsitektur tampilan responsif berbasis **Blade Template Engine**, menghadirkan pengalaman pengguna yang cepat, terstruktur, dan elegan.
 
-## Laravel Sponsors
+---
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+## 🌟 Sorotan Utama & Arsitektur Blade
 
-### Premium Partners
+Project ini dirancang dengan struktur template **Blade** yang modular, memudahkan kustomisasi UI serta menjaga keterbacaan kode:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+```text
+resources/views/
+├── auth/            # Halaman otentikasi (Login, Register, OTP Lupa Password)
+├── components/      # Reusable Blade UI Components (Modal, Card, Navbar, Form)
+├── customers/       # Dashboard penyewa & pemilik toko persewaan
+├── developers/      # Dashboard manajemen sistem (Administrator / Developer)
+├── landing-page/    # Etalase publik, katalog produk, artikel & wisata
+└── layouts/         # Master layouts & kerangka tema aplikasi
+```
 
-## Contributing
+- **Reusable Component System:** Memanfaatkan `<x-slot>` dan directive `@include` / `@extends` untuk konsistensi layout di seluruh halaman.
+- **Blade Optimization:** Bersih dari boilerplate yang membebani statistik repository, menjadikan **Blade** sebagai bahasa dominan pada visualisasi GitHub.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+## ✨ Fitur Unggulan
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+### 🏕️ 1. Manajemen Katalog & Persewaan Perlengkapan
+- Katalog lengkap: tenda dome, sleeping bag, carrier, kompor outdoor, nesting, matras, headlamp, tracking pole, dll.
+- Dukungan varian produk, galeri multi-foto, stok inventaris, dan harga sewa harian.
+- Perhitungan sewa otomatis berdasarkan durasi hari rental dan sistem denda keterlambatan pengembalian.
 
-## Security Vulnerabilities
+### 💬 2. Real-Time Chat (Laravel Reverb WebSocket)
+- Komunikasi dua arah langsung (instant messaging) antara penyewa (customer) dan pemilik rental (toko).
+- Status pesan terkirim, live typing, dan unread badge secara real-time.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+### 💳 3. Pembayaran Digital Otomatis (Midtrans Payment Gateway)
+- Integrasi Midtrans Snap untuk kemudahan checkout otomatis.
+- Mendukung metode pembayaran QRIS (GoPay, ShopeePay), Virtual Account (BCA, BNI, BRI, Mandiri), dan Transfer Bank.
+- Webhook callback instan untuk sinkronisasi status pembayaran penyewaan maupun pembayaran iklan.
 
-## License
+### 📍 4. Geocoding & Lokasi Toko Rental (Nominatim Geocoder)
+- Menemukan toko persewaan outdoor terdekat berdasarkan lokasi geospasial pengguna.
+- Penentuan titik jemput dan delivery alat outdoor.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 📊 5. Laporan Keuangan & Export PDF (DomPDF)
+- Dashboard grafik finansial: tren pemasukan, pengeluaran, keuntungan, serta rekap laba kotor & bersih.
+- Cetak otomatis invoice transaksi rental dan laporan keuangan periodik dalam format PDF.
+
+### 🛡️ 6. Multi-Role & Sistem Verifikasi Identitas (KYC)
+- **Customer / Toko:** Menyewa produk, membuka toko rental, mengelola etalase alat, mengelola pesanan masuk, dan melihat analitik toko.
+- **Developer / Admin:** Monitoring platform, verifikasi KYC pengguna, moderasi produk/iklan, manajemen artikel edukasi, dan pembukuan komisi platform.
+
+---
+
+## 🛠️ Tech Stack & Dependensi
+
+| Kategori | Teknologi | Deskripsi |
+|---|---|---|
+| **Language** | **Blade** & **PHP ^8.1** | Templating engine utama dan bahasa backend |
+| **Framework** | **Laravel 10.x** | Full-stack web application framework |
+| **Realtime Service** | **Laravel Reverb** | Official ultra-fast WebSocket server untuk Laravel |
+| **Payment Gateway** | **Midtrans PHP SDK** | Gateway pembayaran multi-channel otomatis |
+| **UI Styling** | **Tailwind CSS & Bootstrap** | Kombinasi styling utility & komponen responsif |
+| **Build Tool** | **Vite** | Bundler frontend cepat untuk asset JS/CSS |
+| **Geocoding** | **Geocoder Nominatim** | Penyedia data geolokasi & alamat peta |
+| **PDF Generator** | **Barryvdh DomPDF** | Engine generate file invoice & laporan PDF |
+| **Alerts** | **SweetAlert (RealRashid)** | Notifikasi interaktif dan dialog konfirmasi elegan |
+
+---
+
+## 🚀 Panduan Memulai (Quick Start)
+
+### Prasyarat Sistem
+- PHP >= 8.1 (dengan ekstensi `pdo_mysql`, `mbstring`, `fileinfo`, `curl`, `gd`)
+- Composer >= 2.0
+- Node.js (v18+) & NPM
+- MySQL Database Server
+
+### Langkah Instalasi
+
+1. **Clone Repositori:**
+   ```bash
+   git clone https://github.com/<username>/marketplace-kampsewa-web.git
+   cd marketplace-kampsewa-web
+   ```
+
+2. **Install Dependensi:**
+   ```bash
+   composer install
+   npm install
+   ```
+
+3. **Konfigurasi Environment:**
+   Salin file `.env.example` menjadi `.env`:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+4. **Atur Database & Layanan di `.env`:**
+   Sesuaikan kredensial database dan kredensial Midtrans / Reverb:
+   ```env
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=kampsewa_db
+   DB_USERNAME=root
+   DB_PASSWORD=
+
+   # Reverb WebSocket
+   REVERB_APP_ID=your-app-id
+   REVERB_APP_KEY=your-app-key
+   REVERB_APP_SECRET=your-app-secret
+   REVERB_HOST="localhost"
+   REVERB_PORT=8080
+   REVERB_SCHEME="http"
+
+   # Midtrans Gateway
+   MIDTRANS_SERVER_KEY=your-server-key
+   MIDTRANS_CLIENT_KEY=your-client-key
+   MIDTRANS_IS_PRODUCTION=false
+   ```
+
+5. **Migrasi Database & Seeder:**
+   ```bash
+   php artisan migrate --seed
+   ```
+
+6. **Build Asset & Link Storage:**
+   ```bash
+   php artisan storage:link
+   ```
+
+---
+
+## 🏃 Menjalankan Aplikasi
+
+Jalankan perintah berikut pada terminal terpisah untuk menjalankan semua servis secara optimal:
+
+| No | Terminal | Perintah | Fungsi |
+|---|---|---|---|
+| 1 | **Frontend Dev** | `npm run dev` | Menjalankan Vite hot-reload compiler |
+| 2 | **Web Server** | `php artisan serve` | Menjalankan web server lokal di `http://127.0.0.1:8000` |
+| 3 | **WebSocket** | `php artisan reverb:start` | Menjalankan server live chat real-time |
+| 4 | **Scheduler** | `php artisan schedule:work` | Menjalankan cron pekerjaan terjadwal (opsional) |
+
+---
+
+## 📁 Struktur Direktori
+
+```text
+marketplace-kampsewa-web/
+├── app/
+│   ├── Http/Controllers/    # Controller modular (Auth, Customer, Developer, Landing)
+│   ├── Models/                 # Eloquent ORM Models (Produk, Penyewaan, Chat, dll)
+│   └── Services/               # Layanan bisnis khusus
+├── config/                     # Konfigurasi sistem
+├── database/                   # Migrations, seeders, and factories
+├── public/                     # Public static files, images, and logo
+├── resources/
+│   ├── css/ & js/              # Sumber file aset Vite
+│   └── views/                  # Blade templates (tampilan modular aplikasi)
+├── routes/
+│   ├── web.php                 # Route definisi navigasi aplikasi
+│   └── channels.php            # Route channel WebSocket Reverb
+└── storage/                    # Penyimpanan upload berkas & log
+```
+
+---
+
+## 💡 Konfigurasi GitHub Repository
+
+Agar tampilan repositori di GitHub semakin menarik dan mudah ditemukan oleh komunitas pengembang:
+
+1. **Tambahkan Topics di Menu GitHub Repository:**
+   > `blade` · `blade-templates` · `laravel` · `php` · `marketplace` · `outdoor-rental` · `reverb-websocket` · `midtrans`
+2. **Atur Deskripsi Repository:**
+   > *🏕️ KampSewa Web — Platform Marketplace Persewaan Alat Camping & Outdoor berbasis Laravel & Blade Template Engine.*
+
+---
+
+## 📄 Lisensi
+
+Project ini dirilis di bawah lisensi [MIT License](LICENSE).
+
+<p align="center">
+  Dibuat dengan ❤️ untuk mendukung kegiatan outdoor dan pecinta alam Indonesia 🏕️
+</p>

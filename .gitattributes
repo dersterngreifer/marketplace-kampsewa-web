@@ -1,11 +1,32 @@
 * text=auto eol=lf
 
-*.blade.php diff=html
+# Programming and markup diffs
+*.php diff=php
+*.blade.php diff=html linguist-language=Blade linguist-detectable=true
 *.css diff=css
 *.html diff=html
 *.md diff=markdown
-*.php diff=php
 
+# Explicitly identify Blade templates for GitHub Linguist
+resources/views/** linguist-language=Blade
+resources/views/** linguist-detectable=true
+
+# Ignore vendor, public assets, templates, and storage as vendored/generated so they don't skew language stats
+public/** linguist-vendored
+storage/** linguist-vendored
+tests/** linguist-documentation
+notes/** linguist-documentation
+reports/** linguist-documentation
+database/factories/** linguist-vendored
+database/seeders/** linguist-vendored
+test_*.php linguist-vendored
+insert_products.php linguist-vendored
+verify_products.php linguist-vendored
+
+# Export ignore
 /.github export-ignore
 CHANGELOG.md export-ignore
 .styleci.yml export-ignore
+.editorconfig export-ignore
+.env.example export-ignore
+phpunit.xml export-ignore
