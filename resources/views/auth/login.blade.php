@@ -195,6 +195,36 @@
             color: #94A3B8;
             font-weight: 400;
         }
+        .input-field-wrap input::-ms-reveal,
+        .input-field-wrap input::-ms-clear {
+            display: none;
+        }
+        .toggle-password-btn {
+            background: transparent;
+            border: none;
+            padding: 4px;
+            margin: -4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748B;
+            font-size: 15px;
+            cursor: pointer;
+            flex-shrink: 0;
+            border-radius: 6px;
+            transition: color 0.2s ease, transform 0.15s ease;
+        }
+        .toggle-password-btn:hover {
+            color: #5038ED;
+        }
+        .toggle-password-btn:focus-visible {
+            outline: 2px solid #5038ED;
+            outline-offset: 2px;
+            color: #5038ED;
+        }
+        .toggle-password-btn:active {
+            transform: scale(0.92);
+        }
 
         /* ---- Submit Button ---- */
         .btn-login {
@@ -296,10 +326,20 @@
 
                         {{-- Password --}}
                         <div>
-                            <label class="input-group-label">Password</label>
+                            <label for="password" class="input-group-label">Password</label>
                             <div class="input-field-wrap">
                                 <i class="fi fi-rr-key field-icon"></i>
-                                <input type="password" name="password" placeholder="Masukkan password">
+                                <input id="password" type="password" name="password" placeholder="Masukkan password">
+                                <button
+                                    type="button"
+                                    id="toggle-password"
+                                    class="toggle-password-btn"
+                                    aria-label="Tampilkan password"
+                                    aria-pressed="false"
+                                    title="Tampilkan password"
+                                >
+                                    <i id="toggle-password-icon" class="fas fa-eye" aria-hidden="true"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -348,6 +388,29 @@
 
     </div>
     @include('sweetalert::alert')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const passwordInput = document.getElementById('password');
+            const toggleButton = document.getElementById('toggle-password');
+            const toggleIcon = document.getElementById('toggle-password-icon');
+
+            if (!passwordInput || !toggleButton || !toggleIcon) return;
+
+            toggleButton.addEventListener('click', function () {
+                const isHidden = passwordInput.type === 'password';
+                passwordInput.type = isHidden ? 'text' : 'password';
+
+                toggleIcon.classList.toggle('fa-eye', !isHidden);
+                toggleIcon.classList.toggle('fa-eye-slash', isHidden);
+
+                const label = isHidden ? 'Sembunyikan password' : 'Tampilkan password';
+                toggleButton.setAttribute('aria-pressed', String(isHidden));
+                toggleButton.setAttribute('aria-label', label);
+                toggleButton.setAttribute('title', label);
+            });
+        });
+    </script>
 </body>
 
 </html>

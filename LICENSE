@@ -1,0 +1,70 @@
+KampSewa Web — Portfolio & Non-Commercial Attribution License (v1.0)
+
+Copyright (c) 2026 Agung Kurniawan (https://github.com/dersterngreifer)
+Source Repository: https://github.com/dersterngreifer/marketplace-kampsewa-web
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and display the Software strictly for personal, educational, and
+portfolio showcase purposes, subject to the following terms and conditions:
+
+1. PERMITTED USE (PORTFOLIO & NON-COMMERCIAL ONLY)
+   You may use, study, fork, modify, and showcase the Software (including a
+   non-commercial live demo) as part of your personal portfolio, CV, academic
+   work, or job application demonstration, provided that all conditions in this
+   License are strictly met.
+
+2. STRICT PROHIBITION OF COMMERCIAL USE
+   You may NOT use the Software, in whole or in part (whether original or
+   modified), for any commercial purpose without prior explicit written
+   permission from the Copyright Holder. Prohibited commercial uses include,
+   but are not limited to:
+   a) Selling, reselling, licensing, sublicensing, renting, or redistributing
+      the Software or any derivative work for monetary or commercial gain;
+   b) Using the Software in production for any business, company, organization,
+      or paid client / freelance project;
+   c) Operating the Software as a commercial marketplace, paid service,
+      ad-supported platform, or Software-as-a-Service (SaaS);
+   d) Removing, obscuring, or bypassing license notices to present or monetize
+      the Software as a proprietary or original commercial product.
+
+3. MANDATORY ATTRIBUTION & GITHUB SOURCE CREDIT
+   If you use, fork, modify, or showcase the Software in a portfolio, live
+   demo, public repository, or presentation, you MUST:
+   a) Retain the above copyright notice and this License text in all copies or
+      substantial portions of the Software;
+   b) Provide clear, visible credit to the original author (Agung Kurniawan)
+      and include a direct link/reference to the original GitHub source
+      repository in a prominent location (such as your portfolio project
+      description, README, presentation, or live demo footer/about section):
+
+      Original Project: KampSewa Web by Agung Kurniawan
+      GitHub Source: https://github.com/dersterngreifer/marketplace-kampsewa-web
+
+   c) Clearly indicate any modifications you made, and do not misrepresent
+      the original codebase as solely your own original creation.
+
+4. THIRD-PARTY COMPONENTS
+   This Software relies on third-party frameworks and packages (such as Laravel
+   and packages listed in composer.json and package.json), which remain subject
+   to their own respective licenses. This License applies to the original code,
+   templates, configurations, and assets created for this repository.
+
+5. COMMERCIAL LICENSING INQUIRIES
+   To request commercial usage rights or a separate commercial license, please
+   contact the Copyright Holder via GitHub:
+   https://github.com/dersterngreifer
+
+6. TERMINATION
+   Any failure to comply with the terms of this License—including unauthorized
+   commercial use or omission of mandatory GitHub source attribution—will
+   automatically and immediately terminate your rights under this License.
+
+7. DISCLAIMER OF WARRANTY & LIMITATION OF LIABILITY
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+   WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
+   OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+   SOFTWARE.
