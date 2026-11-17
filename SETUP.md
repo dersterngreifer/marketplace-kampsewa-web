@@ -22,4 +22,4 @@ Jalankan perintah berikut secara bersamaan di terminal/CMD yang berbeda:
 | 3 | `php artisan reverb:start` | Menjalankan WebSocket server Reverb |
 | 4 | `php artisan serve` | Menjalankan development server Laravel |
 
-> **Catatan:** Aplikasi dapat diakses di `http://127.0.0.1:8000` setelah `php artisan serve` berjalan.
+> **Catatan:** Aplikasi dapat diakses di `http://127.0.0.1:8000` setelah `php artisan serve` berjalan. cihuy
